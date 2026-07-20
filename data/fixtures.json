@@ -1,0 +1,2712 @@
+{
+  "domain": "healthcare",
+  "entities": {
+    "Person": [
+      {
+        "name": "Dr. Sarah Chen",
+        "email": "sarah.chen@medcenter.org",
+        "role": "Chief Medical Officer",
+        "description": "Experienced physician with 15 years in emergency medicine and hospital administration"
+      },
+      {
+        "name": "Marcus Williams",
+        "email": "marcus.williams@healthtech.com",
+        "role": "Healthcare IT Specialist",
+        "description": "Technology consultant specializing in electronic health record implementations"
+      },
+      {
+        "name": "Dr. Priya Patel",
+        "email": "priya.patel@cardiaccare.net",
+        "role": "Cardiologist",
+        "description": "Board-certified cardiologist with expertise in interventional cardiology"
+      },
+      {
+        "name": "Elena Rodriguez",
+        "email": "elena.rodriguez@nursecorp.org",
+        "role": "Nurse Manager",
+        "description": "Registered nurse with 12 years experience in critical care and staff management"
+      },
+      {
+        "name": "Dr. James Thompson",
+        "email": "james.thompson@oncologyinc.com",
+        "role": "Oncologist",
+        "description": "Medical oncologist specializing in breast cancer research and treatment"
+      }
+    ],
+    "Organization": [
+      {
+        "name": "Metropolitan General Hospital",
+        "description": "Large tertiary care hospital serving urban and suburban communities with comprehensive medical services",
+        "industry": "Healthcare"
+      },
+      {
+        "name": "Cardiac Care Associates",
+        "description": "Specialized cardiovascular practice with multiple locations offering diagnostic and interventional services",
+        "industry": "Healthcare"
+      },
+      {
+        "name": "MediTech Solutions",
+        "description": "Healthcare technology company providing EHR systems and clinical decision support tools",
+        "industry": "Healthcare Technology"
+      },
+      {
+        "name": "Regional Pharmacy Network",
+        "description": "Chain of community pharmacies providing prescription services and medication therapy management",
+        "industry": "Pharmaceutical"
+      },
+      {
+        "name": "Sunshine Pediatric Group",
+        "description": "Multi-provider pediatric practice offering comprehensive care for children and adolescents",
+        "industry": "Healthcare"
+      }
+    ],
+    "Location": [
+      {
+        "name": "Downtown Medical District",
+        "address": "1200 Medical Center Drive, Atlanta, GA 30309",
+        "latitude": 33.749,
+        "longitude": -84.388
+      },
+      {
+        "name": "Northside Health Campus",
+        "address": "4500 North Hills Boulevard, Denver, CO 80205",
+        "latitude": 39.7392,
+        "longitude": -104.9903
+      },
+      {
+        "name": "Westgate Medical Plaza",
+        "address": "2800 Westgate Avenue, Phoenix, AZ 85021",
+        "latitude": 33.4484,
+        "longitude": -112.074
+      },
+      {
+        "name": "Riverside Healthcare Complex",
+        "address": "750 Riverside Drive, Portland, OR 97201",
+        "latitude": 45.5152,
+        "longitude": -122.6784
+      },
+      {
+        "name": "Central Medical Center",
+        "address": "1500 Main Street, Houston, TX 77002",
+        "latitude": 29.7604,
+        "longitude": -95.3698
+      }
+    ],
+    "Event": [
+      {
+        "name": "Annual Cardiology Conference",
+        "date": "2024-03-15T09:00:00Z",
+        "description": "Medical education conference focusing on latest advances in cardiovascular treatment and prevention"
+      },
+      {
+        "name": "Hospital Accreditation Review",
+        "date": "2024-02-28T08:00:00Z",
+        "description": "Joint Commission accreditation site visit for quality and safety assessment"
+      },
+      {
+        "name": "Emergency Preparedness Drill",
+        "date": "2024-01-20T14:00:00Z",
+        "description": "Hospital-wide emergency response simulation exercise for mass casualty incident"
+      },
+      {
+        "name": "New Provider Orientation",
+        "date": "2024-02-01T08:30:00Z",
+        "description": "Comprehensive orientation program for newly hired physicians and clinical staff"
+      },
+      {
+        "name": "Quality Improvement Summit",
+        "date": "2024-04-10T09:00:00Z",
+        "description": "Multi-disciplinary meeting to review patient safety metrics and improvement initiatives"
+      }
+    ],
+    "Object": [
+      {
+        "name": "Electronic Health Record System",
+        "description": "Comprehensive digital platform for managing patient medical records and clinical workflows"
+      },
+      {
+        "name": "MRI Machine - Siemens 3T",
+        "description": "High-field magnetic resonance imaging system for advanced diagnostic imaging"
+      },
+      {
+        "name": "Cardiac Catheterization Lab",
+        "description": "Specialized procedure room equipped for minimally invasive cardiac interventions"
+      },
+      {
+        "name": "Automated Medication Dispensing System",
+        "description": "Robotic pharmacy system for secure medication storage and distribution"
+      },
+      {
+        "name": "Patient Monitoring Network",
+        "description": "Integrated system for continuous monitoring of vital signs and clinical parameters"
+      }
+    ],
+    "Patient": [
+      {
+        "patient_id": "PT-2024-001847",
+        "name": "Maria Elena Gonzalez",
+        "date_of_birth": "1978-05-14",
+        "blood_type": "O+",
+        "allergies": "Penicillin, shellfish"
+      },
+      {
+        "patient_id": "PT-2024-002156",
+        "name": "Robert Kim",
+        "date_of_birth": "1985-11-22",
+        "blood_type": "A+",
+        "allergies": "None known"
+      },
+      {
+        "patient_id": "PT-2024-001923",
+        "name": "Jennifer Walsh",
+        "date_of_birth": "1992-03-08",
+        "blood_type": "B-",
+        "allergies": "Latex, sulfa drugs"
+      },
+      {
+        "patient_id": "PT-2024-002089",
+        "name": "Ahmed Hassan",
+        "date_of_birth": "1967-09-15",
+        "blood_type": "AB+",
+        "allergies": "Aspirin"
+      },
+      {
+        "patient_id": "PT-2024-001756",
+        "name": "Lisa Chang",
+        "date_of_birth": "1980-12-30",
+        "blood_type": "O-",
+        "allergies": "Morphine, eggs"
+      },
+      {
+        "patient_id": "PT-2024-002234",
+        "name": "Michael O'Brien",
+        "date_of_birth": "1973-07-19",
+        "blood_type": "A-",
+        "allergies": "None known"
+      },
+      {
+        "patient_id": "PT-2024-001812",
+        "name": "Fatima Al-Rashid",
+        "date_of_birth": "1995-01-26",
+        "blood_type": "B+",
+        "allergies": "Iodine contrast, nuts"
+      },
+      {
+        "patient_id": "PT-2024-002067",
+        "name": "David Johnson",
+        "date_of_birth": "1958-04-12",
+        "blood_type": "O+",
+        "allergies": "Codeine"
+      },
+      {
+        "patient_id": "PT-2024-001945",
+        "name": "Anna Petrov",
+        "date_of_birth": "1987-08-03",
+        "blood_type": "AB-",
+        "allergies": "Vancomycin, strawberries"
+      },
+      {
+        "patient_id": "PT-2024-002178",
+        "name": "Carlos Rivera",
+        "date_of_birth": "1991-10-21",
+        "blood_type": "A+",
+        "allergies": "None known"
+      }
+    ],
+    "Provider": [
+      {
+        "provider_id": "PRV-2024-8901",
+        "name": "Dr. Emily Watson",
+        "specialty": "cardiology",
+        "license_number": "MD-45892-GA"
+      },
+      {
+        "provider_id": "PRV-2024-8902",
+        "name": "Dr. Rajesh Kumar",
+        "specialty": "oncology",
+        "license_number": "MD-73456-TX"
+      },
+      {
+        "provider_id": "PRV-2024-8903",
+        "name": "Dr. Angela Martinez",
+        "specialty": "pediatrics",
+        "license_number": "MD-62183-CA"
+      },
+      {
+        "provider_id": "PRV-2024-8904",
+        "name": "Dr. Thomas Anderson",
+        "specialty": "orthopedics",
+        "license_number": "MD-51947-FL"
+      },
+      {
+        "provider_id": "PRV-2024-8905",
+        "name": "Dr. Samantha Lee",
+        "specialty": "emergency",
+        "license_number": "MD-38724-NY"
+      },
+      {
+        "provider_id": "PRV-2024-8906",
+        "name": "Dr. Mohammed Abdi",
+        "specialty": "general_practice",
+        "license_number": "MD-29651-WA"
+      },
+      {
+        "provider_id": "PRV-2024-8907",
+        "name": "Dr. Rebecca Stone",
+        "specialty": "psychiatry",
+        "license_number": "MD-47832-CO"
+      },
+      {
+        "provider_id": "PRV-2024-8908",
+        "name": "Dr. Kevin O'Connor",
+        "specialty": "surgery",
+        "license_number": "MD-65719-MA"
+      },
+      {
+        "provider_id": "PRV-2024-8909",
+        "name": "Dr. Lisa Zhang",
+        "specialty": "radiology",
+        "license_number": "MD-42856-OR"
+      },
+      {
+        "provider_id": "PRV-2024-8910",
+        "name": "Dr. Marcus Thompson",
+        "specialty": "neurology",
+        "license_number": "MD-37294-AZ"
+      }
+    ],
+    "Diagnosis": [
+      {
+        "icd_code": "I50.9",
+        "name": "Heart failure, unspecified",
+        "category": "chronic",
+        "severity": "moderate"
+      },
+      {
+        "icd_code": "E11.9",
+        "name": "Type 2 diabetes mellitus without complications",
+        "category": "chronic",
+        "severity": "mild"
+      },
+      {
+        "icd_code": "J44.1",
+        "name": "Chronic obstructive pulmonary disease with acute exacerbation",
+        "category": "chronic",
+        "severity": "severe"
+      },
+      {
+        "icd_code": "F32.1",
+        "name": "Major depressive disorder, single episode, moderate",
+        "category": "mental_health",
+        "severity": "moderate"
+      },
+      {
+        "icd_code": "S72.001A",
+        "name": "Fracture of unspecified part of neck of right femur, initial encounter",
+        "category": "acute",
+        "severity": "severe"
+      },
+      {
+        "icd_code": "A09",
+        "name": "Infectious gastroenteritis and colitis, unspecified",
+        "category": "infectious",
+        "severity": "mild"
+      },
+      {
+        "icd_code": "M79.0",
+        "name": "Rheumatism, unspecified",
+        "category": "autoimmune",
+        "severity": "moderate"
+      },
+      {
+        "icd_code": "Q21.0",
+        "name": "Ventricular septal defect",
+        "category": "genetic",
+        "severity": "moderate"
+      },
+      {
+        "icd_code": "I21.9",
+        "name": "Acute myocardial infarction, unspecified",
+        "category": "acute",
+        "severity": "critical"
+      },
+      {
+        "icd_code": "G93.1",
+        "name": "Anoxic brain damage, not elsewhere classified",
+        "category": "acute",
+        "severity": "critical"
+      }
+    ],
+    "Treatment": [
+      {
+        "treatment_id": "TX-2024-5672",
+        "name": "Cardiac catheterization with stent placement",
+        "treatment_type": "procedure",
+        "status": "completed",
+        "start_date": "2024-01-15T10:30:00Z",
+        "end_date": "2024-01-15T12:45:00Z"
+      },
+      {
+        "treatment_id": "TX-2024-5673",
+        "name": "Metformin therapy for diabetes",
+        "treatment_type": "medication",
+        "status": "in_progress",
+        "start_date": "2024-01-10T09:00:00Z",
+        "end_date": null
+      },
+      {
+        "treatment_id": "TX-2024-5674",
+        "name": "Physical therapy for knee rehabilitation",
+        "treatment_type": "therapy",
+        "status": "in_progress",
+        "start_date": "2024-02-01T14:00:00Z",
+        "end_date": "2024-03-15T14:00:00Z"
+      },
+      {
+        "treatment_id": "TX-2024-5675",
+        "name": "CT scan of abdomen and pelvis",
+        "treatment_type": "imaging",
+        "status": "completed",
+        "start_date": "2024-01-22T11:00:00Z",
+        "end_date": "2024-01-22T11:30:00Z"
+      },
+      {
+        "treatment_id": "TX-2024-5676",
+        "name": "Appendectomy",
+        "treatment_type": "surgery",
+        "status": "planned",
+        "start_date": "2024-02-28T08:00:00Z",
+        "end_date": "2024-02-28T10:00:00Z"
+      },
+      {
+        "treatment_id": "TX-2024-5677",
+        "name": "Complete blood count",
+        "treatment_type": "lab_test",
+        "status": "completed",
+        "start_date": "2024-02-05T07:30:00Z",
+        "end_date": "2024-02-05T07:45:00Z"
+      },
+      {
+        "treatment_id": "TX-2024-5678",
+        "name": "Chemotherapy cycle 3",
+        "treatment_type": "medication",
+        "status": "planned",
+        "start_date": "2024-03-01T09:00:00Z",
+        "end_date": "2024-03-01T15:00:00Z"
+      },
+      {
+        "treatment_id": "TX-2024-5679",
+        "name": "Cognitive behavioral therapy",
+        "treatment_type": "therapy",
+        "status": "in_progress",
+        "start_date": "2024-01-20T16:00:00Z",
+        "end_date": "2024-04-20T16:00:00Z"
+      }
+    ],
+    "Encounter": [
+      {
+        "encounter_id": "ENC-2024-78901",
+        "encounter_type": "emergency",
+        "date": "2024-02-12T15:30:00Z",
+        "chief_complaint": "Chest pain and shortness of breath",
+        "disposition": "Admitted to telemetry unit",
+        "name": "Encounter 1"
+      },
+      {
+        "encounter_id": "ENC-2024-78902",
+        "encounter_type": "outpatient",
+        "date": "2024-02-08T10:15:00Z",
+        "chief_complaint": "Routine diabetes follow-up",
+        "disposition": "Discharged home with medication adjustment",
+        "name": "Encounter 2"
+      },
+      {
+        "encounter_id": "ENC-2024-78903",
+        "encounter_type": "inpatient",
+        "date": "2024-01-25T08:00:00Z",
+        "chief_complaint": "Post-operative monitoring after hip replacement",
+        "disposition": "Transferred to rehabilitation facility",
+        "name": "Encounter 3"
+      },
+      {
+        "encounter_id": "ENC-2024-78904",
+        "encounter_type": "telehealth",
+        "date": "2024-02-14T14:00:00Z",
+        "chief_complaint": "Mental health check-in and medication review",
+        "disposition": "Continued current treatment plan",
+        "name": "Encounter 4"
+      },
+      {
+        "encounter_id": "ENC-2024-78905",
+        "encounter_type": "outpatient",
+        "date": "2024-02-10T11:30:00Z",
+        "chief_complaint": "Annual physical examination",
+        "disposition": "Scheduled follow-up in 12 months",
+        "name": "Encounter 5"
+      },
+      {
+        "encounter_id": "ENC-2024-78906",
+        "encounter_type": "emergency",
+        "date": "2024-02-15T22:45:00Z",
+        "chief_complaint": "Severe abdominal pain",
+        "disposition": "Admitted for emergency surgery",
+        "name": "Encounter 6"
+      },
+      {
+        "encounter_id": "ENC-2024-78907",
+        "encounter_type": "outpatient",
+        "date": "2024-02-09T13:20:00Z",
+        "chief_complaint": "Chronic back pain management",
+        "disposition": "Referred to pain management specialist",
+        "name": "Encounter 7"
+      },
+      {
+        "encounter_id": "ENC-2024-78908",
+        "encounter_type": "inpatient",
+        "date": "2024-01-30T16:00:00Z",
+        "chief_complaint": "Chemotherapy administration and monitoring",
+        "disposition": "Discharged home after treatment completion",
+        "name": "Encounter 8"
+      }
+    ],
+    "Facility": [
+      {
+        "facility_id": "FAC-2024-0156",
+        "name": "St. Mary's Medical Center",
+        "facility_type": "hospital",
+        "bed_count": 425
+      },
+      {
+        "facility_id": "FAC-2024-0157",
+        "name": "Northside Family Clinic",
+        "facility_type": "clinic",
+        "bed_count": 0
+      },
+      {
+        "facility_id": "FAC-2024-0158",
+        "name": "QuickCare Urgent Care",
+        "facility_type": "urgent_care",
+        "bed_count": 8
+      },
+      {
+        "facility_id": "FAC-2024-0159",
+        "name": "Regional Diagnostic Laboratory",
+        "facility_type": "lab",
+        "bed_count": 0
+      },
+      {
+        "facility_id": "FAC-2024-0160",
+        "name": "Wellness Pharmacy",
+        "facility_type": "pharmacy",
+        "bed_count": 0
+      },
+      {
+        "facility_id": "FAC-2024-0161",
+        "name": "Harbor Rehabilitation Center",
+        "facility_type": "rehab_center",
+        "bed_count": 32
+      },
+      {
+        "facility_id": "FAC-2024-0162",
+        "name": "Metropolitan General Hospital",
+        "facility_type": "hospital",
+        "bed_count": 750
+      },
+      {
+        "facility_id": "FAC-2024-0163",
+        "name": "Sunset Medical Clinic",
+        "facility_type": "clinic",
+        "bed_count": 0
+      }
+    ],
+    "Medication": [
+      {
+        "ndc_code": "0781-3401-01",
+        "name": "Lisinopril 10mg tablets",
+        "drug_class": "ACE inhibitor",
+        "dosage_form": "Tablet",
+        "contraindications": "Pregnancy, hereditary angioedema, bilateral renal artery stenosis"
+      },
+      {
+        "ndc_code": "0002-1100-02",
+        "name": "Metformin 500mg extended release",
+        "drug_class": "Biguanide",
+        "dosage_form": "Extended-release tablet",
+        "contraindications": "Severe kidney disease, metabolic acidosis, diabetic ketoacidosis"
+      },
+      {
+        "ndc_code": "0093-7663-56",
+        "name": "Atorvastatin 20mg tablets",
+        "drug_class": "HMG-CoA reductase inhibitor",
+        "dosage_form": "Tablet",
+        "contraindications": "Active liver disease, pregnancy, breastfeeding"
+      },
+      {
+        "ndc_code": "50458-612-60",
+        "name": "Amlodipine 5mg tablets",
+        "drug_class": "Calcium channel blocker",
+        "dosage_form": "Tablet",
+        "contraindications": "Cardiogenic shock, severe aortic stenosis"
+      },
+      {
+        "ndc_code": "0777-3105-02",
+        "name": "Sertraline 50mg tablets",
+        "drug_class": "SSRI",
+        "dosage_form": "Tablet",
+        "contraindications": "MAOI use within 14 days, pimozide use"
+      },
+      {
+        "ndc_code": "0049-0010-66",
+        "name": "Levothyroxine 100mcg tablets",
+        "drug_class": "Thyroid hormone",
+        "dosage_form": "Tablet",
+        "contraindications": "Uncorrected adrenal insufficiency, acute myocardial infarction"
+      },
+      {
+        "ndc_code": "0777-0304-02",
+        "name": "Omeprazole 20mg capsules",
+        "drug_class": "Proton pump inhibitor",
+        "dosage_form": "Delayed-release capsule",
+        "contraindications": "Known hypersensitivity to substituted benzimidazoles"
+      },
+      {
+        "ndc_code": "68180-518-06",
+        "name": "Gabapentin 300mg capsules",
+        "drug_class": "Anticonvulsant",
+        "dosage_form": "Capsule",
+        "contraindications": "Known hypersensitivity to gabapentin"
+      },
+      {
+        "ndc_code": "0378-0781-05",
+        "name": "Hydrochlorothiazide 25mg tablets",
+        "drug_class": "Thiazide diuretic",
+        "dosage_form": "Tablet",
+        "contraindications": "Anuria, hypersensitivity to sulfonamides"
+      },
+      {
+        "ndc_code": "60505-0117-01",
+        "name": "Warfarin 5mg tablets",
+        "drug_class": "Anticoagulant",
+        "dosage_form": "Tablet",
+        "contraindications": "Active bleeding, pregnancy, recent surgery"
+      }
+    ]
+  },
+  "relationships": [
+    {
+      "type": "WORKS_FOR",
+      "source_label": "Person",
+      "source_name": "Dr. Sarah Chen",
+      "target_label": "Organization",
+      "target_name": "Metropolitan General Hospital"
+    },
+    {
+      "type": "WORKS_FOR",
+      "source_label": "Person",
+      "source_name": "Dr. Sarah Chen",
+      "target_label": "Organization",
+      "target_name": "MediTech Solutions"
+    },
+    {
+      "type": "WORKS_FOR",
+      "source_label": "Person",
+      "source_name": "Dr. Sarah Chen",
+      "target_label": "Organization",
+      "target_name": "Regional Pharmacy Network"
+    },
+    {
+      "type": "WORKS_FOR",
+      "source_label": "Person",
+      "source_name": "Marcus Williams",
+      "target_label": "Organization",
+      "target_name": "Cardiac Care Associates"
+    },
+    {
+      "type": "WORKS_FOR",
+      "source_label": "Person",
+      "source_name": "Dr. Priya Patel",
+      "target_label": "Organization",
+      "target_name": "MediTech Solutions"
+    },
+    {
+      "type": "WORKS_FOR",
+      "source_label": "Person",
+      "source_name": "Dr. Priya Patel",
+      "target_label": "Organization",
+      "target_name": "Metropolitan General Hospital"
+    },
+    {
+      "type": "WORKS_FOR",
+      "source_label": "Person",
+      "source_name": "Elena Rodriguez",
+      "target_label": "Organization",
+      "target_name": "MediTech Solutions"
+    },
+    {
+      "type": "WORKS_FOR",
+      "source_label": "Person",
+      "source_name": "Dr. James Thompson",
+      "target_label": "Organization",
+      "target_name": "Metropolitan General Hospital"
+    },
+    {
+      "type": "LOCATED_AT",
+      "source_label": "Organization",
+      "source_name": "Metropolitan General Hospital",
+      "target_label": "Location",
+      "target_name": "Central Medical Center"
+    },
+    {
+      "type": "LOCATED_AT",
+      "source_label": "Organization",
+      "source_name": "Cardiac Care Associates",
+      "target_label": "Location",
+      "target_name": "Central Medical Center"
+    },
+    {
+      "type": "LOCATED_AT",
+      "source_label": "Organization",
+      "source_name": "MediTech Solutions",
+      "target_label": "Location",
+      "target_name": "Westgate Medical Plaza"
+    },
+    {
+      "type": "LOCATED_AT",
+      "source_label": "Organization",
+      "source_name": "Regional Pharmacy Network",
+      "target_label": "Location",
+      "target_name": "Downtown Medical District"
+    },
+    {
+      "type": "LOCATED_AT",
+      "source_label": "Organization",
+      "source_name": "Sunshine Pediatric Group",
+      "target_label": "Location",
+      "target_name": "Downtown Medical District"
+    },
+    {
+      "type": "PARTICIPATED_IN",
+      "source_label": "Person",
+      "source_name": "Dr. Sarah Chen",
+      "target_label": "Event",
+      "target_name": "Emergency Preparedness Drill"
+    },
+    {
+      "type": "PARTICIPATED_IN",
+      "source_label": "Person",
+      "source_name": "Marcus Williams",
+      "target_label": "Event",
+      "target_name": "New Provider Orientation"
+    },
+    {
+      "type": "PARTICIPATED_IN",
+      "source_label": "Person",
+      "source_name": "Marcus Williams",
+      "target_label": "Event",
+      "target_name": "Emergency Preparedness Drill"
+    },
+    {
+      "type": "PARTICIPATED_IN",
+      "source_label": "Person",
+      "source_name": "Dr. Priya Patel",
+      "target_label": "Event",
+      "target_name": "Annual Cardiology Conference"
+    },
+    {
+      "type": "PARTICIPATED_IN",
+      "source_label": "Person",
+      "source_name": "Dr. Priya Patel",
+      "target_label": "Event",
+      "target_name": "New Provider Orientation"
+    },
+    {
+      "type": "PARTICIPATED_IN",
+      "source_label": "Person",
+      "source_name": "Elena Rodriguez",
+      "target_label": "Event",
+      "target_name": "Quality Improvement Summit"
+    },
+    {
+      "type": "PARTICIPATED_IN",
+      "source_label": "Person",
+      "source_name": "Elena Rodriguez",
+      "target_label": "Event",
+      "target_name": "Annual Cardiology Conference"
+    },
+    {
+      "type": "PARTICIPATED_IN",
+      "source_label": "Person",
+      "source_name": "Dr. James Thompson",
+      "target_label": "Event",
+      "target_name": "New Provider Orientation"
+    },
+    {
+      "type": "PARTICIPATED_IN",
+      "source_label": "Person",
+      "source_name": "Dr. James Thompson",
+      "target_label": "Event",
+      "target_name": "Quality Improvement Summit"
+    },
+    {
+      "type": "DIAGNOSED_WITH",
+      "source_label": "Patient",
+      "source_name": "Maria Elena Gonzalez",
+      "target_label": "Diagnosis",
+      "target_name": "Acute myocardial infarction, unspecified"
+    },
+    {
+      "type": "DIAGNOSED_WITH",
+      "source_label": "Patient",
+      "source_name": "Maria Elena Gonzalez",
+      "target_label": "Diagnosis",
+      "target_name": "Heart failure, unspecified"
+    },
+    {
+      "type": "DIAGNOSED_WITH",
+      "source_label": "Patient",
+      "source_name": "Maria Elena Gonzalez",
+      "target_label": "Diagnosis",
+      "target_name": "Type 2 diabetes mellitus without complications"
+    },
+    {
+      "type": "DIAGNOSED_WITH",
+      "source_label": "Patient",
+      "source_name": "Robert Kim",
+      "target_label": "Diagnosis",
+      "target_name": "Acute myocardial infarction, unspecified"
+    },
+    {
+      "type": "DIAGNOSED_WITH",
+      "source_label": "Patient",
+      "source_name": "Jennifer Walsh",
+      "target_label": "Diagnosis",
+      "target_name": "Anoxic brain damage, not elsewhere classified"
+    },
+    {
+      "type": "DIAGNOSED_WITH",
+      "source_label": "Patient",
+      "source_name": "Jennifer Walsh",
+      "target_label": "Diagnosis",
+      "target_name": "Major depressive disorder, single episode, moderate"
+    },
+    {
+      "type": "DIAGNOSED_WITH",
+      "source_label": "Patient",
+      "source_name": "Ahmed Hassan",
+      "target_label": "Diagnosis",
+      "target_name": "Heart failure, unspecified"
+    },
+    {
+      "type": "DIAGNOSED_WITH",
+      "source_label": "Patient",
+      "source_name": "Ahmed Hassan",
+      "target_label": "Diagnosis",
+      "target_name": "Type 2 diabetes mellitus without complications"
+    },
+    {
+      "type": "DIAGNOSED_WITH",
+      "source_label": "Patient",
+      "source_name": "Ahmed Hassan",
+      "target_label": "Diagnosis",
+      "target_name": "Anoxic brain damage, not elsewhere classified"
+    },
+    {
+      "type": "DIAGNOSED_WITH",
+      "source_label": "Patient",
+      "source_name": "Lisa Chang",
+      "target_label": "Diagnosis",
+      "target_name": "Acute myocardial infarction, unspecified"
+    },
+    {
+      "type": "DIAGNOSED_WITH",
+      "source_label": "Patient",
+      "source_name": "Lisa Chang",
+      "target_label": "Diagnosis",
+      "target_name": "Fracture of unspecified part of neck of right femur, initial encounter"
+    },
+    {
+      "type": "DIAGNOSED_WITH",
+      "source_label": "Patient",
+      "source_name": "Lisa Chang",
+      "target_label": "Diagnosis",
+      "target_name": "Infectious gastroenteritis and colitis, unspecified"
+    },
+    {
+      "type": "DIAGNOSED_WITH",
+      "source_label": "Patient",
+      "source_name": "Michael O'Brien",
+      "target_label": "Diagnosis",
+      "target_name": "Major depressive disorder, single episode, moderate"
+    },
+    {
+      "type": "DIAGNOSED_WITH",
+      "source_label": "Patient",
+      "source_name": "Michael O'Brien",
+      "target_label": "Diagnosis",
+      "target_name": "Rheumatism, unspecified"
+    },
+    {
+      "type": "DIAGNOSED_WITH",
+      "source_label": "Patient",
+      "source_name": "Michael O'Brien",
+      "target_label": "Diagnosis",
+      "target_name": "Acute myocardial infarction, unspecified"
+    },
+    {
+      "type": "DIAGNOSED_WITH",
+      "source_label": "Patient",
+      "source_name": "Fatima Al-Rashid",
+      "target_label": "Diagnosis",
+      "target_name": "Infectious gastroenteritis and colitis, unspecified"
+    },
+    {
+      "type": "DIAGNOSED_WITH",
+      "source_label": "Patient",
+      "source_name": "David Johnson",
+      "target_label": "Diagnosis",
+      "target_name": "Type 2 diabetes mellitus without complications"
+    },
+    {
+      "type": "DIAGNOSED_WITH",
+      "source_label": "Patient",
+      "source_name": "Anna Petrov",
+      "target_label": "Diagnosis",
+      "target_name": "Infectious gastroenteritis and colitis, unspecified"
+    },
+    {
+      "type": "DIAGNOSED_WITH",
+      "source_label": "Patient",
+      "source_name": "Anna Petrov",
+      "target_label": "Diagnosis",
+      "target_name": "Type 2 diabetes mellitus without complications"
+    },
+    {
+      "type": "DIAGNOSED_WITH",
+      "source_label": "Patient",
+      "source_name": "Carlos Rivera",
+      "target_label": "Diagnosis",
+      "target_name": "Chronic obstructive pulmonary disease with acute exacerbation"
+    },
+    {
+      "type": "DIAGNOSED_WITH",
+      "source_label": "Patient",
+      "source_name": "Carlos Rivera",
+      "target_label": "Diagnosis",
+      "target_name": "Major depressive disorder, single episode, moderate"
+    },
+    {
+      "type": "DIAGNOSED_WITH",
+      "source_label": "Patient",
+      "source_name": "Carlos Rivera",
+      "target_label": "Diagnosis",
+      "target_name": "Type 2 diabetes mellitus without complications"
+    },
+    {
+      "type": "TREATED_BY",
+      "source_label": "Patient",
+      "source_name": "Maria Elena Gonzalez",
+      "target_label": "Provider",
+      "target_name": "Dr. Rajesh Kumar"
+    },
+    {
+      "type": "TREATED_BY",
+      "source_label": "Patient",
+      "source_name": "Maria Elena Gonzalez",
+      "target_label": "Provider",
+      "target_name": "Dr. Mohammed Abdi"
+    },
+    {
+      "type": "TREATED_BY",
+      "source_label": "Patient",
+      "source_name": "Maria Elena Gonzalez",
+      "target_label": "Provider",
+      "target_name": "Dr. Samantha Lee"
+    },
+    {
+      "type": "TREATED_BY",
+      "source_label": "Patient",
+      "source_name": "Robert Kim",
+      "target_label": "Provider",
+      "target_name": "Dr. Angela Martinez"
+    },
+    {
+      "type": "TREATED_BY",
+      "source_label": "Patient",
+      "source_name": "Robert Kim",
+      "target_label": "Provider",
+      "target_name": "Dr. Emily Watson"
+    },
+    {
+      "type": "TREATED_BY",
+      "source_label": "Patient",
+      "source_name": "Jennifer Walsh",
+      "target_label": "Provider",
+      "target_name": "Dr. Lisa Zhang"
+    },
+    {
+      "type": "TREATED_BY",
+      "source_label": "Patient",
+      "source_name": "Jennifer Walsh",
+      "target_label": "Provider",
+      "target_name": "Dr. Thomas Anderson"
+    },
+    {
+      "type": "TREATED_BY",
+      "source_label": "Patient",
+      "source_name": "Jennifer Walsh",
+      "target_label": "Provider",
+      "target_name": "Dr. Angela Martinez"
+    },
+    {
+      "type": "TREATED_BY",
+      "source_label": "Patient",
+      "source_name": "Ahmed Hassan",
+      "target_label": "Provider",
+      "target_name": "Dr. Kevin O'Connor"
+    },
+    {
+      "type": "TREATED_BY",
+      "source_label": "Patient",
+      "source_name": "Ahmed Hassan",
+      "target_label": "Provider",
+      "target_name": "Dr. Lisa Zhang"
+    },
+    {
+      "type": "TREATED_BY",
+      "source_label": "Patient",
+      "source_name": "Ahmed Hassan",
+      "target_label": "Provider",
+      "target_name": "Dr. Samantha Lee"
+    },
+    {
+      "type": "TREATED_BY",
+      "source_label": "Patient",
+      "source_name": "Lisa Chang",
+      "target_label": "Provider",
+      "target_name": "Dr. Emily Watson"
+    },
+    {
+      "type": "TREATED_BY",
+      "source_label": "Patient",
+      "source_name": "Michael O'Brien",
+      "target_label": "Provider",
+      "target_name": "Dr. Samantha Lee"
+    },
+    {
+      "type": "TREATED_BY",
+      "source_label": "Patient",
+      "source_name": "Michael O'Brien",
+      "target_label": "Provider",
+      "target_name": "Dr. Marcus Thompson"
+    },
+    {
+      "type": "TREATED_BY",
+      "source_label": "Patient",
+      "source_name": "Fatima Al-Rashid",
+      "target_label": "Provider",
+      "target_name": "Dr. Angela Martinez"
+    },
+    {
+      "type": "TREATED_BY",
+      "source_label": "Patient",
+      "source_name": "Fatima Al-Rashid",
+      "target_label": "Provider",
+      "target_name": "Dr. Rebecca Stone"
+    },
+    {
+      "type": "TREATED_BY",
+      "source_label": "Patient",
+      "source_name": "David Johnson",
+      "target_label": "Provider",
+      "target_name": "Dr. Thomas Anderson"
+    },
+    {
+      "type": "TREATED_BY",
+      "source_label": "Patient",
+      "source_name": "Anna Petrov",
+      "target_label": "Provider",
+      "target_name": "Dr. Mohammed Abdi"
+    },
+    {
+      "type": "TREATED_BY",
+      "source_label": "Patient",
+      "source_name": "Anna Petrov",
+      "target_label": "Provider",
+      "target_name": "Dr. Angela Martinez"
+    },
+    {
+      "type": "TREATED_BY",
+      "source_label": "Patient",
+      "source_name": "Carlos Rivera",
+      "target_label": "Provider",
+      "target_name": "Dr. Lisa Zhang"
+    },
+    {
+      "type": "TREATED_BY",
+      "source_label": "Patient",
+      "source_name": "Carlos Rivera",
+      "target_label": "Provider",
+      "target_name": "Dr. Mohammed Abdi"
+    },
+    {
+      "type": "PRESCRIBED",
+      "source_label": "Provider",
+      "source_name": "Dr. Emily Watson",
+      "target_label": "Medication",
+      "target_name": "Amlodipine 5mg tablets"
+    },
+    {
+      "type": "PRESCRIBED",
+      "source_label": "Provider",
+      "source_name": "Dr. Emily Watson",
+      "target_label": "Medication",
+      "target_name": "Warfarin 5mg tablets"
+    },
+    {
+      "type": "PRESCRIBED",
+      "source_label": "Provider",
+      "source_name": "Dr. Emily Watson",
+      "target_label": "Medication",
+      "target_name": "Metformin 500mg extended release"
+    },
+    {
+      "type": "PRESCRIBED",
+      "source_label": "Provider",
+      "source_name": "Dr. Rajesh Kumar",
+      "target_label": "Medication",
+      "target_name": "Sertraline 50mg tablets"
+    },
+    {
+      "type": "PRESCRIBED",
+      "source_label": "Provider",
+      "source_name": "Dr. Rajesh Kumar",
+      "target_label": "Medication",
+      "target_name": "Hydrochlorothiazide 25mg tablets"
+    },
+    {
+      "type": "PRESCRIBED",
+      "source_label": "Provider",
+      "source_name": "Dr. Rajesh Kumar",
+      "target_label": "Medication",
+      "target_name": "Gabapentin 300mg capsules"
+    },
+    {
+      "type": "PRESCRIBED",
+      "source_label": "Provider",
+      "source_name": "Dr. Angela Martinez",
+      "target_label": "Medication",
+      "target_name": "Atorvastatin 20mg tablets"
+    },
+    {
+      "type": "PRESCRIBED",
+      "source_label": "Provider",
+      "source_name": "Dr. Angela Martinez",
+      "target_label": "Medication",
+      "target_name": "Metformin 500mg extended release"
+    },
+    {
+      "type": "PRESCRIBED",
+      "source_label": "Provider",
+      "source_name": "Dr. Angela Martinez",
+      "target_label": "Medication",
+      "target_name": "Lisinopril 10mg tablets"
+    },
+    {
+      "type": "PRESCRIBED",
+      "source_label": "Provider",
+      "source_name": "Dr. Thomas Anderson",
+      "target_label": "Medication",
+      "target_name": "Hydrochlorothiazide 25mg tablets"
+    },
+    {
+      "type": "PRESCRIBED",
+      "source_label": "Provider",
+      "source_name": "Dr. Samantha Lee",
+      "target_label": "Medication",
+      "target_name": "Warfarin 5mg tablets"
+    },
+    {
+      "type": "PRESCRIBED",
+      "source_label": "Provider",
+      "source_name": "Dr. Mohammed Abdi",
+      "target_label": "Medication",
+      "target_name": "Metformin 500mg extended release"
+    },
+    {
+      "type": "PRESCRIBED",
+      "source_label": "Provider",
+      "source_name": "Dr. Mohammed Abdi",
+      "target_label": "Medication",
+      "target_name": "Gabapentin 300mg capsules"
+    },
+    {
+      "type": "PRESCRIBED",
+      "source_label": "Provider",
+      "source_name": "Dr. Mohammed Abdi",
+      "target_label": "Medication",
+      "target_name": "Atorvastatin 20mg tablets"
+    },
+    {
+      "type": "PRESCRIBED",
+      "source_label": "Provider",
+      "source_name": "Dr. Rebecca Stone",
+      "target_label": "Medication",
+      "target_name": "Warfarin 5mg tablets"
+    },
+    {
+      "type": "PRESCRIBED",
+      "source_label": "Provider",
+      "source_name": "Dr. Rebecca Stone",
+      "target_label": "Medication",
+      "target_name": "Amlodipine 5mg tablets"
+    },
+    {
+      "type": "PRESCRIBED",
+      "source_label": "Provider",
+      "source_name": "Dr. Kevin O'Connor",
+      "target_label": "Medication",
+      "target_name": "Amlodipine 5mg tablets"
+    },
+    {
+      "type": "PRESCRIBED",
+      "source_label": "Provider",
+      "source_name": "Dr. Kevin O'Connor",
+      "target_label": "Medication",
+      "target_name": "Levothyroxine 100mcg tablets"
+    },
+    {
+      "type": "PRESCRIBED",
+      "source_label": "Provider",
+      "source_name": "Dr. Kevin O'Connor",
+      "target_label": "Medication",
+      "target_name": "Warfarin 5mg tablets"
+    },
+    {
+      "type": "PRESCRIBED",
+      "source_label": "Provider",
+      "source_name": "Dr. Lisa Zhang",
+      "target_label": "Medication",
+      "target_name": "Omeprazole 20mg capsules"
+    },
+    {
+      "type": "PRESCRIBED",
+      "source_label": "Provider",
+      "source_name": "Dr. Lisa Zhang",
+      "target_label": "Medication",
+      "target_name": "Lisinopril 10mg tablets"
+    },
+    {
+      "type": "PRESCRIBED",
+      "source_label": "Provider",
+      "source_name": "Dr. Marcus Thompson",
+      "target_label": "Medication",
+      "target_name": "Gabapentin 300mg capsules"
+    },
+    {
+      "type": "PRESCRIBED",
+      "source_label": "Provider",
+      "source_name": "Dr. Marcus Thompson",
+      "target_label": "Medication",
+      "target_name": "Omeprazole 20mg capsules"
+    },
+    {
+      "type": "REFERRED_TO",
+      "source_label": "Provider",
+      "source_name": "Dr. Emily Watson",
+      "target_label": "Provider",
+      "target_name": "Dr. Samantha Lee"
+    },
+    {
+      "type": "REFERRED_TO",
+      "source_label": "Provider",
+      "source_name": "Dr. Rajesh Kumar",
+      "target_label": "Provider",
+      "target_name": "Dr. Mohammed Abdi"
+    },
+    {
+      "type": "REFERRED_TO",
+      "source_label": "Provider",
+      "source_name": "Dr. Rajesh Kumar",
+      "target_label": "Provider",
+      "target_name": "Dr. Kevin O'Connor"
+    },
+    {
+      "type": "REFERRED_TO",
+      "source_label": "Provider",
+      "source_name": "Dr. Rajesh Kumar",
+      "target_label": "Provider",
+      "target_name": "Dr. Thomas Anderson"
+    },
+    {
+      "type": "REFERRED_TO",
+      "source_label": "Provider",
+      "source_name": "Dr. Angela Martinez",
+      "target_label": "Provider",
+      "target_name": "Dr. Mohammed Abdi"
+    },
+    {
+      "type": "REFERRED_TO",
+      "source_label": "Provider",
+      "source_name": "Dr. Thomas Anderson",
+      "target_label": "Provider",
+      "target_name": "Dr. Kevin O'Connor"
+    },
+    {
+      "type": "REFERRED_TO",
+      "source_label": "Provider",
+      "source_name": "Dr. Thomas Anderson",
+      "target_label": "Provider",
+      "target_name": "Dr. Lisa Zhang"
+    },
+    {
+      "type": "REFERRED_TO",
+      "source_label": "Provider",
+      "source_name": "Dr. Thomas Anderson",
+      "target_label": "Provider",
+      "target_name": "Dr. Marcus Thompson"
+    },
+    {
+      "type": "REFERRED_TO",
+      "source_label": "Provider",
+      "source_name": "Dr. Samantha Lee",
+      "target_label": "Provider",
+      "target_name": "Dr. Marcus Thompson"
+    },
+    {
+      "type": "REFERRED_TO",
+      "source_label": "Provider",
+      "source_name": "Dr. Samantha Lee",
+      "target_label": "Provider",
+      "target_name": "Dr. Rajesh Kumar"
+    },
+    {
+      "type": "REFERRED_TO",
+      "source_label": "Provider",
+      "source_name": "Dr. Mohammed Abdi",
+      "target_label": "Provider",
+      "target_name": "Dr. Kevin O'Connor"
+    },
+    {
+      "type": "REFERRED_TO",
+      "source_label": "Provider",
+      "source_name": "Dr. Rebecca Stone",
+      "target_label": "Provider",
+      "target_name": "Dr. Rajesh Kumar"
+    },
+    {
+      "type": "REFERRED_TO",
+      "source_label": "Provider",
+      "source_name": "Dr. Kevin O'Connor",
+      "target_label": "Provider",
+      "target_name": "Dr. Angela Martinez"
+    },
+    {
+      "type": "REFERRED_TO",
+      "source_label": "Provider",
+      "source_name": "Dr. Kevin O'Connor",
+      "target_label": "Provider",
+      "target_name": "Dr. Emily Watson"
+    },
+    {
+      "type": "REFERRED_TO",
+      "source_label": "Provider",
+      "source_name": "Dr. Lisa Zhang",
+      "target_label": "Provider",
+      "target_name": "Dr. Angela Martinez"
+    },
+    {
+      "type": "REFERRED_TO",
+      "source_label": "Provider",
+      "source_name": "Dr. Lisa Zhang",
+      "target_label": "Provider",
+      "target_name": "Dr. Samantha Lee"
+    },
+    {
+      "type": "REFERRED_TO",
+      "source_label": "Provider",
+      "source_name": "Dr. Lisa Zhang",
+      "target_label": "Provider",
+      "target_name": "Dr. Thomas Anderson"
+    },
+    {
+      "type": "REFERRED_TO",
+      "source_label": "Provider",
+      "source_name": "Dr. Marcus Thompson",
+      "target_label": "Provider",
+      "target_name": "Dr. Emily Watson"
+    },
+    {
+      "type": "REFERRED_TO",
+      "source_label": "Provider",
+      "source_name": "Dr. Marcus Thompson",
+      "target_label": "Provider",
+      "target_name": "Dr. Rebecca Stone"
+    },
+    {
+      "type": "REFERRED_TO",
+      "source_label": "Provider",
+      "source_name": "Dr. Marcus Thompson",
+      "target_label": "Provider",
+      "target_name": "Dr. Mohammed Abdi"
+    },
+    {
+      "type": "HAD_ENCOUNTER",
+      "source_label": "Patient",
+      "source_name": "Maria Elena Gonzalez",
+      "target_label": "Encounter",
+      "target_name": "Encounter 6"
+    },
+    {
+      "type": "HAD_ENCOUNTER",
+      "source_label": "Patient",
+      "source_name": "Maria Elena Gonzalez",
+      "target_label": "Encounter",
+      "target_name": "Encounter 5"
+    },
+    {
+      "type": "HAD_ENCOUNTER",
+      "source_label": "Patient",
+      "source_name": "Robert Kim",
+      "target_label": "Encounter",
+      "target_name": "Encounter 5"
+    },
+    {
+      "type": "HAD_ENCOUNTER",
+      "source_label": "Patient",
+      "source_name": "Robert Kim",
+      "target_label": "Encounter",
+      "target_name": "Encounter 6"
+    },
+    {
+      "type": "HAD_ENCOUNTER",
+      "source_label": "Patient",
+      "source_name": "Jennifer Walsh",
+      "target_label": "Encounter",
+      "target_name": "Encounter 3"
+    },
+    {
+      "type": "HAD_ENCOUNTER",
+      "source_label": "Patient",
+      "source_name": "Jennifer Walsh",
+      "target_label": "Encounter",
+      "target_name": "Encounter 6"
+    },
+    {
+      "type": "HAD_ENCOUNTER",
+      "source_label": "Patient",
+      "source_name": "Jennifer Walsh",
+      "target_label": "Encounter",
+      "target_name": "Encounter 4"
+    },
+    {
+      "type": "HAD_ENCOUNTER",
+      "source_label": "Patient",
+      "source_name": "Ahmed Hassan",
+      "target_label": "Encounter",
+      "target_name": "Encounter 8"
+    },
+    {
+      "type": "HAD_ENCOUNTER",
+      "source_label": "Patient",
+      "source_name": "Ahmed Hassan",
+      "target_label": "Encounter",
+      "target_name": "Encounter 5"
+    },
+    {
+      "type": "HAD_ENCOUNTER",
+      "source_label": "Patient",
+      "source_name": "Ahmed Hassan",
+      "target_label": "Encounter",
+      "target_name": "Encounter 1"
+    },
+    {
+      "type": "HAD_ENCOUNTER",
+      "source_label": "Patient",
+      "source_name": "Lisa Chang",
+      "target_label": "Encounter",
+      "target_name": "Encounter 2"
+    },
+    {
+      "type": "HAD_ENCOUNTER",
+      "source_label": "Patient",
+      "source_name": "Michael O'Brien",
+      "target_label": "Encounter",
+      "target_name": "Encounter 6"
+    },
+    {
+      "type": "HAD_ENCOUNTER",
+      "source_label": "Patient",
+      "source_name": "Michael O'Brien",
+      "target_label": "Encounter",
+      "target_name": "Encounter 3"
+    },
+    {
+      "type": "HAD_ENCOUNTER",
+      "source_label": "Patient",
+      "source_name": "Michael O'Brien",
+      "target_label": "Encounter",
+      "target_name": "Encounter 5"
+    },
+    {
+      "type": "HAD_ENCOUNTER",
+      "source_label": "Patient",
+      "source_name": "Fatima Al-Rashid",
+      "target_label": "Encounter",
+      "target_name": "Encounter 5"
+    },
+    {
+      "type": "HAD_ENCOUNTER",
+      "source_label": "Patient",
+      "source_name": "Fatima Al-Rashid",
+      "target_label": "Encounter",
+      "target_name": "Encounter 7"
+    },
+    {
+      "type": "HAD_ENCOUNTER",
+      "source_label": "Patient",
+      "source_name": "Fatima Al-Rashid",
+      "target_label": "Encounter",
+      "target_name": "Encounter 8"
+    },
+    {
+      "type": "HAD_ENCOUNTER",
+      "source_label": "Patient",
+      "source_name": "David Johnson",
+      "target_label": "Encounter",
+      "target_name": "Encounter 3"
+    },
+    {
+      "type": "HAD_ENCOUNTER",
+      "source_label": "Patient",
+      "source_name": "David Johnson",
+      "target_label": "Encounter",
+      "target_name": "Encounter 8"
+    },
+    {
+      "type": "HAD_ENCOUNTER",
+      "source_label": "Patient",
+      "source_name": "Anna Petrov",
+      "target_label": "Encounter",
+      "target_name": "Encounter 1"
+    },
+    {
+      "type": "HAD_ENCOUNTER",
+      "source_label": "Patient",
+      "source_name": "Anna Petrov",
+      "target_label": "Encounter",
+      "target_name": "Encounter 5"
+    },
+    {
+      "type": "HAD_ENCOUNTER",
+      "source_label": "Patient",
+      "source_name": "Carlos Rivera",
+      "target_label": "Encounter",
+      "target_name": "Encounter 2"
+    },
+    {
+      "type": "ATTENDED",
+      "source_label": "Provider",
+      "source_name": "Dr. Emily Watson",
+      "target_label": "Encounter",
+      "target_name": "Encounter 7"
+    },
+    {
+      "type": "ATTENDED",
+      "source_label": "Provider",
+      "source_name": "Dr. Emily Watson",
+      "target_label": "Encounter",
+      "target_name": "Encounter 2"
+    },
+    {
+      "type": "ATTENDED",
+      "source_label": "Provider",
+      "source_name": "Dr. Emily Watson",
+      "target_label": "Encounter",
+      "target_name": "Encounter 1"
+    },
+    {
+      "type": "ATTENDED",
+      "source_label": "Provider",
+      "source_name": "Dr. Rajesh Kumar",
+      "target_label": "Encounter",
+      "target_name": "Encounter 4"
+    },
+    {
+      "type": "ATTENDED",
+      "source_label": "Provider",
+      "source_name": "Dr. Angela Martinez",
+      "target_label": "Encounter",
+      "target_name": "Encounter 1"
+    },
+    {
+      "type": "ATTENDED",
+      "source_label": "Provider",
+      "source_name": "Dr. Angela Martinez",
+      "target_label": "Encounter",
+      "target_name": "Encounter 2"
+    },
+    {
+      "type": "ATTENDED",
+      "source_label": "Provider",
+      "source_name": "Dr. Angela Martinez",
+      "target_label": "Encounter",
+      "target_name": "Encounter 5"
+    },
+    {
+      "type": "ATTENDED",
+      "source_label": "Provider",
+      "source_name": "Dr. Thomas Anderson",
+      "target_label": "Encounter",
+      "target_name": "Encounter 4"
+    },
+    {
+      "type": "ATTENDED",
+      "source_label": "Provider",
+      "source_name": "Dr. Thomas Anderson",
+      "target_label": "Encounter",
+      "target_name": "Encounter 8"
+    },
+    {
+      "type": "ATTENDED",
+      "source_label": "Provider",
+      "source_name": "Dr. Thomas Anderson",
+      "target_label": "Encounter",
+      "target_name": "Encounter 6"
+    },
+    {
+      "type": "ATTENDED",
+      "source_label": "Provider",
+      "source_name": "Dr. Samantha Lee",
+      "target_label": "Encounter",
+      "target_name": "Encounter 1"
+    },
+    {
+      "type": "ATTENDED",
+      "source_label": "Provider",
+      "source_name": "Dr. Mohammed Abdi",
+      "target_label": "Encounter",
+      "target_name": "Encounter 8"
+    },
+    {
+      "type": "ATTENDED",
+      "source_label": "Provider",
+      "source_name": "Dr. Mohammed Abdi",
+      "target_label": "Encounter",
+      "target_name": "Encounter 5"
+    },
+    {
+      "type": "ATTENDED",
+      "source_label": "Provider",
+      "source_name": "Dr. Mohammed Abdi",
+      "target_label": "Encounter",
+      "target_name": "Encounter 4"
+    },
+    {
+      "type": "ATTENDED",
+      "source_label": "Provider",
+      "source_name": "Dr. Rebecca Stone",
+      "target_label": "Encounter",
+      "target_name": "Encounter 5"
+    },
+    {
+      "type": "ATTENDED",
+      "source_label": "Provider",
+      "source_name": "Dr. Rebecca Stone",
+      "target_label": "Encounter",
+      "target_name": "Encounter 6"
+    },
+    {
+      "type": "ATTENDED",
+      "source_label": "Provider",
+      "source_name": "Dr. Kevin O'Connor",
+      "target_label": "Encounter",
+      "target_name": "Encounter 7"
+    },
+    {
+      "type": "ATTENDED",
+      "source_label": "Provider",
+      "source_name": "Dr. Lisa Zhang",
+      "target_label": "Encounter",
+      "target_name": "Encounter 7"
+    },
+    {
+      "type": "ATTENDED",
+      "source_label": "Provider",
+      "source_name": "Dr. Marcus Thompson",
+      "target_label": "Encounter",
+      "target_name": "Encounter 3"
+    },
+    {
+      "type": "ATTENDED",
+      "source_label": "Provider",
+      "source_name": "Dr. Marcus Thompson",
+      "target_label": "Encounter",
+      "target_name": "Encounter 7"
+    },
+    {
+      "type": "ATTENDED",
+      "source_label": "Provider",
+      "source_name": "Dr. Marcus Thompson",
+      "target_label": "Encounter",
+      "target_name": "Encounter 4"
+    },
+    {
+      "type": "OCCURRED_AT",
+      "source_label": "Encounter",
+      "source_name": "Encounter 1",
+      "target_label": "Facility",
+      "target_name": "Sunset Medical Clinic"
+    },
+    {
+      "type": "OCCURRED_AT",
+      "source_label": "Encounter",
+      "source_name": "Encounter 1",
+      "target_label": "Facility",
+      "target_name": "Wellness Pharmacy"
+    },
+    {
+      "type": "OCCURRED_AT",
+      "source_label": "Encounter",
+      "source_name": "Encounter 1",
+      "target_label": "Facility",
+      "target_name": "St. Mary's Medical Center"
+    },
+    {
+      "type": "OCCURRED_AT",
+      "source_label": "Encounter",
+      "source_name": "Encounter 2",
+      "target_label": "Facility",
+      "target_name": "Wellness Pharmacy"
+    },
+    {
+      "type": "OCCURRED_AT",
+      "source_label": "Encounter",
+      "source_name": "Encounter 3",
+      "target_label": "Facility",
+      "target_name": "Sunset Medical Clinic"
+    },
+    {
+      "type": "OCCURRED_AT",
+      "source_label": "Encounter",
+      "source_name": "Encounter 3",
+      "target_label": "Facility",
+      "target_name": "Metropolitan General Hospital"
+    },
+    {
+      "type": "OCCURRED_AT",
+      "source_label": "Encounter",
+      "source_name": "Encounter 4",
+      "target_label": "Facility",
+      "target_name": "Wellness Pharmacy"
+    },
+    {
+      "type": "OCCURRED_AT",
+      "source_label": "Encounter",
+      "source_name": "Encounter 4",
+      "target_label": "Facility",
+      "target_name": "Metropolitan General Hospital"
+    },
+    {
+      "type": "OCCURRED_AT",
+      "source_label": "Encounter",
+      "source_name": "Encounter 4",
+      "target_label": "Facility",
+      "target_name": "Northside Family Clinic"
+    },
+    {
+      "type": "OCCURRED_AT",
+      "source_label": "Encounter",
+      "source_name": "Encounter 5",
+      "target_label": "Facility",
+      "target_name": "Harbor Rehabilitation Center"
+    },
+    {
+      "type": "OCCURRED_AT",
+      "source_label": "Encounter",
+      "source_name": "Encounter 6",
+      "target_label": "Facility",
+      "target_name": "St. Mary's Medical Center"
+    },
+    {
+      "type": "OCCURRED_AT",
+      "source_label": "Encounter",
+      "source_name": "Encounter 6",
+      "target_label": "Facility",
+      "target_name": "Metropolitan General Hospital"
+    },
+    {
+      "type": "OCCURRED_AT",
+      "source_label": "Encounter",
+      "source_name": "Encounter 6",
+      "target_label": "Facility",
+      "target_name": "Sunset Medical Clinic"
+    },
+    {
+      "type": "OCCURRED_AT",
+      "source_label": "Encounter",
+      "source_name": "Encounter 7",
+      "target_label": "Facility",
+      "target_name": "St. Mary's Medical Center"
+    },
+    {
+      "type": "OCCURRED_AT",
+      "source_label": "Encounter",
+      "source_name": "Encounter 8",
+      "target_label": "Facility",
+      "target_name": "Northside Family Clinic"
+    },
+    {
+      "type": "RESULTED_IN",
+      "source_label": "Encounter",
+      "source_name": "Encounter 1",
+      "target_label": "Diagnosis",
+      "target_name": "Major depressive disorder, single episode, moderate"
+    },
+    {
+      "type": "RESULTED_IN",
+      "source_label": "Encounter",
+      "source_name": "Encounter 1",
+      "target_label": "Diagnosis",
+      "target_name": "Rheumatism, unspecified"
+    },
+    {
+      "type": "RESULTED_IN",
+      "source_label": "Encounter",
+      "source_name": "Encounter 2",
+      "target_label": "Diagnosis",
+      "target_name": "Infectious gastroenteritis and colitis, unspecified"
+    },
+    {
+      "type": "RESULTED_IN",
+      "source_label": "Encounter",
+      "source_name": "Encounter 3",
+      "target_label": "Diagnosis",
+      "target_name": "Ventricular septal defect"
+    },
+    {
+      "type": "RESULTED_IN",
+      "source_label": "Encounter",
+      "source_name": "Encounter 4",
+      "target_label": "Diagnosis",
+      "target_name": "Ventricular septal defect"
+    },
+    {
+      "type": "RESULTED_IN",
+      "source_label": "Encounter",
+      "source_name": "Encounter 4",
+      "target_label": "Diagnosis",
+      "target_name": "Chronic obstructive pulmonary disease with acute exacerbation"
+    },
+    {
+      "type": "RESULTED_IN",
+      "source_label": "Encounter",
+      "source_name": "Encounter 5",
+      "target_label": "Diagnosis",
+      "target_name": "Type 2 diabetes mellitus without complications"
+    },
+    {
+      "type": "RESULTED_IN",
+      "source_label": "Encounter",
+      "source_name": "Encounter 6",
+      "target_label": "Diagnosis",
+      "target_name": "Chronic obstructive pulmonary disease with acute exacerbation"
+    },
+    {
+      "type": "RESULTED_IN",
+      "source_label": "Encounter",
+      "source_name": "Encounter 6",
+      "target_label": "Diagnosis",
+      "target_name": "Rheumatism, unspecified"
+    },
+    {
+      "type": "RESULTED_IN",
+      "source_label": "Encounter",
+      "source_name": "Encounter 7",
+      "target_label": "Diagnosis",
+      "target_name": "Anoxic brain damage, not elsewhere classified"
+    },
+    {
+      "type": "RESULTED_IN",
+      "source_label": "Encounter",
+      "source_name": "Encounter 7",
+      "target_label": "Diagnosis",
+      "target_name": "Major depressive disorder, single episode, moderate"
+    },
+    {
+      "type": "RESULTED_IN",
+      "source_label": "Encounter",
+      "source_name": "Encounter 7",
+      "target_label": "Diagnosis",
+      "target_name": "Type 2 diabetes mellitus without complications"
+    },
+    {
+      "type": "RESULTED_IN",
+      "source_label": "Encounter",
+      "source_name": "Encounter 8",
+      "target_label": "Diagnosis",
+      "target_name": "Major depressive disorder, single episode, moderate"
+    },
+    {
+      "type": "RESULTED_IN",
+      "source_label": "Encounter",
+      "source_name": "Encounter 8",
+      "target_label": "Diagnosis",
+      "target_name": "Rheumatism, unspecified"
+    },
+    {
+      "type": "RESULTED_IN",
+      "source_label": "Encounter",
+      "source_name": "Encounter 8",
+      "target_label": "Diagnosis",
+      "target_name": "Ventricular septal defect"
+    },
+    {
+      "type": "INCLUDES",
+      "source_label": "Encounter",
+      "source_name": "Encounter 1",
+      "target_label": "Treatment",
+      "target_name": "CT scan of abdomen and pelvis"
+    },
+    {
+      "type": "INCLUDES",
+      "source_label": "Encounter",
+      "source_name": "Encounter 2",
+      "target_label": "Treatment",
+      "target_name": "Complete blood count"
+    },
+    {
+      "type": "INCLUDES",
+      "source_label": "Encounter",
+      "source_name": "Encounter 2",
+      "target_label": "Treatment",
+      "target_name": "CT scan of abdomen and pelvis"
+    },
+    {
+      "type": "INCLUDES",
+      "source_label": "Encounter",
+      "source_name": "Encounter 2",
+      "target_label": "Treatment",
+      "target_name": "Cognitive behavioral therapy"
+    },
+    {
+      "type": "INCLUDES",
+      "source_label": "Encounter",
+      "source_name": "Encounter 3",
+      "target_label": "Treatment",
+      "target_name": "CT scan of abdomen and pelvis"
+    },
+    {
+      "type": "INCLUDES",
+      "source_label": "Encounter",
+      "source_name": "Encounter 3",
+      "target_label": "Treatment",
+      "target_name": "Cognitive behavioral therapy"
+    },
+    {
+      "type": "INCLUDES",
+      "source_label": "Encounter",
+      "source_name": "Encounter 3",
+      "target_label": "Treatment",
+      "target_name": "Cardiac catheterization with stent placement"
+    },
+    {
+      "type": "INCLUDES",
+      "source_label": "Encounter",
+      "source_name": "Encounter 4",
+      "target_label": "Treatment",
+      "target_name": "Complete blood count"
+    },
+    {
+      "type": "INCLUDES",
+      "source_label": "Encounter",
+      "source_name": "Encounter 4",
+      "target_label": "Treatment",
+      "target_name": "Appendectomy"
+    },
+    {
+      "type": "INCLUDES",
+      "source_label": "Encounter",
+      "source_name": "Encounter 4",
+      "target_label": "Treatment",
+      "target_name": "Cardiac catheterization with stent placement"
+    },
+    {
+      "type": "INCLUDES",
+      "source_label": "Encounter",
+      "source_name": "Encounter 5",
+      "target_label": "Treatment",
+      "target_name": "Metformin therapy for diabetes"
+    },
+    {
+      "type": "INCLUDES",
+      "source_label": "Encounter",
+      "source_name": "Encounter 6",
+      "target_label": "Treatment",
+      "target_name": "Cardiac catheterization with stent placement"
+    },
+    {
+      "type": "INCLUDES",
+      "source_label": "Encounter",
+      "source_name": "Encounter 6",
+      "target_label": "Treatment",
+      "target_name": "Chemotherapy cycle 3"
+    },
+    {
+      "type": "INCLUDES",
+      "source_label": "Encounter",
+      "source_name": "Encounter 7",
+      "target_label": "Treatment",
+      "target_name": "Complete blood count"
+    },
+    {
+      "type": "INCLUDES",
+      "source_label": "Encounter",
+      "source_name": "Encounter 7",
+      "target_label": "Treatment",
+      "target_name": "Cardiac catheterization with stent placement"
+    },
+    {
+      "type": "INCLUDES",
+      "source_label": "Encounter",
+      "source_name": "Encounter 8",
+      "target_label": "Treatment",
+      "target_name": "Chemotherapy cycle 3"
+    },
+    {
+      "type": "INCLUDES",
+      "source_label": "Encounter",
+      "source_name": "Encounter 8",
+      "target_label": "Treatment",
+      "target_name": "Metformin therapy for diabetes"
+    },
+    {
+      "type": "TREATS",
+      "source_label": "Treatment",
+      "source_name": "Cardiac catheterization with stent placement",
+      "target_label": "Diagnosis",
+      "target_name": "Chronic obstructive pulmonary disease with acute exacerbation"
+    },
+    {
+      "type": "TREATS",
+      "source_label": "Treatment",
+      "source_name": "Metformin therapy for diabetes",
+      "target_label": "Diagnosis",
+      "target_name": "Major depressive disorder, single episode, moderate"
+    },
+    {
+      "type": "TREATS",
+      "source_label": "Treatment",
+      "source_name": "Metformin therapy for diabetes",
+      "target_label": "Diagnosis",
+      "target_name": "Anoxic brain damage, not elsewhere classified"
+    },
+    {
+      "type": "TREATS",
+      "source_label": "Treatment",
+      "source_name": "Physical therapy for knee rehabilitation",
+      "target_label": "Diagnosis",
+      "target_name": "Fracture of unspecified part of neck of right femur, initial encounter"
+    },
+    {
+      "type": "TREATS",
+      "source_label": "Treatment",
+      "source_name": "Physical therapy for knee rehabilitation",
+      "target_label": "Diagnosis",
+      "target_name": "Infectious gastroenteritis and colitis, unspecified"
+    },
+    {
+      "type": "TREATS",
+      "source_label": "Treatment",
+      "source_name": "Physical therapy for knee rehabilitation",
+      "target_label": "Diagnosis",
+      "target_name": "Acute myocardial infarction, unspecified"
+    },
+    {
+      "type": "TREATS",
+      "source_label": "Treatment",
+      "source_name": "CT scan of abdomen and pelvis",
+      "target_label": "Diagnosis",
+      "target_name": "Type 2 diabetes mellitus without complications"
+    },
+    {
+      "type": "TREATS",
+      "source_label": "Treatment",
+      "source_name": "CT scan of abdomen and pelvis",
+      "target_label": "Diagnosis",
+      "target_name": "Infectious gastroenteritis and colitis, unspecified"
+    },
+    {
+      "type": "TREATS",
+      "source_label": "Treatment",
+      "source_name": "Appendectomy",
+      "target_label": "Diagnosis",
+      "target_name": "Anoxic brain damage, not elsewhere classified"
+    },
+    {
+      "type": "TREATS",
+      "source_label": "Treatment",
+      "source_name": "Complete blood count",
+      "target_label": "Diagnosis",
+      "target_name": "Heart failure, unspecified"
+    },
+    {
+      "type": "TREATS",
+      "source_label": "Treatment",
+      "source_name": "Complete blood count",
+      "target_label": "Diagnosis",
+      "target_name": "Acute myocardial infarction, unspecified"
+    },
+    {
+      "type": "TREATS",
+      "source_label": "Treatment",
+      "source_name": "Complete blood count",
+      "target_label": "Diagnosis",
+      "target_name": "Ventricular septal defect"
+    },
+    {
+      "type": "TREATS",
+      "source_label": "Treatment",
+      "source_name": "Chemotherapy cycle 3",
+      "target_label": "Diagnosis",
+      "target_name": "Anoxic brain damage, not elsewhere classified"
+    },
+    {
+      "type": "TREATS",
+      "source_label": "Treatment",
+      "source_name": "Cognitive behavioral therapy",
+      "target_label": "Diagnosis",
+      "target_name": "Type 2 diabetes mellitus without complications"
+    },
+    {
+      "type": "TREATS",
+      "source_label": "Treatment",
+      "source_name": "Cognitive behavioral therapy",
+      "target_label": "Diagnosis",
+      "target_name": "Acute myocardial infarction, unspecified"
+    },
+    {
+      "type": "TREATS",
+      "source_label": "Treatment",
+      "source_name": "Cognitive behavioral therapy",
+      "target_label": "Diagnosis",
+      "target_name": "Heart failure, unspecified"
+    },
+    {
+      "type": "USES",
+      "source_label": "Treatment",
+      "source_name": "Cardiac catheterization with stent placement",
+      "target_label": "Medication",
+      "target_name": "Gabapentin 300mg capsules"
+    },
+    {
+      "type": "USES",
+      "source_label": "Treatment",
+      "source_name": "Cardiac catheterization with stent placement",
+      "target_label": "Medication",
+      "target_name": "Metformin 500mg extended release"
+    },
+    {
+      "type": "USES",
+      "source_label": "Treatment",
+      "source_name": "Metformin therapy for diabetes",
+      "target_label": "Medication",
+      "target_name": "Metformin 500mg extended release"
+    },
+    {
+      "type": "USES",
+      "source_label": "Treatment",
+      "source_name": "Metformin therapy for diabetes",
+      "target_label": "Medication",
+      "target_name": "Warfarin 5mg tablets"
+    },
+    {
+      "type": "USES",
+      "source_label": "Treatment",
+      "source_name": "Physical therapy for knee rehabilitation",
+      "target_label": "Medication",
+      "target_name": "Omeprazole 20mg capsules"
+    },
+    {
+      "type": "USES",
+      "source_label": "Treatment",
+      "source_name": "Physical therapy for knee rehabilitation",
+      "target_label": "Medication",
+      "target_name": "Lisinopril 10mg tablets"
+    },
+    {
+      "type": "USES",
+      "source_label": "Treatment",
+      "source_name": "CT scan of abdomen and pelvis",
+      "target_label": "Medication",
+      "target_name": "Gabapentin 300mg capsules"
+    },
+    {
+      "type": "USES",
+      "source_label": "Treatment",
+      "source_name": "CT scan of abdomen and pelvis",
+      "target_label": "Medication",
+      "target_name": "Atorvastatin 20mg tablets"
+    },
+    {
+      "type": "USES",
+      "source_label": "Treatment",
+      "source_name": "Appendectomy",
+      "target_label": "Medication",
+      "target_name": "Levothyroxine 100mcg tablets"
+    },
+    {
+      "type": "USES",
+      "source_label": "Treatment",
+      "source_name": "Appendectomy",
+      "target_label": "Medication",
+      "target_name": "Sertraline 50mg tablets"
+    },
+    {
+      "type": "USES",
+      "source_label": "Treatment",
+      "source_name": "Appendectomy",
+      "target_label": "Medication",
+      "target_name": "Gabapentin 300mg capsules"
+    },
+    {
+      "type": "USES",
+      "source_label": "Treatment",
+      "source_name": "Complete blood count",
+      "target_label": "Medication",
+      "target_name": "Gabapentin 300mg capsules"
+    },
+    {
+      "type": "USES",
+      "source_label": "Treatment",
+      "source_name": "Complete blood count",
+      "target_label": "Medication",
+      "target_name": "Sertraline 50mg tablets"
+    },
+    {
+      "type": "USES",
+      "source_label": "Treatment",
+      "source_name": "Complete blood count",
+      "target_label": "Medication",
+      "target_name": "Hydrochlorothiazide 25mg tablets"
+    },
+    {
+      "type": "USES",
+      "source_label": "Treatment",
+      "source_name": "Chemotherapy cycle 3",
+      "target_label": "Medication",
+      "target_name": "Sertraline 50mg tablets"
+    },
+    {
+      "type": "USES",
+      "source_label": "Treatment",
+      "source_name": "Cognitive behavioral therapy",
+      "target_label": "Medication",
+      "target_name": "Lisinopril 10mg tablets"
+    },
+    {
+      "type": "CONTRAINDICATED_WITH",
+      "source_label": "Medication",
+      "source_name": "Lisinopril 10mg tablets",
+      "target_label": "Medication",
+      "target_name": "Levothyroxine 100mcg tablets"
+    },
+    {
+      "type": "CONTRAINDICATED_WITH",
+      "source_label": "Medication",
+      "source_name": "Metformin 500mg extended release",
+      "target_label": "Medication",
+      "target_name": "Lisinopril 10mg tablets"
+    },
+    {
+      "type": "CONTRAINDICATED_WITH",
+      "source_label": "Medication",
+      "source_name": "Atorvastatin 20mg tablets",
+      "target_label": "Medication",
+      "target_name": "Omeprazole 20mg capsules"
+    },
+    {
+      "type": "CONTRAINDICATED_WITH",
+      "source_label": "Medication",
+      "source_name": "Atorvastatin 20mg tablets",
+      "target_label": "Medication",
+      "target_name": "Hydrochlorothiazide 25mg tablets"
+    },
+    {
+      "type": "CONTRAINDICATED_WITH",
+      "source_label": "Medication",
+      "source_name": "Atorvastatin 20mg tablets",
+      "target_label": "Medication",
+      "target_name": "Warfarin 5mg tablets"
+    },
+    {
+      "type": "CONTRAINDICATED_WITH",
+      "source_label": "Medication",
+      "source_name": "Amlodipine 5mg tablets",
+      "target_label": "Medication",
+      "target_name": "Hydrochlorothiazide 25mg tablets"
+    },
+    {
+      "type": "CONTRAINDICATED_WITH",
+      "source_label": "Medication",
+      "source_name": "Amlodipine 5mg tablets",
+      "target_label": "Medication",
+      "target_name": "Omeprazole 20mg capsules"
+    },
+    {
+      "type": "CONTRAINDICATED_WITH",
+      "source_label": "Medication",
+      "source_name": "Sertraline 50mg tablets",
+      "target_label": "Medication",
+      "target_name": "Amlodipine 5mg tablets"
+    },
+    {
+      "type": "CONTRAINDICATED_WITH",
+      "source_label": "Medication",
+      "source_name": "Sertraline 50mg tablets",
+      "target_label": "Medication",
+      "target_name": "Hydrochlorothiazide 25mg tablets"
+    },
+    {
+      "type": "CONTRAINDICATED_WITH",
+      "source_label": "Medication",
+      "source_name": "Levothyroxine 100mcg tablets",
+      "target_label": "Medication",
+      "target_name": "Lisinopril 10mg tablets"
+    },
+    {
+      "type": "CONTRAINDICATED_WITH",
+      "source_label": "Medication",
+      "source_name": "Levothyroxine 100mcg tablets",
+      "target_label": "Medication",
+      "target_name": "Atorvastatin 20mg tablets"
+    },
+    {
+      "type": "CONTRAINDICATED_WITH",
+      "source_label": "Medication",
+      "source_name": "Omeprazole 20mg capsules",
+      "target_label": "Medication",
+      "target_name": "Sertraline 50mg tablets"
+    },
+    {
+      "type": "CONTRAINDICATED_WITH",
+      "source_label": "Medication",
+      "source_name": "Omeprazole 20mg capsules",
+      "target_label": "Medication",
+      "target_name": "Gabapentin 300mg capsules"
+    },
+    {
+      "type": "CONTRAINDICATED_WITH",
+      "source_label": "Medication",
+      "source_name": "Omeprazole 20mg capsules",
+      "target_label": "Medication",
+      "target_name": "Levothyroxine 100mcg tablets"
+    },
+    {
+      "type": "CONTRAINDICATED_WITH",
+      "source_label": "Medication",
+      "source_name": "Gabapentin 300mg capsules",
+      "target_label": "Medication",
+      "target_name": "Hydrochlorothiazide 25mg tablets"
+    },
+    {
+      "type": "CONTRAINDICATED_WITH",
+      "source_label": "Medication",
+      "source_name": "Gabapentin 300mg capsules",
+      "target_label": "Medication",
+      "target_name": "Omeprazole 20mg capsules"
+    },
+    {
+      "type": "CONTRAINDICATED_WITH",
+      "source_label": "Medication",
+      "source_name": "Gabapentin 300mg capsules",
+      "target_label": "Medication",
+      "target_name": "Metformin 500mg extended release"
+    },
+    {
+      "type": "CONTRAINDICATED_WITH",
+      "source_label": "Medication",
+      "source_name": "Hydrochlorothiazide 25mg tablets",
+      "target_label": "Medication",
+      "target_name": "Levothyroxine 100mcg tablets"
+    },
+    {
+      "type": "CONTRAINDICATED_WITH",
+      "source_label": "Medication",
+      "source_name": "Hydrochlorothiazide 25mg tablets",
+      "target_label": "Medication",
+      "target_name": "Lisinopril 10mg tablets"
+    },
+    {
+      "type": "CONTRAINDICATED_WITH",
+      "source_label": "Medication",
+      "source_name": "Warfarin 5mg tablets",
+      "target_label": "Medication",
+      "target_name": "Sertraline 50mg tablets"
+    },
+    {
+      "type": "AFFILIATED_WITH",
+      "source_label": "Provider",
+      "source_name": "Dr. Emily Watson",
+      "target_label": "Facility",
+      "target_name": "Northside Family Clinic"
+    },
+    {
+      "type": "AFFILIATED_WITH",
+      "source_label": "Provider",
+      "source_name": "Dr. Rajesh Kumar",
+      "target_label": "Facility",
+      "target_name": "Wellness Pharmacy"
+    },
+    {
+      "type": "AFFILIATED_WITH",
+      "source_label": "Provider",
+      "source_name": "Dr. Rajesh Kumar",
+      "target_label": "Facility",
+      "target_name": "Harbor Rehabilitation Center"
+    },
+    {
+      "type": "AFFILIATED_WITH",
+      "source_label": "Provider",
+      "source_name": "Dr. Angela Martinez",
+      "target_label": "Facility",
+      "target_name": "Northside Family Clinic"
+    },
+    {
+      "type": "AFFILIATED_WITH",
+      "source_label": "Provider",
+      "source_name": "Dr. Angela Martinez",
+      "target_label": "Facility",
+      "target_name": "St. Mary's Medical Center"
+    },
+    {
+      "type": "AFFILIATED_WITH",
+      "source_label": "Provider",
+      "source_name": "Dr. Angela Martinez",
+      "target_label": "Facility",
+      "target_name": "Harbor Rehabilitation Center"
+    },
+    {
+      "type": "AFFILIATED_WITH",
+      "source_label": "Provider",
+      "source_name": "Dr. Thomas Anderson",
+      "target_label": "Facility",
+      "target_name": "St. Mary's Medical Center"
+    },
+    {
+      "type": "AFFILIATED_WITH",
+      "source_label": "Provider",
+      "source_name": "Dr. Samantha Lee",
+      "target_label": "Facility",
+      "target_name": "Regional Diagnostic Laboratory"
+    },
+    {
+      "type": "AFFILIATED_WITH",
+      "source_label": "Provider",
+      "source_name": "Dr. Samantha Lee",
+      "target_label": "Facility",
+      "target_name": "St. Mary's Medical Center"
+    },
+    {
+      "type": "AFFILIATED_WITH",
+      "source_label": "Provider",
+      "source_name": "Dr. Samantha Lee",
+      "target_label": "Facility",
+      "target_name": "Sunset Medical Clinic"
+    },
+    {
+      "type": "AFFILIATED_WITH",
+      "source_label": "Provider",
+      "source_name": "Dr. Mohammed Abdi",
+      "target_label": "Facility",
+      "target_name": "Wellness Pharmacy"
+    },
+    {
+      "type": "AFFILIATED_WITH",
+      "source_label": "Provider",
+      "source_name": "Dr. Rebecca Stone",
+      "target_label": "Facility",
+      "target_name": "Metropolitan General Hospital"
+    },
+    {
+      "type": "AFFILIATED_WITH",
+      "source_label": "Provider",
+      "source_name": "Dr. Rebecca Stone",
+      "target_label": "Facility",
+      "target_name": "St. Mary's Medical Center"
+    },
+    {
+      "type": "AFFILIATED_WITH",
+      "source_label": "Provider",
+      "source_name": "Dr. Rebecca Stone",
+      "target_label": "Facility",
+      "target_name": "Northside Family Clinic"
+    },
+    {
+      "type": "AFFILIATED_WITH",
+      "source_label": "Provider",
+      "source_name": "Dr. Kevin O'Connor",
+      "target_label": "Facility",
+      "target_name": "St. Mary's Medical Center"
+    },
+    {
+      "type": "AFFILIATED_WITH",
+      "source_label": "Provider",
+      "source_name": "Dr. Kevin O'Connor",
+      "target_label": "Facility",
+      "target_name": "Metropolitan General Hospital"
+    },
+    {
+      "type": "AFFILIATED_WITH",
+      "source_label": "Provider",
+      "source_name": "Dr. Kevin O'Connor",
+      "target_label": "Facility",
+      "target_name": "Regional Diagnostic Laboratory"
+    },
+    {
+      "type": "AFFILIATED_WITH",
+      "source_label": "Provider",
+      "source_name": "Dr. Lisa Zhang",
+      "target_label": "Facility",
+      "target_name": "St. Mary's Medical Center"
+    },
+    {
+      "type": "AFFILIATED_WITH",
+      "source_label": "Provider",
+      "source_name": "Dr. Lisa Zhang",
+      "target_label": "Facility",
+      "target_name": "Regional Diagnostic Laboratory"
+    },
+    {
+      "type": "AFFILIATED_WITH",
+      "source_label": "Provider",
+      "source_name": "Dr. Marcus Thompson",
+      "target_label": "Facility",
+      "target_name": "Harbor Rehabilitation Center"
+    }
+  ],
+  "documents": [
+    {
+      "template_id": "discharge_summary",
+      "template_name": "Discharge Summary",
+      "title": "Discharge Summary - Maria Elena Gonzalez",
+      "content": "DISCHARGE SUMMARY\n\nPatient: Maria Elena Gonzalez\nPatient ID: MG-2024-0847\nDischarge Date: March 15, 2024\nFacility: St. Mary's Medical Center\nAttending Physician: Dr. Emily Watson (Cardiology)\n\nADMISSION DIAGNOSIS: Heart failure, unspecified\nDISCHARGE DIAGNOSIS: Heart failure, unspecified, stable\n\nHOSPITAL COURSE:\nMs. Gonzalez was admitted with acute exacerbation of heart failure presenting with shortness of breath, lower extremity edema, and fatigue. Initial chest X-ray showed pulmonary congestion. Echocardiogram revealed ejection fraction of 35%. Patient underwent cardiac catheterization with stent placement to address significant coronary artery stenosis. Post-procedure recovery was uncomplicated.\n\nTREATMENTS RECEIVED:\n- Cardiac catheterization with stent placement\n- Diuretic therapy with furosemide\n- ACE inhibitor optimization\n- Daily weight monitoring\n- Dietary consultation\n\nDISCHARGE CONDITION: Stable, improved from admission\n\nDISCHARGE MEDICATIONS:\n- Metoprolol 50mg twice daily\n- Lisinopril 10mg daily\n- Furosemide 40mg daily\n- Aspirin 81mg daily\n- Atorvastatin 40mg daily\n\nDISCHARGE INSTRUCTIONS:\n- Daily weights, call if gain >3 lbs in 2 days\n- Low sodium diet (<2g daily)\n- Medication compliance essential\n- Gradual activity increase as tolerated\n- Monitor for chest pain, shortness of breath\n\nFOLLOW-UP:\n- Cardiology appointment with Dr. Watson in 1 week\n- Primary care visit in 2 weeks\n- INR check in 3 days if on anticoagulation\n- Return to ED if symptoms worsen\n\nPrognosis is good with medication compliance and lifestyle modifications."
+    },
+    {
+      "template_id": "discharge_summary",
+      "template_name": "Discharge Summary",
+      "title": "Discharge Summary - Robert Kim",
+      "content": "DISCHARGE SUMMARY\n\nPatient: Robert Kim\nPatient ID: RK-2024-1205\nDischarge Date: March 18, 2024\nFacility: St. Mary's Medical Center\nAttending Physician: Dr. Rajesh Kumar (Endocrinology)\n\nADMISSION DIAGNOSIS: Type 2 diabetes mellitus without complications, uncontrolled\nDISCHARGE DIAGNOSIS: Type 2 diabetes mellitus without complications, improved glycemic control\n\nHOSPITAL COURSE:\nMr. Kim presented with hyperglycemia (glucose 380 mg/dL), polyuria, polydipsia, and fatigue. No signs of diabetic ketoacidosis or hyperosmolar state. HbA1c was elevated at 11.2%. Patient received diabetes education and insulin initiation protocol. Blood glucose levels stabilized with combination therapy.\n\nTREATMENTS RECEIVED:\n- Metformin therapy for diabetes\n- Insulin sliding scale protocol\n- Comprehensive diabetes education\n- Nutritional counseling\n- Blood glucose monitoring training\n\nDISCHARGE CONDITION: Stable with improved glucose control\n\nDISCHARGE MEDICATIONS:\n- Metformin 1000mg twice daily with meals\n- Insulin glargine 20 units at bedtime\n- Insulin lispro sliding scale with meals\n\nDISCHARGE INSTRUCTIONS:\n- Blood glucose monitoring 4 times daily\n- Carbohydrate counting and portion control\n- Regular exercise as tolerated\n- Foot care and daily inspection\n- Recognition of hypoglycemia symptoms\n- Medication timing with meals important\n\nFOLLOW-UP:\n- Endocrinology follow-up with Dr. Kumar in 2 weeks\n- Diabetes educator appointment in 1 week\n- Primary care visit in 3-4 weeks\n- Ophthalmology referral for diabetic eye exam\n- HbA1c recheck in 3 months\n\nPatient demonstrates good understanding of diabetes management and discharge instructions."
+    },
+    {
+      "template_id": "discharge_summary",
+      "template_name": "Discharge Summary",
+      "title": "Discharge Summary - Jennifer Walsh",
+      "content": "DISCHARGE SUMMARY\n\nPatient: Jennifer Walsh\nPatient ID: JW-2024-0692\nDischarge Date: March 20, 2024\nFacility: St. Mary's Medical Center\nAttending Physician: Dr. Angela Martinez (Pulmonology)\n\nADMISSION DIAGNOSIS: Chronic obstructive pulmonary disease with acute exacerbation\nDISCHARGE DIAGNOSIS: COPD exacerbation, resolved\n\nHOSPITAL COURSE:\nMs. Walsh presented with increased dyspnea, productive cough with purulent sputum, and wheezing. Chest X-ray showed hyperinflation consistent with COPD, no pneumonia. Arterial blood gas revealed mild hypoxemia. Patient responded well to bronchodilator therapy, corticosteroids, and oxygen support. Smoking cessation counseling provided.\n\nTREATMENTS RECEIVED:\n- Nebulized bronchodilators (albuterol/ipratropium)\n- Systemic corticosteroids (prednisone)\n- Oxygen therapy\n- Chest physiotherapy\n- Smoking cessation counseling\n- Pulmonary rehabilitation consultation\n\nDISCHARGE CONDITION: Stable, breathing comfortably on room air\n\nDISCHARGE MEDICATIONS:\n- Albuterol inhaler 2 puffs every 4-6 hours as needed\n- Tiotropium 18mcg daily\n- Prednisone 40mg daily x 5 days, then taper\n- Azithromycin 250mg daily x 5 days\n\nDISCHARGE INSTRUCTIONS:\n- Continue prescribed inhalers as directed\n- Complete antibiotic and steroid courses\n- Smoking cessation mandatory\n- Avoid respiratory irritants\n- Monitor for worsening shortness of breath\n- Use pursed-lip breathing techniques\n\nFOLLOW-UP:\n- Pulmonology appointment with Dr. Martinez in 1-2 weeks\n- Primary care visit in 1 week\n- Pulmonary rehabilitation enrollment\n- Smoking cessation program referral\n- Return to ED if breathing difficulties worsen"
+    },
+    {
+      "template_id": "discharge_summary",
+      "template_name": "Discharge Summary",
+      "title": "Discharge Summary - Ahmed Hassan",
+      "content": "DISCHARGE SUMMARY\n\nPatient: Ahmed Hassan\nPatient ID: AH-2024-1134\nDischarge Date: March 22, 2024\nFacility: St. Mary's Medical Center\nAttending Physician: Dr. Thomas Anderson (Psychiatry)\n\nADMISSION DIAGNOSIS: Major depressive disorder, single episode, moderate\nDISCHARGE DIAGNOSIS: Major depressive disorder, single episode, moderate - stabilized\n\nHOSPITAL COURSE:\nMr. Hassan was admitted following increased depression symptoms with passive suicidal ideation but no active plan. PHQ-9 score was 16 on admission. Patient participated in individual and group therapy sessions, medication optimization, and safety planning. Mood significantly improved during hospitalization with no further suicidal ideation reported.\n\nTREATMENTS RECEIVED:\n- Psychiatric evaluation and medication adjustment\n- Individual psychotherapy sessions\n- Group therapy participation\n- Safety planning intervention\n- Social work assessment\n- Family therapy session\n\nDISCHARGE CONDITION: Stable mood, no suicidal ideation, good insight\n\nDISCHARGE MEDICATIONS:\n- Sertraline 100mg daily (increased from 50mg)\n- Trazodone 50mg at bedtime for sleep\n- Continue multivitamin\n\nDISCHARGE INSTRUCTIONS:\n- Take medications as prescribed, do not stop abruptly\n- Attend all follow-up appointments\n- Continue therapy sessions\n- Maintain daily routine and sleep hygiene\n- Avoid alcohol and substances\n- Contact crisis line if suicidal thoughts return\n- Emergency contact numbers provided\n\nFOLLOW-UP:\n- Psychiatry follow-up with Dr. Anderson in 1 week\n- Outpatient therapy sessions twice weekly\n- Primary care appointment in 2 weeks\n- Crisis intervention available 24/7\n- Family support meetings as needed\n\nPatient contracted for safety and demonstrates good understanding of discharge plan."
+    },
+    {
+      "template_id": "discharge_summary",
+      "template_name": "Discharge Summary",
+      "title": "Discharge Summary - Lisa Chang",
+      "content": "DISCHARGE SUMMARY\n\nPatient: Lisa Chang\nPatient ID: LC-2024-0958\nDischarge Date: March 25, 2024\nFacility: St. Mary's Medical Center\nAttending Physician: Dr. Samantha Lee (Orthopedic Surgery)\n\nADMISSION DIAGNOSIS: Fracture of unspecified part of neck of right femur, initial encounter\nDISCHARGE DIAGNOSIS: Right femoral neck fracture, status post surgical repair\n\nHOSPITAL COURSE:\nMs. Chang sustained a right femoral neck fracture following a fall at home. CT scan revealed a displaced femoral neck fracture requiring surgical intervention. Patient underwent successful open reduction and internal fixation with cannulated screws. Post-operative recovery was uncomplicated with appropriate pain management and early mobilization.\n\nTREATMENTS RECEIVED:\n- Open reduction internal fixation of right femur\n- Post-operative pain management\n- Physical therapy for knee rehabilitation (modified for hip)\n- Occupational therapy evaluation\n- DVT prophylaxis with enoxaparin\n- Fall risk assessment\n\nDISCHARGE CONDITION: Stable, ambulating with walker, adequate pain control\n\nDISCHARGE MEDICATIONS:\n- Oxycodone 5mg every 4-6 hours as needed for pain\n- Acetaminophen 1000mg every 8 hours\n- Enoxaparin 40mg daily x 4 weeks\n- Calcium with Vitamin D daily\n\nDISCHARGE INSTRUCTIONS:\n- Weight bearing as tolerated with walker\n- Keep surgical site clean and dry\n- No driving while on pain medications\n- Home safety modifications implemented\n- Ice application 15-20 minutes several times daily\n- Monitor for signs of infection\n\nFOLLOW-UP:\n- Orthopedic follow-up with Dr. Lee in 2 weeks\n- X-rays at follow-up visit\n- Home health physical therapy 3x/week\n- Primary care visit in 1 week\n- Bone density scan in 6 weeks\n\nPatient educated on fall prevention and demonstrates safe mobility with assistive device."
+    },
+    {
+      "template_id": "referral_letter",
+      "template_name": "Referral Letter",
+      "title": "Cardiology Referral - Maria Elena Gonzalez",
+      "content": "Dear Dr. Rajesh Kumar,\n\nI am writing to refer my patient, Maria Elena Gonzalez (DOB: 03/15/1967), to your cardiology service at St. Mary's Medical Center for evaluation and management of heart failure, unspecified.\n\nMs. Gonzalez is a 56-year-old female who presents with a 3-month history of progressive dyspnea on exertion, orthopnea, and bilateral lower extremity edema. She reports difficulty climbing stairs and walking more than two blocks without becoming short of breath. She has also experienced nocturnal dyspnea requiring her to sleep with three pillows.\n\nPertinent medical history includes hypertension (controlled on lisinopril 10mg daily) and hyperlipidemia (managed with atorvastatin 20mg daily). She has no known history of coronary artery disease or valvular disease. Family history is significant for myocardial infarction in her father at age 62.\n\nPhysical examination reveals blood pressure of 142/88 mmHg, heart rate 96 bpm regular, and oxygen saturation 94% on room air. Cardiac examination demonstrates an S3 gallop and a grade 2/6 systolic murmur at the apex. Pulmonary examination reveals bibasilar crackles. There is 2+ pitting edema to the mid-shins bilaterally.\n\nRecent laboratory results show BNP of 450 pg/mL (normal <100), creatinine 1.2 mg/dL, and normal electrolytes. Chest X-ray demonstrates cardiomegaly and mild pulmonary vascular congestion. ECG shows normal sinus rhythm with left ventricular hypertrophy.\n\nI have initiated furosemide 40mg daily with some symptomatic improvement, but she requires specialized evaluation for optimal heart failure management, including assessment for underlying etiology and consideration of advanced therapies.\n\nThank you for your expertise in caring for Ms. Gonzalez. Please feel free to contact me if you need any additional information.\n\nSincerely,\nDr. Emily Watson\nInternal Medicine\nNorthside Family Clinic"
+    },
+    {
+      "template_id": "referral_letter",
+      "template_name": "Referral Letter",
+      "title": "Endocrinology Referral - Robert Kim",
+      "content": "Dear Dr. Angela Martinez,\n\nI am referring Mr. Robert Kim (DOB: 11/28/1974) to your endocrinology practice at Regional Diagnostic Laboratory for comprehensive management of Type 2 diabetes mellitus without complications.\n\nMr. Kim is a 49-year-old male with newly diagnosed diabetes identified during routine screening. He is asymptomatic but has multiple risk factors including BMI of 32.5 kg/m\u00b2, family history of diabetes in both parents, and sedentary lifestyle due to his work as a software engineer.\n\nHis initial presentation included fasting glucose of 187 mg/dL and HbA1c of 8.2%. Subsequent testing confirmed the diagnosis with repeat fasting glucose of 195 mg/dL. He denies polyuria, polydipsia, or unintentional weight loss. Review of systems is otherwise negative.\n\nPhysical examination is notable for central obesity and acanthosis nigricans on the neck. Blood pressure is 134/82 mmHg. Cardiovascular, pulmonary, and neurological examinations are normal. Diabetic foot examination shows no evidence of neuropathy or vascular compromise.\n\nLaboratory studies reveal normal kidney function with creatinine of 0.9 mg/dL and eGFR >90. Lipid panel shows total cholesterol 240 mg/dL, HDL 35 mg/dL, and triglycerides 285 mg/dL. Urinalysis shows no proteinuria. TSH is within normal limits at 2.1 mIU/L.\n\nI have initiated metformin 500mg twice daily, which he tolerates well. He has also begun working with our nutritionist and has joined a local gym. However, given his significantly elevated HbA1c and complex metabolic profile, he would benefit from your specialized expertise in optimizing his diabetes management and addressing his dyslipidemia.\n\nI appreciate your evaluation and recommendations for Mr. Kim's comprehensive diabetes care.\n\nBest regards,\nDr. Thomas Anderson\nFamily Medicine\nNorthside Family Clinic"
+    },
+    {
+      "template_id": "referral_letter",
+      "template_name": "Referral Letter",
+      "title": "Pulmonology Referral - Jennifer Walsh",
+      "content": "Dear Dr. Samantha Lee,\n\nI am urgently referring Ms. Jennifer Walsh (DOB: 07/12/1958) to your pulmonology service at St. Mary's Medical Center for management of chronic obstructive pulmonary disease with acute exacerbation.\n\nMs. Walsh is a 65-year-old female with a 45-pack-year smoking history (quit 2 years ago) and known moderate COPD who presents with a 5-day history of worsening dyspnea, increased sputum production, and fever. She reports that her usual white sputum has become yellow-green and more voluminous. She has been using her rescue albuterol inhaler every 2-3 hours with minimal relief.\n\nHer baseline FEV1 is 55% predicted (moderate COPD) from spirometry performed 8 months ago. She uses tiotropium 18mcg daily and as-needed albuterol. She has had two previous hospitalizations for COPD exacerbations in the past 18 months, both requiring systemic corticosteroids and antibiotics.\n\nCurrently, she appears in mild respiratory distress with accessory muscle use. Vital signs show temperature 101.2\u00b0F, respiratory rate 24/min, oxygen saturation 89% on room air improving to 94% on 2L nasal cannula. Pulmonary examination reveals diffuse expiratory wheezing and rhonchi throughout both lung fields. Heart rate is 108 bpm regular.\n\nChest X-ray demonstrates hyperinflation consistent with COPD but no acute infiltrates. Arterial blood gas on room air shows pH 7.35, PCO2 55 mmHg, PO2 65 mmHg. White blood cell count is elevated at 13,500 with left shift.\n\nI have initiated prednisone 40mg daily, azithromycin 500mg daily, and increased bronchodilator therapy. However, given her recent frequent exacerbations and current severity, she requires your specialized evaluation for optimization of her maintenance therapy and consideration of advanced treatment options.\n\nThank you for your prompt attention to Ms. Walsh's care.\n\nSincerely,\nDr. Emily Watson\nInternal Medicine\nQuickCare Urgent Care"
+    },
+    {
+      "template_id": "referral_letter",
+      "template_name": "Referral Letter",
+      "title": "Psychiatry Referral - Ahmed Hassan",
+      "content": "Dear Dr. Rajesh Kumar,\n\nI am referring Mr. Ahmed Hassan (DOB: 02/20/1985) to your psychiatry practice at St. Mary's Medical Center for evaluation and treatment of major depressive disorder, single episode, moderate.\n\nMr. Hassan is a 38-year-old male who presents with a 4-month history of persistent depressed mood, anhedonia, and significant functional impairment. He reports feeling overwhelmed and hopeless since losing his job as an accountant due to company downsizing. His symptoms include early morning awakening, decreased appetite with 15-pound weight loss, fatigue, difficulty concentrating, and feelings of worthlessness.\n\nHe scores 18 on the PHQ-9 depression screening tool, indicating moderate depression. He denies current suicidal ideation but admits to passive thoughts of death, stating \"sometimes I wonder if others would be better off without me.\" He has no previous history of depression or other psychiatric conditions and no family history of mental illness.\n\nMr. Hassan is married with two young children and reports that his symptoms are significantly impacting his relationships and ability to seek new employment. His wife confirms changes in his sleep patterns, irritability, and social withdrawal. He has been using alcohol more frequently, consuming 3-4 beers nightly, which represents an increase from his usual 1-2 drinks per week.\n\nPhysical examination and basic laboratory studies are normal. Thyroid function tests are within normal limits. He is not currently taking any medications and has no known drug allergies.\n\nI have provided initial counseling regarding depression and lifestyle modifications, but given the severity of his symptoms and functional impairment, he requires specialized psychiatric evaluation for consideration of antidepressant therapy and structured psychotherapy.\n\nThank you for your expertise in Mr. Hassan's mental health care.\n\nBest regards,\nDr. Angela Martinez\nFamily Medicine\nNorthside Family Clinic"
+    },
+    {
+      "template_id": "referral_letter",
+      "template_name": "Referral Letter",
+      "title": "Orthopedic Surgery Referral - Lisa Chang",
+      "content": "Dear Dr. Thomas Anderson,\n\nI am urgently referring Ms. Lisa Chang (DOB: 09/03/1943) to your orthopedic surgery service at St. Mary's Medical Center for fracture of unspecified part of neck of right femur, initial encounter.\n\nMs. Chang is an 80-year-old female who sustained a fall at home this morning while getting out of bed. She immediately experienced severe right hip pain and was unable to bear weight. She was brought to our emergency department by ambulance.\n\nHer medical history is significant for osteoporosis (T-score -3.2), hypertension, and mild cognitive impairment. Current medications include alendronate 70mg weekly, calcium carbonate with vitamin D, lisinopril 5mg daily, and donepezil 5mg daily. She lives independently but has been using a walker for ambulation due to previous balance issues.\n\nPhysical examination reveals a well-appearing elderly woman in moderate distress due to pain. Her right lower extremity is shortened and externally rotated. There is tenderness over the right hip with inability to perform straight leg raise. Neurovascular examination of the right lower extremity is intact with palpable dorsalis pedis and posterior tibial pulses. Skin integrity is maintained.\n\nRadiographic imaging demonstrates a displaced femoral neck fracture on the right side. CT scan confirms the fracture pattern and shows significant osteoporotic changes. Laboratory studies reveal normal hemoglobin of 12.8 g/dL, normal coagulation studies, and creatinine of 1.1 mg/dL.\n\nShe has been made NPO and is receiving morphine for pain control. Her family has been notified and is present. Given her age, functional status, and fracture pattern, she requires urgent orthopedic evaluation for surgical intervention.\n\nThank you for your immediate attention to Ms. Chang's care.\n\nSincerely,\nDr. Samantha Lee\nEmergency Medicine\nQuickCare Urgent Care"
+    },
+    {
+      "template_id": "lab_report",
+      "template_name": "Laboratory Report",
+      "title": "Complete Blood Count and Basic Metabolic Panel - Maria Elena Gonzalez",
+      "content": "LABORATORY REPORT\n\nPatient: Maria Elena Gonzalez\nDate of Birth: 03/15/1978\nMRN: 445782\nOrdering Physician: Dr. Emily Watson\nFacility: St. Mary's Medical Center\nDate of Collection: November 15, 2024\nReport Date: November 15, 2024\n\nTESTS PERFORMED:\nComplete Blood Count (CBC) with Differential\nBasic Metabolic Panel (BMP)\n\nRESULTS:\n\nCOMPLETE BLOOD COUNT:\nWhite Blood Cell Count: 8.2 K/uL (Reference: 4.0-11.0)\nRed Blood Cell Count: 4.1 M/uL (Reference: 4.2-5.4) [LOW]\nHemoglobin: 11.8 g/dL (Reference: 12.0-15.5) [LOW]\nHematocrit: 35.2% (Reference: 36.0-46.0) [LOW]\nMean Corpuscular Volume: 78 fL (Reference: 80-100) [LOW]\nPlatelet Count: 285 K/uL (Reference: 150-450)\n\nBASIC METABOLIC PANEL:\nGlucose: 94 mg/dL (Reference: 70-99)\nSodium: 140 mmol/L (Reference: 136-145)\nPotassium: 4.1 mmol/L (Reference: 3.5-5.1)\nChloride: 102 mmol/L (Reference: 98-107)\nBUN: 18 mg/dL (Reference: 7-20)\nCreatinine: 0.9 mg/dL (Reference: 0.6-1.1)\neGFR: >60 mL/min/1.73m\u00b2\n\nCLINICAL INTERPRETATION:\nThe CBC results indicate mild microcytic anemia with low hemoglobin, hematocrit, and RBC count. The reduced MCV suggests possible iron deficiency anemia. Basic metabolic panel shows normal kidney function and electrolyte balance. Recommend iron studies and nutritional assessment to determine underlying cause of anemia.\n\nReviewed by: Dr. Michael Chen, MD\nPathologist\nSt. Mary's Medical Center Laboratory"
+    },
+    {
+      "template_id": "lab_report",
+      "template_name": "Laboratory Report",
+      "title": "Lipid Profile and Thyroid Function Tests - Robert Kim",
+      "content": "LABORATORY REPORT\n\nPatient: Robert Kim\nDate of Birth: 07/22/1965\nMRN: 887234\nOrdering Physician: Dr. Rajesh Kumar\nFacility: Northside Family Clinic\nDate of Collection: November 16, 2024\nReport Date: November 16, 2024\n\nTESTS PERFORMED:\nLipid Profile\nThyroid Stimulating Hormone (TSH)\nFree T4\n\nRESULTS:\n\nLIPID PROFILE:\nTotal Cholesterol: 245 mg/dL (Reference: <200) [HIGH]\nLDL Cholesterol: 165 mg/dL (Reference: <100) [HIGH]\nHDL Cholesterol: 38 mg/dL (Reference: >40 men) [LOW]\nTriglycerides: 210 mg/dL (Reference: <150) [HIGH]\nNon-HDL Cholesterol: 207 mg/dL (Reference: <130) [HIGH]\nTotal Cholesterol/HDL Ratio: 6.4 (Reference: <5.0) [HIGH]\n\nTHYROID FUNCTION:\nTSH: 4.8 mIU/L (Reference: 0.4-4.0) [HIGH]\nFree T4: 0.9 ng/dL (Reference: 0.8-1.8)\n\nCLINICAL INTERPRETATION:\nLipid profile demonstrates dyslipidemia with elevated total cholesterol, LDL cholesterol, and triglycerides, along with low HDL cholesterol. This pattern significantly increases cardiovascular risk and warrants therapeutic intervention per current guidelines.\n\nThyroid function tests show elevated TSH with normal free T4, consistent with subclinical hypothyroidism. This condition may contribute to the observed dyslipidemia. Recommend repeat thyroid function testing in 6-8 weeks and consideration of thyroid hormone replacement therapy if TSH remains elevated.\n\nDietary modifications, exercise, and possible statin therapy should be considered for lipid management.\n\nReviewed by: Dr. Patricia Williams, MD\nClinical Pathologist\nRegional Diagnostic Laboratory"
+    },
+    {
+      "template_id": "lab_report",
+      "template_name": "Laboratory Report",
+      "title": "Urinalysis and Urine Culture - Jennifer Walsh",
+      "content": "LABORATORY REPORT\n\nPatient: Jennifer Walsh\nDate of Birth: 09/08/1990\nMRN: 223456\nOrdering Physician: Dr. Angela Martinez\nFacility: QuickCare Urgent Care\nDate of Collection: November 17, 2024\nReport Date: November 18, 2024\n\nTESTS PERFORMED:\nComplete Urinalysis\nUrine Culture and Sensitivity\n\nRESULTS:\n\nURINALYSIS:\nColor: Yellow\nClarity: Cloudy [ABNORMAL]\nSpecific Gravity: 1.025 (Reference: 1.003-1.030)\npH: 6.0 (Reference: 5.0-8.0)\nProtein: Trace (Reference: Negative)\nGlucose: Negative\nKetones: Negative\nBilirubin: Negative\nBlood: 1+ [ABNORMAL]\nNitrites: Positive [ABNORMAL]\nLeukocyte Esterase: 2+ [ABNORMAL]\n\nMICROSCOPIC EXAMINATION:\nRBC: 5-10/hpf (Reference: 0-3/hpf) [HIGH]\nWBC: >50/hpf (Reference: 0-5/hpf) [HIGH]\nEpithelial Cells: Few\nBacteria: Many [ABNORMAL]\nCasts: None seen\n\nURINE CULTURE:\nOrganism: Escherichia coli\nColony Count: >100,000 CFU/mL [SIGNIFICANT BACTERIURIA]\n\nSENSITIVITY TESTING:\nAmpicillin: Resistant\nCiprofloxacin: Sensitive\nNitrofurantoin: Sensitive\nTrimethoprim/Sulfamethoxazole: Sensitive\nCeftriaxone: Sensitive\n\nCLINICAL INTERPRETATION:\nUrinalysis findings of pyuria, bacteriuria, positive nitrites, and leukocyte esterase are consistent with urinary tract infection. Culture confirms significant E. coli bacteriuria (>100,000 CFU/mL). The organism shows resistance to ampicillin but remains sensitive to several first-line antibiotics including nitrofurantoin and trimethoprim/sulfamethoxazole. Recommend appropriate antibiotic therapy based on sensitivity results.\n\nReviewed by: Dr. Sarah Thompson, MD\nClinical Microbiologist"
+    },
+    {
+      "template_id": "lab_report",
+      "template_name": "Laboratory Report",
+      "title": "Hemoglobin A1c and Fasting Glucose - Ahmed Hassan",
+      "content": "LABORATORY REPORT\n\nPatient: Ahmed Hassan\nDate of Birth: 12/03/1972\nMRN: 556789\nOrdering Physician: Dr. Thomas Anderson\nFacility: St. Mary's Medical Center\nDate of Collection: November 18, 2024\nReport Date: November 18, 2024\n\nTESTS PERFORMED:\nHemoglobin A1c\nFasting Glucose\nEstimated Average Glucose (eAG)\n\nRESULTS:\n\nGLYCEMIC CONTROL ASSESSMENT:\nFasting Glucose: 156 mg/dL (Reference: 70-99) [HIGH]\nHemoglobin A1c: 8.2% (Reference: <5.7%) [HIGH]\nEstimated Average Glucose: 189 mg/dL\n\nA1c INTERPRETATION:\n<5.7%: Normal\n5.7-6.4%: Prediabetes\n\u22656.5%: Diabetes\n\nPatient fasted for 12 hours prior to glucose collection as confirmed.\n\nCLINICAL INTERPRETATION:\nThe elevated fasting glucose of 156 mg/dL and hemoglobin A1c of 8.2% confirm inadequate glycemic control in this patient with diabetes mellitus. The A1c value indicates that average blood glucose levels over the past 2-3 months have been significantly elevated, corresponding to an estimated average glucose of 189 mg/dL.\n\nCurrent diabetes management appears suboptimal, as the American Diabetes Association recommends an A1c target of <7% for most adults with diabetes. The current A1c of 8.2% places the patient at increased risk for diabetes-related complications including retinopathy, nephropathy, and cardiovascular disease.\n\nRecommend review and intensification of diabetes management strategy, including assessment of medication adherence, dietary counseling, and possible adjustment of antidiabetic medications. Consider referral to endocrinologist if glycemic targets cannot be achieved with current primary care management.\n\nReviewed by: Dr. Jennifer Liu, MD\nClinical Chemistry\nSt. Mary's Medical Center Laboratory"
+    },
+    {
+      "template_id": "lab_report",
+      "template_name": "Laboratory Report",
+      "title": "Comprehensive Metabolic Panel and Liver Function Tests - Lisa Chang",
+      "content": "LABORATORY REPORT\n\nPatient: Lisa Chang\nDate of Birth: 04/28/1985\nMRN: 334567\nOrdering Physician: Dr. Samantha Lee\nFacility: Regional Diagnostic Laboratory\nDate of Collection: November 19, 2024\nReport Date: November 19, 2024\n\nTESTS PERFORMED:\nComprehensive Metabolic Panel (CMP)\nLiver Function Tests\n\nRESULTS:\n\nELECTROLYTES AND KIDNEY FUNCTION:\nSodium: 138 mmol/L (Reference: 136-145)\nPotassium: 3.9 mmol/L (Reference: 3.5-5.1)\nChloride: 101 mmol/L (Reference: 98-107)\nCO2: 24 mmol/L (Reference: 22-28)\nBUN: 15 mg/dL (Reference: 7-20)\nCreatinine: 0.8 mg/dL (Reference: 0.6-1.1)\neGFR: >60 mL/min/1.73m\u00b2\nGlucose: 88 mg/dL (Reference: 70-99)\n\nLIVER FUNCTION TESTS:\nTotal Protein: 7.2 g/dL (Reference: 6.0-8.3)\nAlbumin: 4.1 g/dL (Reference: 3.5-5.0)\nTotal Bilirubin: 0.8 mg/dL (Reference: 0.3-1.2)\nDirect Bilirubin: 0.2 mg/dL (Reference: 0.0-0.3)\nAST (SGOT): 28 U/L (Reference: 10-40)\nALT (SGPT): 32 U/L (Reference: 10-40)\nAlkaline Phosphatase: 78 U/L (Reference: 44-147)\n\nCLINICAL INTERPRETATION:\nThe comprehensive metabolic panel demonstrates normal electrolyte balance, kidney function, and glucose metabolism. All values fall within established reference ranges, indicating adequate hydration status and normal renal function.\n\nLiver function tests are entirely within normal limits. Normal aminotransferase levels (AST and ALT) suggest no evidence of hepatocellular injury. Normal alkaline phosphatase and bilirubin levels indicate normal bile flow and absence of cholestasis. Protein synthesis function appears adequate as evidenced by normal albumin and total protein levels.\n\nOverall, these results suggest normal hepatic and renal function with appropriate metabolic status.\n\nReviewed by: Dr. Robert Martinez, MD\nClinical Pathologist\nRegional Diagnostic Laboratory"
+    },
+    {
+      "template_id": "progress_note",
+      "template_name": "Clinical Progress Note",
+      "title": "Clinical Progress Note - Maria Elena Gonzalez - Routine Follow-up",
+      "content": "CLINICAL PROGRESS NOTE\n\nPatient: Maria Elena Gonzalez\nProvider: Dr. Emily Watson\nFacility: Northside Family Clinic\nDate: November 15, 2024\nEncounter Type: Routine Follow-up\n\nSUBJECTIVE:\nChief Complaint: Follow-up for hypertension management\n\nMs. Gonzalez returns for routine follow-up of her essential hypertension. She reports good adherence to prescribed lisinopril 10mg daily. Denies chest pain, shortness of breath, or palpitations. Has been monitoring blood pressure at home with readings averaging 135/85 mmHg. Reports mild intermittent headaches, particularly in the morning. Diet consists of reduced sodium intake per previous counseling. Regular walking 30 minutes daily, 4-5 times per week. No new medications or supplements.\n\nOBJECTIVE:\nVital Signs: BP 138/86 mmHg (repeat: 136/84 mmHg), HR 72 bpm, regular rhythm, RR 16, Temp 98.4\u00b0F, O2 sat 98% RA, BMI 28.3\nGeneral: Well-appearing Hispanic female in no acute distress\nCardiovascular: Regular rate and rhythm, no murmurs, rubs, or gallops. No peripheral edema. Distal pulses intact.\nLungs: Clear to auscultation bilaterally\nNeurologic: Alert and oriented, no focal deficits\n\nASSESSMENT:\n1. Essential hypertension (I10) - partially controlled\n2. Overweight (Z68.25)\n\nPLAN:\n1. Increase lisinopril to 20mg daily\n2. Continue home BP monitoring, log values\n3. Dietary consultation for DASH diet education\n4. Return in 6 weeks for BP recheck\n5. Basic metabolic panel and lipid profile in 3 months\n6. Continue current exercise regimen\n\nPatient educated on medication change and importance of compliance. Advised to contact office if BP consistently >160/100 or symptoms worsen.\n\nElectronically signed by Dr. Emily Watson, MD"
+    },
+    {
+      "template_id": "progress_note",
+      "template_name": "Clinical Progress Note",
+      "title": "Clinical Progress Note - Robert Kim - Urgent Care Visit",
+      "content": "CLINICAL PROGRESS NOTE\n\nPatient: Robert Kim\nProvider: Dr. Rajesh Kumar\nFacility: QuickCare Urgent Care\nDate: November 15, 2024\nEncounter Type: Urgent Care Visit\n\nSUBJECTIVE:\nChief Complaint: Acute onset left ankle pain and swelling\n\nMr. Kim presents with sudden onset severe left ankle pain that began this morning while playing basketball. Describes hearing a \"pop\" followed by immediate intense pain and inability to bear weight. Denies previous ankle injuries. Pain rated 8/10, sharp and constant. Applied ice and elevation with minimal relief. No numbness or tingling. No recent travel or prolonged immobilization. Taking ibuprofen 600mg with limited effect.\n\nOBJECTIVE:\nVital Signs: BP 125/78 mmHg, HR 88 bpm, RR 18, Temp 98.1\u00b0F, O2 sat 99% RA\nGeneral: Asian male in moderate distress due to pain\nMusculoskeletal: Left ankle significantly swollen and ecchymotic over lateral malleolus. Tender to palpation over anterior talofibular ligament. Positive anterior drawer test. Unable to bear weight. Neurovascularly intact distally. Range of motion limited by pain and swelling.\nSkin: No lacerations or abrasions\n\nASSESSMENT:\n1. Acute lateral ankle sprain, grade 2-3 (S93.401A)\n2. Rule out avulsion fracture\n\nPLAN:\n1. X-ray left ankle (3 views) - ordered\n2. RICE protocol (rest, ice, compression, elevation)\n3. Non-weight bearing with crutches\n4. Ibuprofen 600mg TID with food\n5. Elastic ankle brace for support\n6. Follow-up with orthopedics in 3-5 days if no improvement\n7. Return if increasing pain, numbness, or color changes\n\nX-ray results pending. Patient provided crutch training and home care instructions. Prescription for crutches and ankle brace given.\n\nElectronically signed by Dr. Rajesh Kumar, MD"
+    },
+    {
+      "template_id": "progress_note",
+      "template_name": "Clinical Progress Note",
+      "title": "Clinical Progress Note - Jennifer Walsh - Annual Physical",
+      "content": "CLINICAL PROGRESS NOTE\n\nPatient: Jennifer Walsh\nProvider: Dr. Angela Martinez\nFacility: St. Mary's Medical Center\nDate: November 15, 2024\nEncounter Type: Annual Physical Examination\n\nSUBJECTIVE:\nChief Complaint: Annual wellness examination\n\nMs. Walsh presents for routine annual physical. Generally feeling well with no acute concerns. Reports improved energy levels since starting multivitamin. Exercises regularly with yoga and hiking. Denies chest pain, shortness of breath, palpitations, or syncope. No urinary symptoms, bowel changes, or unexplained weight loss. Last menstrual period 2 weeks ago, regular cycles. Sexually active with one partner, using barrier contraception. Non-smoker, occasional alcohol use (2-3 drinks weekly). Family history significant for maternal diabetes and paternal coronary artery disease.\n\nOBJECTIVE:\nVital Signs: BP 118/72 mmHg, HR 68 bpm, RR 14, Temp 98.2\u00b0F, Weight 142 lbs, Height 5'6\", BMI 22.9\nGeneral: Well-developed, well-nourished Caucasian female in no distress\nHEENT: PERRL, EOMI, TMs clear, throat non-erythematous\nCardiovascular: Regular rate and rhythm, no murmurs\nPulmonary: Clear to auscultation bilaterally, good air movement\nAbdomen: Soft, non-tender, non-distended, bowel sounds present\nBreast: No masses, nipple discharge, or lymphadenopathy\nPelvic: Deferred per patient request, scheduled separately\nSkin: No suspicious lesions noted\n\nASSESSMENT:\n1. Health maintenance examination (Z00.00)\n2. Counseling on preventive care\n\nPLAN:\n1. Mammogram screening - scheduled\n2. Pap smear at gynecology appointment next month\n3. Fasting lipid panel and glucose\n4. Continue current lifestyle modifications\n5. HPV and influenza vaccination updated\n6. Return in one year for routine follow-up\n7. Discussed breast self-examination technique\n\nPatient counseled on maintaining healthy lifestyle and importance of routine screening. All questions answered satisfactorily.\n\nElectronically signed by Dr. Angela Martinez, MD"
+    },
+    {
+      "template_id": "progress_note",
+      "template_name": "Clinical Progress Note",
+      "title": "Clinical Progress Note - Ahmed Hassan - Diabetes Management",
+      "content": "CLINICAL PROGRESS NOTE\n\nPatient: Ahmed Hassan\nProvider: Dr. Thomas Anderson\nFacility: Northside Family Clinic\nDate: November 15, 2024\nEncounter Type: Diabetes Follow-up\n\nSUBJECTIVE:\nChief Complaint: Type 2 diabetes mellitus follow-up\n\nMr. Hassan returns for quarterly diabetes management. Reports generally good glucose control with home monitoring showing fasting levels 110-140 mg/dL and post-prandial readings 150-180 mg/dL. Adherence to metformin 1000mg BID is excellent. Denies polyuria, polydipsia, or unexplained weight changes. Follows diabetic diet with carbohydrate counting. Walking 45 minutes daily per diabetic educator recommendations. Recent HbA1c drawn last week. Reports mild bilateral foot tingling, particularly at night. Vision check with ophthalmologist completed last month - no retinopathy noted. Checking feet daily as instructed.\n\nOBJECTIVE:\nVital Signs: BP 142/88 mmHg, HR 76 bpm, RR 16, Temp 98.6\u00b0F, Weight 195 lbs (down 3 lbs from last visit), BMI 31.2\nGeneral: Middle-aged Middle Eastern male, alert and cooperative\nCardiovascular: Regular rhythm, no murmurs, no peripheral edema\nFeet: No ulcerations, good pulses, monofilament sensation intact bilaterally, mild callus formation on bilateral heels\nLabs: HbA1c 7.2% (improved from 7.8% three months ago)\n\nASSESSMENT:\n1. Type 2 diabetes mellitus (E11.9) - improved control\n2. Diabetic peripheral neuropathy (E11.40)\n3. Hypertension (I10) - needs optimization\n4. Obesity (E66.9)\n\nPLAN:\n1. Continue metformin 1000mg BID\n2. Add lisinopril 10mg daily for BP control and renal protection\n3. Gabapentin 300mg at bedtime for neuropathic symptoms\n4. Annual microalbumin screening - ordered\n5. Lipid panel - ordered\n6. Nutrition consultation for weight management\n7. Return in 3 months\n8. Continue current foot care regimen\n\nPatient educated on blood pressure medication and neuropathy management. Compliance reinforced.\n\nElectronically signed by Dr. Thomas Anderson, MD"
+    },
+    {
+      "template_id": "progress_note",
+      "template_name": "Clinical Progress Note",
+      "title": "Clinical Progress Note - Lisa Chang - Pediatric Well-Child Visit",
+      "content": "CLINICAL PROGRESS NOTE\n\nPatient: Lisa Chang\nProvider: Dr. Samantha Lee\nFacility: Northside Family Clinic\nDate: November 15, 2024\nEncounter Type: Well-Child Visit\n\nSUBJECTIVE:\nChief Complaint: 6-year well-child examination\n\nLisa presents with her mother for routine 6-year well-child visit. Mother reports child is doing well overall. Started first grade this fall with good adjustment. Eating well with varied diet, though some pickiness with vegetables. Sleeping 10-11 hours nightly without difficulty. No recent illnesses, injuries, or concerns. Toilet trained completely. No behavioral issues at home or school. Up to date with dental care - no cavities at last visit. Mother inquires about appropriate screen time and physical activities.\n\nOBJECTIVE:\nVital Signs: BP 95/60 mmHg, HR 95 bpm, RR 20, Temp 98.3\u00b0F, Weight 45 lbs (50th percentile), Height 44 inches (25th percentile), BMI 16.2\nGeneral: Alert, active Asian female child in no distress, interactive and cooperative\nHEENT: PERRL, red reflex present bilaterally, TMs clear and mobile, throat pink\nCardiovascular: Regular rate and rhythm, no murmurs\nPulmonary: Clear to auscultation, no wheeze or stridor\nAbdomen: Soft, non-tender, bowel sounds present\nNeurologic: Age-appropriate development, good coordination and balance\nSkin: No rashes or lesions\n\nASSESSMENT:\n1. Well-child examination, 6 years (Z00.129)\n2. Normal growth and development\n\nPLAN:\n1. Immunizations: DTaP, IPV, MMR, and Varicella vaccines administered\n2. Vision and hearing screening completed - normal\n3. Anticipatory guidance provided:\n   - Nutrition counseling about balanced diet\n   - Safety discussions (bike helmets, car seats)\n   - Screen time limitations (1-2 hours daily)\n   - Importance of physical activity\n4. Next visit at 7 years of age\n5. Flu vaccine recommended seasonally\n\nMother's questions addressed regarding normal developmental milestones and school readiness. Vaccine information sheets provided.\n\nElectronically signed by Dr. Samantha Lee, MD"
+    },
+    {
+      "template_id": "meeting_notes",
+      "template_name": "Case Conference Notes",
+      "title": "Case Conference Notes - Maria Elena Gonzalez - Heart Failure Management",
+      "content": "CASE CONFERENCE NOTES\n\nPatient: Maria Elena Gonzalez\nFacility: St. Mary's Medical Center\nDate: November 15, 2024\nParticipating Providers: Dr. Emily Watson (Cardiology), Dr. Rajesh Kumar (Internal Medicine), Dr. Angela Martinez (Pharmacy), Nurse Case Manager Sarah Thompson\n\nDISCUSSION POINTS:\nMs. Gonzalez, 67-year-old female with heart failure, unspecified, was reviewed due to recent hospitalizations and medication non-adherence. Dr. Watson reported current NYHA Class III symptoms with shortness of breath on minimal exertion. Recent echocardiogram shows EF of 35%. Dr. Kumar noted patient's difficulty managing complex medication regimen and financial constraints affecting prescription compliance.\n\nTREATMENT PLAN DECISIONS:\n1. Optimize heart failure medications: Increase lisinopril to 10mg daily, continue metoprolol 50mg BID\n2. Initiate spironolactone 25mg daily with close monitoring of potassium levels\n3. Coordinate with Wellness Pharmacy for medication synchronization program\n4. Refer to heart failure clinic for specialized management\n5. Arrange home health nursing for medication education and compliance monitoring\n\nACTION ITEMS:\n- Dr. Watson: Schedule follow-up in heart failure clinic within 2 weeks\n- Dr. Martinez: Contact Wellness Pharmacy to establish synchronized refill program\n- Dr. Kumar: Order basic metabolic panel in 1 week to monitor electrolytes\n- Case Manager: Arrange home health services and patient education materials in Spanish\n- All providers: Document medication changes in EMR and notify primary care physician\n\nNext case conference scheduled for December 13, 2024, to assess treatment response and adjust plan as needed."
+    },
+    {
+      "template_id": "meeting_notes",
+      "template_name": "Case Conference Notes",
+      "title": "Case Conference Notes - Robert Kim - COPD Exacerbation Management",
+      "content": "CASE CONFERENCE NOTES\n\nPatient: Robert Kim\nFacility: Northside Family Clinic\nDate: November 18, 2024\nParticipating Providers: Dr. Thomas Anderson (Pulmonology), Dr. Samantha Lee (Primary Care), Respiratory Therapist Mark Johnson, Social Worker Linda Peters\n\nDISCUSSION POINTS:\nMr. Kim, 58-year-old male with chronic obstructive pulmonary disease with acute exacerbation, presented following recent emergency department visit. Dr. Anderson reported patient had significant bronchospasm and increased sputum production. Current smoking history of 40 pack-years with continued tobacco use despite counseling. Dr. Lee noted poor medication compliance with maintenance inhalers and inadequate understanding of proper inhaler technique.\n\nTREATMENT PLAN DECISIONS:\n1. Complete 5-day course of prednisone 40mg daily as started in ED\n2. Optimize bronchodilator therapy: Switch to combination tiotropium/olodaterol inhaler\n3. Intensive smoking cessation counseling with pharmacotherapy support\n4. Pulmonary rehabilitation referral\n5. Home oxygen evaluation if SpO2 remains <88% on room air\n\nACTION ITEMS:\n- Dr. Anderson: Schedule pulmonary function tests in 6 weeks post-exacerbation\n- Dr. Lee: Prescribe varenicline for smoking cessation, provide nicotine replacement therapy\n- Respiratory Therapist: Conduct comprehensive inhaler education session within 48 hours\n- Social Worker: Connect patient with smoking cessation support groups and resources\n- All providers: Emphasize importance of annual influenza and pneumococcal vaccinations\n\nFollow-up appointment scheduled in 1 week to assess response to treatment and review inhaler technique."
+    },
+    {
+      "template_id": "meeting_notes",
+      "template_name": "Case Conference Notes",
+      "title": "Case Conference Notes - Jennifer Walsh - Depression and Diabetes Care Coordination",
+      "content": "CASE CONFERENCE NOTES\n\nPatient: Jennifer Walsh\nFacility: St. Mary's Medical Center\nDate: November 20, 2024\nParticipating Providers: Dr. Angela Martinez (Psychiatry), Dr. Emily Watson (Endocrinology), Dr. Rajesh Kumar (Primary Care), Clinical Pharmacist David Chen\n\nDISCUSSION POINTS:\nMs. Walsh, 42-year-old female with major depressive disorder, single episode, moderate, and type 2 diabetes mellitus without complications. Dr. Martinez reported patient experiencing persistent depressive symptoms despite 8 weeks of sertraline 100mg daily. Dr. Watson noted poor glycemic control with HbA1c of 9.2%, likely related to depression affecting self-care behaviors. Patient reports decreased appetite, fatigue, and difficulty maintaining diabetes management routine.\n\nTREATMENT PLAN DECISIONS:\n1. Augment antidepressant therapy: Add bupropion 150mg daily to current sertraline\n2. Intensify diabetes management: Initiate once-weekly GLP-1 agonist semaglutide\n3. Coordinate mental health and diabetes education services\n4. Consider continuous glucose monitoring to improve diabetes awareness\n5. Schedule integrated behavioral health sessions focusing on diabetes self-management\n\nACTION ITEMS:\n- Dr. Martinez: Monitor for drug interactions between psychiatric medications\n- Dr. Watson: Provide diabetes technology training and CGM setup\n- Dr. Kumar: Coordinate care plan with patient's insurance for medication coverage\n- Clinical Pharmacist: Conduct comprehensive medication review and patient education\n- All providers: Establish shared treatment goals addressing both conditions simultaneously\n\nNext multidisciplinary review scheduled in 6 weeks to assess treatment response and medication effectiveness."
+    },
+    {
+      "template_id": "meeting_notes",
+      "template_name": "Case Conference Notes",
+      "title": "Case Conference Notes - Ahmed Hassan - Post-Surgical Hip Fracture Recovery",
+      "content": "CASE CONFERENCE NOTES\n\nPatient: Ahmed Hassan\nFacility: St. Mary's Medical Center\nDate: November 22, 2024\nParticipating Providers: Dr. Thomas Anderson (Orthopedic Surgery), Dr. Samantha Lee (Geriatrics), Physical Therapist Rachel Green, Occupational Therapist Michael Torres, Discharge Planner Janet Kim\n\nDISCUSSION POINTS:\nMr. Hassan, 79-year-old male with fracture of unspecified part of neck of right femur, initial encounter, post-operative day 5 following hemiarthroplasty. Dr. Anderson reported successful surgical repair with good prosthetic positioning on imaging. Dr. Lee noted patient's mild cognitive impairment affecting rehabilitation compliance and fall risk concerns. Current pain management adequate with scheduled acetaminophen and PRN oxycodone.\n\nTREATMENT PLAN DECISIONS:\n1. Continue weight-bearing as tolerated with walker assistance\n2. Transfer to skilled nursing facility for intensive rehabilitation\n3. Optimize pain management while minimizing opioid use in elderly patient\n4. Address osteoporosis prevention with calcium, vitamin D, and bisphosphonate therapy\n5. Comprehensive fall risk assessment and home safety evaluation\n\nACTION ITEMS:\n- Dr. Anderson: Schedule 6-week post-operative follow-up with X-rays\n- Dr. Lee: Initiate alendronate 70mg weekly after confirming adequate calcium/vitamin D levels\n- Physical Therapist: Develop progressive mobility plan for SNF transfer\n- Occupational Therapist: Assess ADL capabilities and recommend adaptive equipment\n- Discharge Planner: Coordinate SNF placement and insurance authorization\n\nEstimated 2-3 week SNF stay before potential discharge home with outpatient therapy services."
+    },
+    {
+      "template_id": "meeting_notes",
+      "template_name": "Case Conference Notes",
+      "title": "Case Conference Notes - Lisa Chang - Complex Care Coordination",
+      "content": "CASE CONFERENCE NOTES\n\nPatient: Lisa Chang\nFacility: Regional Diagnostic Laboratory\nDate: November 25, 2024\nParticipating Providers: Dr. Rajesh Kumar (Internal Medicine), Dr. Angela Martinez (Nephrology), Dr. Emily Watson (Cardiology), Clinical Dietitian Patricia Wilson, Care Coordinator Thomas Brown\n\nDISCUSSION POINTS:\nMs. Chang, 54-year-old female with multiple comorbidities including type 2 diabetes mellitus without complications, presented for comprehensive care planning review. Recent laboratory work shows declining renal function with eGFR of 45 mL/min/1.73m\u00b2. Dr. Martinez expressed concern about progression to moderate CKD. Dr. Watson noted well-controlled hypertension but recommended ACE inhibitor adjustment given renal function changes.\n\nTREATMENT PLAN DECISIONS:\n1. Stage 3 CKD management: Reduce lisinopril dose, monitor potassium closely\n2. Diabetes optimization: Continue metformin with dose adjustment for renal function\n3. Nephrology follow-up every 3 months with trending of kidney function\n4. Nutritional counseling for renal-diabetic diet\n5. Bone mineral metabolism screening with PTH, phosphorus, and vitamin D levels\n\nACTION ITEMS:\n- Dr. Kumar: Adjust diabetes medications based on renal function, order CMP in 2 weeks\n- Dr. Martinez: Initiate phosphorus binder if levels elevated, consider referral to vascular access planning if eGFR continues declining\n- Dr. Watson: Modify antihypertensive regimen to be kidney-protective\n- Clinical Dietitian: Provide comprehensive renal diet education with protein restriction counseling\n- Care Coordinator: Establish patient education plan regarding CKD progression and symptom monitoring\n\nNext interdisciplinary review in 3 months to reassess renal function trends and modify treatment approach accordingly."
+    }
+  ],
+  "traces": [
+    {
+      "id": "treatment_selection",
+      "task": "Select appropriate treatment plan for Carlos Rivera diagnosed with Acute myocardial infarction, unspecified",
+      "steps": [
+        {
+          "thought": "Review patient history and current diagnoses",
+          "action": "Query patient entity graph including past encounters, diagnoses, and medications",
+          "observation": "Patient Carlos Rivera, 58-year-old male, presents with chest pain onset 3 hours ago, elevated troponin levels at 15.2 ng/mL, and ECG showing ST-elevation in leads II, III, and aVF indicating inferior STEMI. Medical history includes hypertension controlled with lisinopril 10mg daily and no prior cardiac events."
+        },
+        {
+          "thought": "Check for medication contraindications and allergies",
+          "action": "Cross-reference proposed medications with patient allergies and current prescriptions",
+          "observation": "Patient has documented allergy to aspirin causing GI bleeding in 2019, currently taking lisinopril with no known drug interactions for proposed clopidogrel and atorvastatin. No contraindications identified for beta-blockers or ACE inhibitors based on current renal function (eGFR 78 mL/min/1.73m\u00b2)."
+        },
+        {
+          "thought": "Evaluate treatment options based on clinical evidence",
+          "action": "Find similar past cases and their treatment outcomes",
+          "observation": "Review of 47 similar inferior STEMI cases in past 18 months shows 89% success rate with primary PCI within 90 minutes of presentation, with dual antiplatelet therapy using clopidogrel as aspirin alternative showing comparable outcomes. Thrombolytic therapy used in 3 cases with 2-hour transport delays showed 67% vessel patency rates."
+        },
+        {
+          "thought": "Consider patient preferences and facility capabilities",
+          "action": "Review available treatments at the patient's facility",
+          "observation": "Cardiac catheterization lab available with on-call interventional cardiologist Dr. Martinez available within 45 minutes, patient expressed preference for most effective treatment despite procedural risks after informed consent discussion. Facility equipped for emergency CABG if needed during PCI procedure."
+        }
+      ],
+      "outcome": "Initiated primary percutaneous coronary intervention (PCI) protocol with clopidogrel 600mg loading dose, metoprolol 25mg BID, and atorvastatin 80mg daily, avoiding aspirin due to allergy history. Patient transferred to cardiac catheterization lab for emergent angiography and intervention of suspected right coronary artery occlusion."
+    },
+    {
+      "id": "referral_decision",
+      "task": "Determine if patient Michael O'Brien should be referred to a specialist for Heart failure, unspecified",
+      "steps": [
+        {
+          "thought": "Assess the complexity and progression of the condition",
+          "action": "Query diagnosis history and treatment response",
+          "observation": "Patient Michael O'Brien has a 6-month history of progressive dyspnea and fatigue with poor response to initial ACE inhibitor therapy, showing continued elevated BNP levels at 850 pg/mL and reduced ejection fraction of 35% on recent echocardiogram."
+        },
+        {
+          "thought": "Identify appropriate specialists in the network",
+          "action": "Search providers by specialty and facility affiliation",
+          "observation": "Three cardiologists specializing in heart failure are available within the hospital network: Dr. Sarah Chen at Metro Cardiology Associates, Dr. James Rodriguez at University Heart Center, and Dr. Lisa Park at Regional Medical Specialists."
+        },
+        {
+          "thought": "Check specialist availability and patient coverage",
+          "action": "Query provider schedules and patient insurance compatibility",
+          "observation": "Dr. Sarah Chen has the earliest available appointment slot in 2 weeks and accepts the patient's BlueCross BlueShield insurance plan with standard specialist copay requirements."
+        }
+      ],
+      "outcome": "Patient Michael O'Brien should be referred to Dr. Sarah Chen at Metro Cardiology Associates for specialized heart failure management given his poor response to initial treatment and declining cardiac function."
+    },
+    {
+      "id": "readmission_risk",
+      "task": "Assess readmission risk for Anna Petrov being discharged after Chronic obstructive pulmonary disease with acute exacerbation treatment",
+      "steps": [
+        {
+          "thought": "Review patient's hospitalization and readmission history",
+          "action": "Query past encounters and discharge outcomes",
+          "observation": "Patient has 2 previous COPD-related admissions in the past 18 months, with one 30-day readmission following inadequate medication adherence and missed follow-up appointments."
+        },
+        {
+          "thought": "Evaluate completeness of discharge plan",
+          "action": "Check for scheduled follow-ups, medication reconciliation, and support services",
+          "observation": "Discharge plan includes pulmonary rehabilitation referral scheduled for next week, medication reconciliation completed with simplified inhaler regimen, and home health nursing visits arranged for 3 days post-discharge."
+        },
+        {
+          "thought": "Identify risk factors from similar patients",
+          "action": "Find patients with similar diagnoses and demographics, check their readmission rates",
+          "observation": "Analysis of 847 similar patients (age 65-75, COPD with acute exacerbation, similar comorbidities) shows a 23% 30-day readmission rate, with highest risk factors being living alone and medication non-adherence."
+        }
+      ],
+      "outcome": "Patient classified as moderate-to-high readmission risk due to previous readmission history and living alone status, requiring enhanced discharge planning with daily medication monitoring calls for first week and expedited pulmonary follow-up within 5 days."
+    }
+  ]
+}
