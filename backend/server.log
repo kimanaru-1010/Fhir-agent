@@ -1,0 +1,121 @@
+INFO:     Started server process [20688]
+INFO:     Waiting for application startup.
+Failed to create vector index 'entity_embeddings': {code: Neo.ClientError.Statement.SyntaxError} {message: Invalid input 'I': expected whitespace, comment, '=', node labels, MapLiteral, a parameter, a parameter (old syntax), a relationship pattern, ',', FROM GRAPH, USE GRAPH, CONSTRUCT, LOAD CSV, START, MATCH, UNWIND, MERGE, CREATE UNIQUE, CREATE, SET, DELETE, REMOVE, FOREACH, WITH, CALL, RETURN, UNION, ';' or end of input (line 2, column 15 (offset: 27))
+"            CREATE VECTOR INDEX entity_embeddings IF NOT EXISTS"
+                           ^}
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:52942 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52099 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50391 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50391 - "GET /api/traces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50391 - "GET /api/documents?skip=0&limit=21 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50391 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50391 - "GET /api/schema/visualization HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54150 - "GET /api/schema/visualization HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49439 - "GET /api/traces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49439 - "GET /api/documents?skip=0&limit=21 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49439 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49439 - "GET /api/schema/visualization HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62352 - "GET /api/schema/visualization HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62352 - "OPTIONS /api/chat/stream HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49439 - "POST /api/chat/stream HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50115 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49350 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55040 - "GET /health HTTP/1.1" 200 OK
+Traceback (most recent call last):
+  File "C:\Users\LENOVO\projects\fhir-agent\backend\app\routes.py", line 93, in chat
+    result = await handle_message(request.message, request.session_id)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\projects\fhir-agent\backend\app\agent.py", line 261, in handle_message
+    result = await agent.run(
+             ^^^^^^^^^^^^^^^^
+        message, deps=deps, message_history=message_history
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic_ai\agent\abstract.py", line 550, in run
+    node = await agent_run.next(node)  # pyright: ignore[reportArgumentType]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic_ai\run.py", line 402, in next
+    return await self._run_node_with_hooks(node, self._advance_graph)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic_ai\run.py", line 326, in _run_node_with_hooks
+    return await self._wrap_and_advance(run_context, node, step_fn)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic_ai\run.py", line 296, in _wrap_and_advance
+    result = await cap.on_node_run_error(run_context, node=node, error=e)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic_ai\capabilities\combined.py", line 365, in on_node_run_error
+    raise error
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic_ai\capabilities\combined.py", line 362, in on_node_run_error
+    return await capability.on_node_run_error(cap_ctx, node=node, error=error)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic_ai\capabilities\abstract.py", line 578, in on_node_run_error
+    raise error
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic_ai\capabilities\combined.py", line 362, in on_node_run_error
+    return await capability.on_node_run_error(cap_ctx, node=node, error=error)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic_ai\capabilities\abstract.py", line 578, in on_node_run_error
+    raise error
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic_ai\run.py", line 294, in _wrap_and_advance
+    result = await cap.wrap_node_run(run_context, node=node, handler=step_fn)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic_ai\capabilities\combined.py", line 348, in wrap_node_run
+    return await chain(node)
+           ^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic_ai\capabilities\combined.py", line 779, in wrapped
+    return await cap.wrap_node_run(_ctx_for_cap(cap, ctx), node=node, handler=inner)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic_ai\capabilities\abstract.py", line 557, in wrap_node_run
+    return await handler(node)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic_ai\capabilities\combined.py", line 779, in wrapped
+    return await cap.wrap_node_run(_ctx_for_cap(cap, ctx), node=node, handler=inner)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic_ai\capabilities\abstract.py", line 557, in wrap_node_run
+    return await handler(node)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic_ai\run.py", line 272, in _advance_graph
+    task = await self._graph_run.next(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic_graph\graph_builder.py", line 584, in next
+    return await anext(self)
+           ^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic_graph\graph_builder.py", line 561, in __anext__
+    raise self._next.error
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic_graph\graph_builder.py", line 860, in _run_tracked_task
+    result = await self._run_task(t_)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic_graph\graph_builder.py", line 911, in _run_task
+    output = await node.call(step_context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic_graph\step.py", line 253, in _call_node
+    return await node.run(GraphRunContext(state=ctx.state, deps=ctx.deps))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic_ai\_agent_graph.py", line 1003, in run
+    return await self._make_request(ctx)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic_ai\_agent_graph.py", line 1230, in _make_request
+    model, model_settings, model_request_parameters, message_history, run_context = await self._prepare_request(
+                                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ctx
+        ^^^
+    )
+    ^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic_ai\_agent_graph.py", line 1443, in _prepare_request
+    ctx.deps.usage_limits.check_before_request(usage)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic_ai\usage.py", line 333, in check_before_request
+    raise UsageLimitExceeded(f'The next request would exceed the request_limit of {request_limit}')
+pydantic_ai.exceptions.UsageLimitExceeded: The next request would exceed the request_limit of 50. Consider raising the limit, or see the docs on usage limits for budget-aware patterns: https://ai.pydantic.dev/agent/#usage-limits
+INFO:     127.0.0.1:50393 - "POST /api/chat HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:51155 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62914 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64940 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62726 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55303 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55303 - "GET /api/traces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55303 - "GET /api/documents?skip=0&limit=21 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55303 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55303 - "GET /api/schema/visualization HTTP/1.1" 200 OK

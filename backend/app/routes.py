@@ -102,6 +102,8 @@ async def chat(request: ChatRequest):
             result["tool_calls"] = tool_calls
         return result
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -158,7 +160,7 @@ async def chat_stream(request: ChatRequest):
         # Emit session_id as first event
         yield f"event: session_id\ndata: {json.dumps({'session_id': session_id})}\n\n"
         idle_timeout = 120.0  # Max seconds between events
-        overall_timeout = 300.0  # 5 min total max
+        overall_timeout = 500  # 5 min total max
         loop = asyncio.get_event_loop()
         start_time = loop.time()
         try:

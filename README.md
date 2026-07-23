@@ -150,3 +150,5 @@ cp .env.example .env
 **Build errors after `npm install`**
 - Delete `node_modules` and `package-lock.json`, then run `npm install` again
 - Ensure Node.js 18+ is installed
+uv run --no-sync uvicorn app.main:app --reload --port 8000
+npm run dev -- --port 3000
