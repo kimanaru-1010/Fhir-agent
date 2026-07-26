@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+
+const DEFAULT_USER_ID = "anonymous";
 import {
   Box, Flex, Heading, Text, Textarea, IconButton, VStack, HStack,
   Badge, Button, Spinner, Skeleton, Collapsible, Timeline, Circle,
@@ -260,6 +262,7 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
         body: JSON.stringify({
           message: messageText,
           session_id: sessionId,
+          user_id: DEFAULT_USER_ID,
         }),
         signal: controller.signal,
       });

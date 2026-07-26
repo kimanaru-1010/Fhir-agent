@@ -16,13 +16,12 @@ from typing import Any
 
 from app.config import settings
 from openai import AsyncOpenAI
-from pydantic_ai import Agent, RunContext
-from pydantic_ai.messages import ModelRequest, ModelResponse, TextPart, UserPromptPart
+from pydantic_ai import Agent, ModelSettings, RunContext
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
 from app.context_graph_client import execute_cypher, get_schema
-from app.memory import get_context, resolve_session_id, store_message
+from app.memory import save_conversation_memory, search_memories
 
 
 SYSTEM_PROMPT = """You are an AI clinical intelligence assistant with access to a FHIR-oriented
@@ -36,7 +35,7 @@ GRAPH MODEL
   (source)-[:fieldName]->(reference:Reference)-[:RESOLVES_TO]->(target:FHIRResource).
 
 GENERAL RULES
-- You MUST use tools before answering questions about graph data.
+- Use graph tools only when the required information is not already present clearly in conversational memory.
 - Call tools directly without introductory text.
 - Answer only from tool evidence.
 - Do not guess missing clinical facts or code meanings.
@@ -184,6 +183,9 @@ A branch is exhausted when:
 
 Stop the overall tool loop when every relevant branch is exhausted or the requested
 facts have been collected for every matching resource.
+If retrieved data is incomplete, conflicting, or ambiguous, state that explicitly instead of inferring missing facts.
+- Before finalizing, compare the response against all retrieved records relevant to the user’s request.
+- Preserve every distinct relevant fact after deduplication, and do not selectively omit items during summarization.
 """
 
 
@@ -192,29 +194,21 @@ class AgentDeps:
     """Dependencies injected into the agent."""
 
     session_id: str
+    user_id: str
 
 
-lm_studio_client = AsyncOpenAI(
-    base_url=os.getenv(
-        "LM_STUDIO_BASE_URL",
-        "http://172.16.12.230:8000/v1",
-    ),
-    api_key=os.getenv(
-        "LM_STUDIO_API_KEY",
-        "lm-studio",
-    ),
+internal_llm_client = AsyncOpenAI(
+    base_url=settings.internal_llm_base_url,
+    api_key=settings.internal_llm_api_key or "internal",
 )
 
-lm_studio_model = OpenAIChatModel(
-    os.getenv(
-        "LM_STUDIO_MODEL",
-        "Qwen/Qwen3.6-35B-A3B-FP8",
-    ),
-    provider=OpenAIProvider(openai_client=lm_studio_client),
+internal_llm_model = OpenAIChatModel(
+    settings.internal_llm_model,
+    provider=OpenAIProvider(openai_client=internal_llm_client),
 )
 
 agent = Agent(
-    lm_studio_model,
+    internal_llm_model,
     system_prompt=SYSTEM_PROMPT,
     deps_type=AgentDeps,
     retries=1,
@@ -275,7 +269,6 @@ def _log_payload(title: str, value: Any) -> None:
     logger.debug("%s\n%s", title, text)
 
 
-_MAX_HISTORY_MESSAGES = 8
 _DEFAULT_LIMIT = 25
 _MAX_LIMIT = 100
 _MAX_MODEL_TOOL_RESULT_CHARS = int(
@@ -1178,39 +1171,6 @@ async def run_cypher(
 # ---------------------------------------------------------------------------
 
 
-def _build_message_history(
-    history: list[dict[str, Any]],
-    current_message: str,
-) -> list[Any]:
-    cleaned = list(history)
-
-    if cleaned:
-        last = cleaned[-1]
-        if (
-            last.get("role") == "user"
-            and str(last.get("content", "")) == current_message
-        ):
-            cleaned = cleaned[:-1]
-
-    cleaned = cleaned[-_MAX_HISTORY_MESSAGES:]
-    message_history: list[Any] = []
-
-    for message in cleaned:
-        role = message.get("role")
-        content = str(message.get("content", "")).strip()
-        if not content:
-            continue
-
-        if role == "user":
-            message_history.append(
-                ModelRequest(parts=[UserPromptPart(content=content)])
-            )
-        elif role == "assistant":
-            message_history.append(
-                ModelResponse(parts=[TextPart(content=content)])
-            )
-
-    return message_history
 
 
 # ---------------------------------------------------------------------------
@@ -1325,42 +1285,50 @@ def _track_run_end(*, run_id: str, outcome: str, exception: Exception | None = N
 async def _prepare_run(
     message: str,
     session_id: str | None,
+    user_id: str,
     run_id: str = "",
-) -> tuple[str, list[Any]]:
-    resolved_session_id = resolve_session_id(session_id)
+) -> tuple[str, list[Any], str]:
+    resolved_session_id = session_id or str(uuid.uuid4())
     trace = f"[{run_id}]" if run_id else ""
 
-    await store_message(resolved_session_id, "user", message)
-    context = await get_context(resolved_session_id, query=message)
-    history = context.get("messages", [])
+    # Search Mem0 for relevant conversational memories
+    memories = await search_memories(
+        query=message,
+        user_id=user_id,
+        session_id=resolved_session_id,
+        limit=8,
+    )
 
-    message_history = _build_message_history(history, message)
+    memory_prompt = ""
+    if memories:
+        memory_lines = []
+        for item in memories:
+            mem_text = item.get("memory", "")
+            if mem_text:
+                memory_lines.append(f"- {mem_text}")
+        memory_prompt = "Relevant conversational memories:\n" + "\n".join(memory_lines)
+    else:
+        memory_prompt = "No relevant conversational memories were found."
+
+    message_history: list[Any] = []
 
     estimated_history_chars = sum(len(str(item)) for item in message_history)
     logger.info(
-        "PREPARE RUN | run_id=%s | session_id=%s | history_msgs=%d "
+        "PREPARE RUN | run_id=%s | session_id=%s | mem0_results=%d "
         "| current_message_chars=%d | estimated_history_chars=%d | active_runs=%d",
-        run_id, resolved_session_id, len(message_history), len(message),
+        run_id, resolved_session_id, len(memories), len(message),
         estimated_history_chars, len(_active_runs),
     )
-    _log_payload(
-        f"MODEL MESSAGE HISTORY {trace}",
-        [
-            {
-                "type": type(item).__name__,
-                "value": item,
-            }
-            for item in message_history
-        ],
-    )
-    logger.debug("MODEL CURRENT USER MESSAGE %s\n%s", trace, message)
+    _log_payload(f"MEM0 RESULTS {trace}", memories)
+    logger.debug("MEMORY CONTEXT %s\n%s", trace, memory_prompt)
 
-    return resolved_session_id, message_history
+    return resolved_session_id, message_history, memory_prompt
 
 
 async def handle_message(
     message: str,
     session_id: str | None = None,
+    user_id: str = "anonymous",
 ) -> dict[str, Any]:
     """Handle an incoming non-streaming chat message."""
     run_id = _generate_run_id()
@@ -1368,27 +1336,48 @@ async def handle_message(
     handler_token = _CURRENT_HANDLER.set("handle_message")
     _track_run_start(run_id=run_id, handler_name="handle_message", message=message, supplied_session_id=session_id)
     try:
-        resolved_session_id, message_history = await _prepare_run(message, session_id, run_id=run_id)
-        logger.info("MODEL RUN START | run_id=%s | handler=handle_message | session_id=%s", run_id, resolved_session_id)
-        result = await agent.run(message, deps=AgentDeps(session_id=resolved_session_id), message_history=message_history)
-        _log_model_usage(result, run_id)
-        u = result.usage
-        logger.info(
-            "TOKENS | run_id=%s input=%d output=%d total=%d requests=%d tool_calls=%d session=%s",
-            run_id, u.input_tokens, u.output_tokens, u.total_tokens, u.requests, u.tool_calls, resolved_session_id,
+        resolved_session_id, message_history, memory_prompt = await _prepare_run(
+            message, session_id, user_id=user_id, run_id=run_id,
         )
+        logger.info("MODEL RUN START | run_id=%s | handler=handle_message | session_id=%s", run_id, resolved_session_id)
+        effective_message = (
+            "CONVERSATIONAL MEMORY\n"
+            f"{memory_prompt}\n\n"
+            "CURRENT USER REQUEST\n"
+            f"{message}"
+            if memory_prompt
+            else message
+        )
+
+        result = await agent.run(
+            effective_message,
+            deps=AgentDeps(session_id=resolved_session_id, user_id=user_id),
+            message_history=[],
+            model_settings=ModelSettings(
+                temperature=0,
+    ),
+        )
+        _log_model_usage(result, run_id)
+        usage_attr = getattr(result, "usage", None)
+        u = usage_attr() if callable(usage_attr) else usage_attr
+        logger.info("TOKENS | run_id=%s | session=%s | usage=%s", run_id, resolved_session_id, u)
         response_text = result.output or ""
         logger.debug("MODEL FINAL OUTPUT | run_id=%s | session_id=%s\n%s", run_id, resolved_session_id, response_text)
         logger.info("MODEL RUN END | run_id=%s | handler=handle_message | session_id=%s | chars=%s", run_id, resolved_session_id, len(response_text))
         if not response_text.strip():
             response_text = "I could not obtain enough graph evidence to answer the question."
-        assistant_result = await store_message(resolved_session_id, "assistant", response_text)
+        # Save the completed conversation to Mem0
+        await save_conversation_memory(
+            user_id=user_id,
+            session_id=resolved_session_id,
+            user_message=message,
+            assistant_message=response_text,
+        )
         _track_run_end(run_id=run_id, outcome="success")
         return {
-            "response": response_text, "session_id": resolved_session_id,
+            "response": response_text,
+            "session_id": resolved_session_id,
             "graph_data": None,
-            "entities_extracted": (assistant_result or {}).get("entities", []),
-            "preferences_detected": (assistant_result or {}).get("preferences", []),
             "diagnostic_run_id": run_id,
         }
     except Exception as exc:
@@ -1402,6 +1391,7 @@ async def handle_message(
 async def handle_message_stream(
     message: str,
     session_id: str | None = None,
+    user_id: str = "anonymous",
 ) -> dict[str, Any]:
     """Run the full agent loop and then emit the final response."""
     from app.context_graph_client import get_collector
@@ -1410,24 +1400,40 @@ async def handle_message_stream(
     handler_token = _CURRENT_HANDLER.set("handle_message_stream")
     _track_run_start(run_id=run_id, handler_name="handle_message_stream", message=message, supplied_session_id=session_id)
     try:
-        resolved_session_id, message_history = await _prepare_run(message, session_id, run_id=run_id)
+        resolved_session_id, message_history, memory_prompt = await _prepare_run(
+            message, session_id, user_id=user_id, run_id=run_id,
+        )
         collector = get_collector()
         logger.info("MODEL RUN START | run_id=%s | handler=handle_message_stream | session_id=%s", run_id, resolved_session_id)
-        result = await agent.run(message, deps=AgentDeps(session_id=resolved_session_id), message_history=message_history)
-        _log_model_usage(result, run_id)
-        u = result.usage
-        logger.info(
-            "TOKENS | run_id=%s input=%d output=%d total=%d requests=%d tool_calls=%d session=%s",
-            run_id, u.input_tokens, u.output_tokens, u.total_tokens, u.requests, u.tool_calls, resolved_session_id,
+        effective_message = (
+            "CONVERSATIONAL MEMORY\n"
+            f"{memory_prompt}\n\n"
+            "CURRENT USER REQUEST\n"
+            f"{message}"
+            if memory_prompt
+            else message
         )
+
+        result = await agent.run(
+            effective_message,
+            deps=AgentDeps(session_id=resolved_session_id, user_id=user_id),
+            message_history=[],
+        )
+        _log_model_usage(result, run_id)
+        usage_attr = getattr(result, "usage", None)
+        u = usage_attr() if callable(usage_attr) else usage_attr
+        logger.info("TOKENS | run_id=%s | session=%s | usage=%s", run_id, resolved_session_id, u)
         response_text = result.output or ""
         if not response_text.strip():
             response_text = "I could not obtain enough graph evidence to answer the question."
         collector.emit_text_delta(response_text)
-        assistant_result = await store_message(resolved_session_id, "assistant", response_text)
-        if assistant_result:
-            collector.emit_entities_extracted(assistant_result.get("entities", []))
-            collector.emit_preferences_detected(assistant_result.get("preferences", []))
+        # Save the completed conversation to Mem0
+        await save_conversation_memory(
+            user_id=user_id,
+            session_id=resolved_session_id,
+            user_message=message,
+            assistant_message=response_text,
+        )
         collector.emit_done(response_text, resolved_session_id)
         logger.info("MODEL RUN END | run_id=%s | handler=handle_message_stream | session_id=%s | chars=%s", run_id, resolved_session_id, len(response_text))
         _track_run_end(run_id=run_id, outcome="success")
