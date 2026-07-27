@@ -41,6 +41,11 @@ class Settings(BaseSettings):
     mem0_vector_store_provider: str = "pgvector"
     mem0_collection_name: str = "fhir_agent_memories"
 
+    # JWT authentication
+    jwt_secret_key: str = ""
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = 60
+
     # Application
     domain_id: str = "healthcare"
     backend_port: int = 8000
@@ -72,6 +77,10 @@ class Settings(BaseSettings):
         missing = [name for name, value in required.items() if not str(value).strip()]
         if missing:
             raise ValueError(f"Missing required settings: {', '.join(missing)}")
+        if not self.jwt_secret_key.strip():
+            raise ValueError("JWT_SECRET_KEY must not be empty")
+        if self.jwt_access_token_expire_minutes <= 0:
+            raise ValueError("JWT_ACCESS_TOKEN_EXPIRE_MINUTES must be greater than zero")
         if self.internal_embedding_dims <= 0:
             raise ValueError("INTERNAL_EMBEDDING_DIMS must be greater than zero")
         if self.postgres_port <= 0 or self.postgres_port > 65535:
