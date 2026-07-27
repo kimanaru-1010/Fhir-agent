@@ -7,6 +7,7 @@ services:
   postgres:
     image: pgvector/pgvector:pg17
     container_name: fhir-postgres
+    restart: unless-stopped
     environment:
       POSTGRES_DB: fhir_agent
       POSTGRES_USER: postgres
@@ -15,6 +16,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/01-vector.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d fhir_agent"]
       interval: 5s
@@ -25,6 +27,7 @@ services:
     build:
       context: ./backend
       dockerfile: ../Dockerfile.backend
+    restart: unless-stopped
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     volumes:
@@ -45,16 +48,23 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-fhir_agent}
+      MEM0_AGENT_ID: ${MEM0_AGENT_ID:-fhir-clinical-agent}
       MEM0_VECTOR_STORE_PROVIDER: pgvector
       MEM0_COLLECTION_NAME: ${MEM0_COLLECTION_NAME:-fhir_agent_memories}
       CORS_ORIGINS: http://localhost:${FRONTEND_PORT:-3000}
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/fhir_agent
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-60}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
   frontend:
     build:
       context: ./frontend
       dockerfile: ../Dockerfile.frontend
+    restart: unless-stopped
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     volumes:

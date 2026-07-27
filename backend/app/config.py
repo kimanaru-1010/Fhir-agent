@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     postgres_password: str = "postgres"
     postgres_db: str = "fhir_agent"
 
+    # PostgreSQL — SQLAlchemy async connection
+    database_url: str = (
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/fhir_agent"
+    )
+
     # Mem0 conversational memory
     mem0_agent_id: str = "fhir-clinical-agent"
     mem0_vector_store_provider: str = "pgvector"
@@ -59,6 +64,7 @@ class Settings(BaseSettings):
             "POSTGRES_PORT": str(self.postgres_port),
             "POSTGRES_USER": self.postgres_user,
             "POSTGRES_DB": self.postgres_db,
+            "DATABASE_URL": self.database_url,
             "MEM0_VECTOR_STORE_PROVIDER": self.mem0_vector_store_provider,
             "MEM0_COLLECTION_NAME": self.mem0_collection_name,
             "MEM0_AGENT_ID": self.mem0_agent_id,

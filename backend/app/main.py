@@ -103,16 +103,22 @@ app.include_router(router, prefix="/api")
 
 @app.get("/health")
 async def health():
-    """Health check endpoint."""
+    """Return the current status of all required backend services."""
     neo4j_ok = is_connected()
-    services_ok = neo4j_ok
-    status = "ok" if services_ok else "degraded"
+
+    services_ok = (
+        neo4j_ok
+        and _postgres_available
+        and _pgvector_available
+        and _memory_available
+    )
+
     return {
-        "status": status,
+        "status": "ok" if services_ok else "degraded",
         "neo4j": neo4j_ok,
         "postgres": _postgres_available,
         "pgvector": _pgvector_available,
         "memory": "mem0-pgvector" if _memory_available else "disabled",
         "domain": "healthcare",
-        "version": "0.1.0",
+        "version": "0.2.0",
     }

@@ -183,7 +183,8 @@ async def log_memory_snapshot(
         return []
 
     try:
-        raw_snapshot = _get_all_memories_sync(
+        raw_snapshot = await asyncio.to_thread(
+            _get_all_memories_sync,
             mem,
             user_id=user_id,
             session_id=session_id,
@@ -295,8 +296,10 @@ async def search_memories(
             top_k=max(1, min(limit, 20)),
         )
 
-        # mem.search() is synchronous (handles blocking I/O internally).
-        result = mem.search(
+        # Mem0 exposes a synchronous API. Run it in a worker thread so the
+        # FastAPI event loop remains responsive while Mem0 performs blocking I/O.
+        result = await asyncio.to_thread(
+            mem.search,
             query=clean_query,
             filters=filters,
             top_k=max(1, min(limit, 20)),
@@ -381,8 +384,10 @@ async def save_conversation_memory(
             messages=messages,
         )
 
-        # mem.add() is synchronous (handles blocking I/O internally).
-        result = mem.add(
+        # Mem0 exposes a synchronous API. Run it in a worker thread so the
+        # FastAPI event loop remains responsive while Mem0 performs blocking I/O.
+        result = await asyncio.to_thread(
+            mem.add,
             messages,
             user_id=user_id,
             agent_id=settings.mem0_agent_id,
