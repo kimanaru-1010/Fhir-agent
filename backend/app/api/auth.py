@@ -22,7 +22,7 @@ from app.services.auth import (
 )
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
-users_router = APIRouter(tags=["users"])
+users_router = APIRouter(prefix="/users", tags=["users"])
 
 
 @auth_router.post(
@@ -94,11 +94,7 @@ async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
     )
 
 
-@users_router.get(
-    "/me",
-    response_model=UserResponse,
-    dependencies=[Depends(get_current_user)],
-)
+@users_router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)):
     """Return the currently authenticated user."""
     return current_user

@@ -32,6 +32,14 @@ class LoginRequest(BaseModel):
     username: str
     password: str
 
+    @field_validator("username")
+    @classmethod
+    def _trim_username(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("username must not be blank after trimming")
+        return v
+
 
 class UserResponse(BaseModel):
     id: UUID
