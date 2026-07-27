@@ -31,6 +31,9 @@ def test_health():
     assert data["status"] == "ok"
     assert data["domain"] == "healthcare"
     assert "neo4j" in data
+    assert "postgres" in data
+    assert "pgvector" in data
+    assert "memory" in data
 
 
 def test_scenarios():
@@ -40,3 +43,32 @@ def test_scenarios():
     assert "domain" in data
     assert "scenarios" in data
     assert isinstance(data["scenarios"], list)
+
+
+def test_health_with_pgvector_status():
+    """Health should include postgres and pgvector booleans."""
+    from app.main import _postgres_available, _pgvector_available
+
+    response = client.get("/health")
+    data = response.json()
+    assert isinstance(data["postgres"], bool)
+    assert isinstance(data["pgvector"], bool)
+    assert data["memory"] in ("mem0-pgvector", "disabled")
+
+
+def test_health_degraded_when_neo4j_down():
+    """When Neo4j is down, status should be degraded."""
+    with patch("app.main.is_connected", return_value=False):
+        response = client.get("/health")
+    data = response.json()
+    assert data["status"] == "degraded"
+    assert data["neo4j"] is False
+
+
+def test_health_status_ok_when_neo4j_up():
+    """When Neo4j is up, status should be ok."""
+    with patch("app.main.is_connected", return_value=True):
+        response = client.get("/health")
+    data = response.json()
+    assert data["status"] == "ok"
+    assert data["neo4j"] is True

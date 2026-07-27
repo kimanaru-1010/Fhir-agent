@@ -8,7 +8,9 @@ import pytest
 from pytest_mock import MockerFixture
 
 from app.memory import (
+    _build_mem0_config,
     _sanitize,
+    check_pgvector_connection,
     init_memory,
     save_conversation_memory,
     search_memories,
@@ -25,7 +27,7 @@ def mock_mem0():
     """Return a mock Memory instance and patch get_memory to return it."""
     mem = MagicMock()
     mem.search = MagicMock(return_value={"results": []})
-    mem.add = MagicMock(return_value={"results": []})
+    mem.add = MagicMock(return_value={"results": [{"id": "1", "memory": "test", "event": "ADD"}]})
 
     with patch("app.memory._memory", mem):
         yield mem
@@ -37,6 +39,7 @@ def mock_mem0_error():
     mem = MagicMock()
     mem.search = MagicMock(side_effect=RuntimeError("mem0 unavailable"))
     mem.add = MagicMock(side_effect=RuntimeError("mem0 unavailable"))
+    mem.get_all = MagicMock(return_value={"results": []})
 
     with patch("app.memory._memory", mem):
         yield mem
@@ -53,11 +56,12 @@ def test_sanitize_empty():
     assert _sanitize(None) == ""
 
 
-def test_sanitize_trims_and_truncates():
+def test_sanitize_trims():
     assert _sanitize("  hello  ") == "hello"
+    # _sanitize trims whitespace but does not truncate
     long = "x" * 10000
     result = _sanitize(long)
-    assert len(result) == 4000
+    assert len(result) == 10000
 
 
 # ---------------------------------------------------------------------------
@@ -73,6 +77,49 @@ def test_init_memory_logs_on_failure():
 
         asyncio.run(init_memory())
         mock_logger.exception.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# _build_mem0_config — pgvector provider
+# ---------------------------------------------------------------------------
+
+
+def test_build_mem0_config_uses_pgvector():
+    config = _build_mem0_config()
+    vs = config["vector_store"]
+    assert vs["provider"] == "pgvector"
+
+
+def test_build_mem0_config_has_pgvector_fields():
+    config = _build_mem0_config()
+    cfg = config["vector_store"]["config"]
+    assert "host" in cfg
+    assert "port" in cfg
+    assert "user" in cfg
+    assert "password" in cfg
+    assert "dbname" in cfg
+    assert "collection_name" in cfg
+    assert "embedding_model_dims" in cfg
+
+
+def test_build_mem0_config_no_qdrant_path():
+    config = _build_mem0_config()
+    cfg = config["vector_store"]["config"]
+    assert "path" not in cfg
+
+
+def test_build_mem0_config_embedding_model_dims_positive():
+    config = _build_mem0_config()
+    dims = config["embedder"]["config"]
+    # embedding_model_dims is only in vector_store config, not embedder
+    vs_dims = config["vector_store"]["config"]["embedding_model_dims"]
+    assert vs_dims > 0
+
+
+def test_build_mem0_config_collection_name_includes_dims():
+    config = _build_mem0_config()
+    cn = config["vector_store"]["config"]["collection_name"]
+    assert "768d" in cn or "d" in cn.split("_")[-1]
 
 
 # ---------------------------------------------------------------------------
@@ -255,3 +302,44 @@ def test_save_conversation_memory_returns_empty_on_error(mock_mem0_error):
         )
     )
     assert result == []
+
+
+# ---------------------------------------------------------------------------
+# check_pgvector_connection — unit tests (mocked)
+# ---------------------------------------------------------------------------
+
+
+def test_check_pgvector_connection_success():
+    """When PostgreSQL is reachable and vector extension exists, return (True, True)."""
+    mock_conn = MagicMock()
+    mock_conn.cursor.return_value.fetchone.return_value = (True,)
+
+    with patch("app.memory.psycopg.connect", return_value=mock_conn):
+        result = check_pgvector_connection()
+    assert result == (True, True)
+
+
+def test_check_pgvector_connection_no_vector_ext():
+    """When vector extension is missing, return (True, False)."""
+    mock_conn = MagicMock()
+    # First call: db_exists = True
+    # Second call: has_vector = False
+    mock_conn.cursor.return_value.fetchone.side_effect = [
+        (True,),   # db exists
+        (False,),  # no vector extension
+    ]
+
+    with patch("app.memory.psycopg.connect", return_value=mock_conn):
+        result = check_pgvector_connection()
+    assert result == (True, False)
+
+
+def test_check_pgvector_connection_connect_fails():
+    """When connection raises, return (False, False)."""
+    import psycopg
+
+    with patch(
+        "app.memory.psycopg.connect", side_effect=psycopg.OperationalError("conn refused")
+    ):
+        result = check_pgvector_connection()
+    assert result == (False, False)

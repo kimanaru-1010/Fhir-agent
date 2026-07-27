@@ -29,6 +29,7 @@ Thumbs.db
 data/documents/*.json
 data/documents/*.txt
 
-# Mem0 / Qdrant local data
+# Mem0 / pgvector local data
 backend/.mem0/
 .mem0/
+backend/logs/

@@ -1,4 +1,4 @@
-"""Mem0 conversational memory backed by internal OpenAI-compatible APIs.
+"""Mem0 conversational memory backed by PostgreSQL + pgvector.
 
 Neo4j remains the authoritative source of FHIR data. Mem0 stores only
 sanitized user/assistant exchanges and never receives raw tool results.
@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from pathlib import Path
 from typing import Any
 
+import psycopg
 from mem0 import Memory
 
 from app.config import settings
@@ -21,24 +21,71 @@ logger = logging.getLogger(__name__)
 _memory: Memory | None = None
 
 
-def _resolved_qdrant_path() -> str:
-    """Resolve the local Qdrant path consistently from the backend directory."""
-    path = Path(settings.mem0_vector_store_path)
-
-    if not path.is_absolute():
-        backend_dir = Path(__file__).resolve().parents[1]
-        path = backend_dir / path
-
-    path.parent.mkdir(parents=True, exist_ok=True)
-    return str(path.resolve())
-
-
 def _collection_name() -> str:
     """Use a dimension-specific collection to avoid incompatible old vectors."""
     return (
         f"{settings.mem0_collection_name}_"
         f"{settings.internal_embedding_dims}d"
     )
+
+
+def check_pgvector_connection() -> tuple[bool, bool]:
+    """Return (postgres_available, pgvector_extension_enabled)."""
+    try:
+        conn = psycopg.connect(
+            host=settings.postgres_host,
+            port=settings.postgres_port,
+            user=settings.postgres_user,
+            password=settings.postgres_password,
+            dbname="postgres",
+        )
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT EXISTS ("
+            "  SELECT 1 FROM pg_database WHERE datname = %s"
+            ")",
+            (settings.postgres_db,),
+        )
+        db_exists = cur.fetchone()[0]
+        cur.close()
+        conn.close()
+
+        if not db_exists:
+            logger.warning(
+                'Database "%s" does not exist in PostgreSQL.',
+                settings.postgres_db,
+            )
+            return (True, False)
+
+        conn2 = psycopg.connect(
+            host=settings.postgres_host,
+            port=settings.postgres_port,
+            user=settings.postgres_user,
+            password=settings.postgres_password,
+            dbname=settings.postgres_db,
+        )
+        cur2 = conn2.cursor()
+        cur2.execute(
+            "SELECT EXISTS ("
+            "  SELECT 1 FROM pg_extension WHERE extname = 'vector'"
+            ")"
+        )
+        has_vector = cur2.fetchone()[0]
+        cur2.close()
+        conn2.close()
+
+        if not has_vector:
+            logger.warning(
+                'pgvector extension is not enabled for database "%s". '
+                "Run: CREATE EXTENSION IF NOT EXISTS vector;",
+                settings.postgres_db,
+            )
+            return (True, False)
+
+        return (True, True)
+    except Exception:
+        logger.exception("Failed to connect to PostgreSQL/pgvector")
+        return (False, False)
 
 
 def _build_mem0_config() -> dict[str, Any]:
@@ -65,10 +112,14 @@ def _build_mem0_config() -> dict[str, Any]:
             },
         },
         "vector_store": {
-            "provider": settings.mem0_vector_store_provider,
+            "provider": "pgvector",
             "config": {
+                "host": settings.postgres_host,
+                "port": settings.postgres_port,
+                "user": settings.postgres_user,
+                "password": settings.postgres_password,
+                "dbname": settings.postgres_db,
                 "collection_name": _collection_name(),
-                "path": _resolved_qdrant_path(),
                 "embedding_model_dims": settings.internal_embedding_dims,
             },
         },
@@ -91,7 +142,7 @@ def _get_all_memories_sync(
     user_id: str,
     session_id: str,
 ) -> Any:
-    """Read the current Mem0/Qdrant contents for one scoped conversation.
+    """Read the current Mem0/pgvector contents for one scoped conversation.
 
     Mem0 has used more than one get_all signature across releases, so this
     helper tries the current filters form first and then the older keyword form.
@@ -118,12 +169,12 @@ async def log_memory_snapshot(
     session_id: str,
     reason: str,
 ) -> list[dict[str, Any]]:
-    """Log all memory records currently visible in this Mem0/Qdrant scope."""
+    """Log all memory records currently visible in this Mem0/pgvector scope."""
     mem = get_memory()
     if mem is None:
         trace(
             "memory",
-            "qdrant_snapshot_skipped",
+            "pgvector_snapshot_skipped",
             reason=reason,
             detail="Mem0 is not initialized",
             user_id=user_id,
@@ -132,8 +183,7 @@ async def log_memory_snapshot(
         return []
 
     try:
-        raw_snapshot = await asyncio.to_thread(
-            _get_all_memories_sync,
+        raw_snapshot = _get_all_memories_sync(
             mem,
             user_id=user_id,
             session_id=session_id,
@@ -142,7 +192,7 @@ async def log_memory_snapshot(
 
         trace(
             "memory",
-            "qdrant_snapshot",
+            "pgvector_snapshot",
             reason=reason,
             user_id=user_id,
             session_id=session_id,
@@ -154,14 +204,14 @@ async def log_memory_snapshot(
     except Exception as exc:
         trace(
             "memory",
-            "qdrant_snapshot_error",
+            "pgvector_snapshot_error",
             reason=reason,
             user_id=user_id,
             session_id=session_id,
             error_type=type(exc).__name__,
             error=str(exc),
         )
-        logger.warning("Unable to read Mem0/Qdrant snapshot", exc_info=True)
+        logger.warning("Unable to read Mem0/pgvector snapshot", exc_info=True)
         return []
 
 
@@ -175,13 +225,12 @@ async def init_memory() -> bool:
 
         logger.info(
             "Mem0 initialized: llm_model=%s embedding_model=%s "
-            "embedding_dims=%s vector_store=%s collection=%s path=%s",
+            "embedding_dims=%s vector_store=%s collection=%s",
             settings.internal_llm_model,
             settings.internal_embedding_model,
             settings.internal_embedding_dims,
             settings.mem0_vector_store_provider,
             _collection_name(),
-            _resolved_qdrant_path(),
         )
         return True
     except Exception:
@@ -246,8 +295,8 @@ async def search_memories(
             top_k=max(1, min(limit, 20)),
         )
 
-        result = await asyncio.to_thread(
-            mem.search,
+        # mem.search() is synchronous (handles blocking I/O internally).
+        result = mem.search(
             query=clean_query,
             filters=filters,
             top_k=max(1, min(limit, 20)),
@@ -302,7 +351,7 @@ async def save_conversation_memory(
     user_message: str,
     assistant_message: str,
 ) -> list[dict[str, Any]]:
-    """Store one exchange and log both Mem0's result and Qdrant contents."""
+    """Store one exchange and log both Mem0's result and pgvector contents."""
     mem = get_memory()
     clean_user = _sanitize(user_message)
     clean_assistant = _strip_reasoning(_sanitize(assistant_message))
@@ -332,8 +381,8 @@ async def save_conversation_memory(
             messages=messages,
         )
 
-        result = await asyncio.to_thread(
-            mem.add,
+        # mem.add() is synchronous (handles blocking I/O internally).
+        result = mem.add(
             messages,
             user_id=user_id,
             agent_id=settings.mem0_agent_id,
@@ -361,7 +410,7 @@ async def save_conversation_memory(
         )
 
         # Read back the scoped records after writing so the log shows what is
-        # actually visible through Mem0's Qdrant-backed store.
+        # actually visible through Mem0's pgvector-backed store.
         await log_memory_snapshot(
             user_id=user_id,
             session_id=session_id,

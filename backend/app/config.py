@@ -24,10 +24,16 @@ class Settings(BaseSettings):
     internal_embedding_model: str = ""
     internal_embedding_dims: int = 768
 
+    # PostgreSQL — Mem0 pgvector store
+    postgres_host: str = "localhost"
+    postgres_port: int = 5432
+    postgres_user: str = "postgres"
+    postgres_password: str = "postgres"
+    postgres_db: str = "fhir_agent"
+
     # Mem0 conversational memory
     mem0_agent_id: str = "fhir-clinical-agent"
-    mem0_vector_store_provider: str = "qdrant"
-    mem0_vector_store_path: str = ".mem0/qdrant"
+    mem0_vector_store_provider: str = "pgvector"
     mem0_collection_name: str = "fhir_agent_memories"
 
     # Application
@@ -49,14 +55,21 @@ class Settings(BaseSettings):
             "INTERNAL_LLM_MODEL": self.internal_llm_model,
             "INTERNAL_EMBEDDING_BASE_URL": self.internal_embedding_base_url,
             "INTERNAL_EMBEDDING_MODEL": self.internal_embedding_model,
-            "MEM0_AGENT_ID": self.mem0_agent_id,
+            "POSTGRES_HOST": self.postgres_host,
+            "POSTGRES_PORT": str(self.postgres_port),
+            "POSTGRES_USER": self.postgres_user,
+            "POSTGRES_DB": self.postgres_db,
+            "MEM0_VECTOR_STORE_PROVIDER": self.mem0_vector_store_provider,
             "MEM0_COLLECTION_NAME": self.mem0_collection_name,
+            "MEM0_AGENT_ID": self.mem0_agent_id,
         }
         missing = [name for name, value in required.items() if not str(value).strip()]
         if missing:
             raise ValueError(f"Missing required settings: {', '.join(missing)}")
         if self.internal_embedding_dims <= 0:
             raise ValueError("INTERNAL_EMBEDDING_DIMS must be greater than zero")
+        if self.postgres_port <= 0 or self.postgres_port > 65535:
+            raise ValueError("POSTGRES_PORT must be between 1 and 65535")
         return self
 
 

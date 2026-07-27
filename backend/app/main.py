@@ -1,5 +1,6 @@
 """Healthcare Context Graph — FastAPI Application."""
 
+import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -9,19 +10,26 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.context_graph_client import connect_neo4j, close_neo4j, is_connected
-from app.memory import init_memory
+from app.memory import check_pgvector_connection, init_memory
 from app.routes import router
 
 logger = logging.getLogger(__name__)
 
 _neo4j_available: bool = False
 _memory_available: bool = False
+_postgres_available: bool = False
+_pgvector_available: bool = False
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifecycle."""
-    global _neo4j_available, _memory_available
+    global _neo4j_available, _memory_available, _postgres_available, _pgvector_available
+
+    # Check PostgreSQL and pgvector extension first
+    _postgres_available, _pgvector_available = await asyncio.to_thread(
+        check_pgvector_connection
+    )
 
     # Connect to Neo4j (FHIR graph)
     try:
@@ -39,12 +47,19 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.warning("Vector index creation failed (non-fatal): %s", e)
 
-    # Initialise Mem0 conversational memory
-    _memory_available = await init_memory()
-    if _memory_available:
-        logger.info("Mem0 conversational memory initialized")
+    # Initialise Mem0 conversational memory (requires pgvector)
+    if _postgres_available and _pgvector_available:
+        _memory_available = await init_memory()
+        if _memory_available:
+            logger.info("Mem0 conversational memory initialized")
+        else:
+            logger.warning(
+                "Mem0 unavailable; chat will run without conversational memory"
+            )
     else:
-        logger.warning("Mem0 unavailable; chat will run without conversational memory")
+        logger.warning(
+            "PostgreSQL or pgvector unavailable; Mem0 not initialized"
+        )
 
     yield
 
@@ -90,10 +105,14 @@ app.include_router(router, prefix="/api")
 async def health():
     """Health check endpoint."""
     neo4j_ok = is_connected()
+    services_ok = neo4j_ok
+    status = "ok" if services_ok else "degraded"
     return {
-        "status": "ok" if neo4j_ok else "degraded",
+        "status": status,
         "neo4j": neo4j_ok,
-        "memory": "mem0" if _memory_available else "disabled",
+        "postgres": _postgres_available,
+        "pgvector": _pgvector_available,
+        "memory": "mem0-pgvector" if _memory_available else "disabled",
         "domain": "healthcare",
         "version": "0.1.0",
     }
