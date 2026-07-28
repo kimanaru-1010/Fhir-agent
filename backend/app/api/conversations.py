@@ -5,20 +5,28 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.db.models import Conversation, User
+from app.db.models import Conversation, Message, User
 from app.dependencies.auth import get_current_user
 from app.schemas.conversation import (
     ConversationCreateRequest,
+    ConversationCreateResponse,
     ConversationListResponse,
     ConversationResponse,
+    FirstMessageResponse,
 )
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
 logger = logging.getLogger(__name__)
+
+
+def generate_title(first_message: str, max_length: int = 60) -> str:
+    normalized = " ".join(first_message.strip().split())
+    if len(normalized) <= max_length:
+        return normalized
+    return normalized[: max_length - 3].rstrip() + "..."
 
 
 async def _get_owned_conversation(
@@ -44,7 +52,7 @@ async def _get_owned_conversation(
 
 @router.post(
     "",
-    response_model=ConversationResponse,
+    response_model=ConversationCreateResponse,
     status_code=status.HTTP_201_CREATED,
 )
 async def create_conversation(
@@ -52,13 +60,22 @@ async def create_conversation(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Create a new conversation for the authenticated user."""
+    """Create a conversation and persist the first user message."""
     conversation = Conversation(
         user_id=current_user.id,
-        title=req.title,
+        title=generate_title(req.first_message),
     )
-    db.add(conversation)
     try:
+        db.add(conversation)
+        await db.flush()
+
+        message = Message(
+            conversation_id=conversation.id,
+            role="user",
+            content=req.first_message,
+        )
+        db.add(message)
+
         await db.commit()
     except Exception:
         await db.rollback()
@@ -68,7 +85,15 @@ async def create_conversation(
             detail="Internal server error",
         )
     await db.refresh(conversation)
-    return conversation
+    await db.refresh(message)
+    return ConversationCreateResponse(
+        id=conversation.id,
+        user_id=conversation.user_id,
+        title=conversation.title,
+        first_message=FirstMessageResponse.model_validate(message),
+        created_at=conversation.created_at,
+        updated_at=conversation.updated_at,
+    )
 
 
 @router.get(
