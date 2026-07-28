@@ -5,30 +5,18 @@ import pytest
 from unittest.mock import AsyncMock, patch
 from fastapi.testclient import TestClient
 
-# Set placeholder keys before importing app modules so framework agents that
-# validate API keys at module-level (e.g. PydanticAI) don't raise on import.
-# These are never used — no real LLM calls happen in unit tests.
-os.environ.setdefault("ANTHROPIC_API_KEY", "test-placeholder")
-os.environ.setdefault("OPENAI_API_KEY", "test-placeholder")
-os.environ.setdefault("GOOGLE_API_KEY", "test-placeholder")
+os.environ.setdefault("LM_STUDIO_BASE_URL", "http://localhost:1234/v1")
 
 from app.main import app
 
 
 @pytest.fixture(autouse=True)
 def mock_backend():
-    """Mock the memory backend for all tests.
-
-    Patches both the bolt-Neo4j path (connect_neo4j, vector index) and the
-    NAMS path (connect_memory) so a single test file works regardless of
-    which backend the generated project targets.
-    """
+    """Mock Neo4j connection so tests don't need a real database."""
     with patch("app.context_graph_client.connect_neo4j", new_callable=AsyncMock), \
          patch("app.context_graph_client.close_neo4j", new_callable=AsyncMock), \
          patch("app.main.is_connected", return_value=True), \
-         patch("app.main.get_memory_status", return_value=True), \
-         patch("app.memory.connect_memory", new_callable=AsyncMock), \
-         patch("app.memory.close_memory", new_callable=AsyncMock), \
+         patch("app.main.init_memory", new_callable=AsyncMock), \
          patch("app.vector_client.create_vector_index", new_callable=AsyncMock):
         yield
 
@@ -42,7 +30,10 @@ def test_health():
     data = response.json()
     assert data["status"] == "ok"
     assert data["domain"] == "healthcare"
-
+    assert "neo4j" in data
+    assert "postgres" in data
+    assert "pgvector" in data
+    assert "memory" in data
 
 
 def test_scenarios():
@@ -52,3 +43,32 @@ def test_scenarios():
     assert "domain" in data
     assert "scenarios" in data
     assert isinstance(data["scenarios"], list)
+
+
+def test_health_with_pgvector_status():
+    """Health should include postgres and pgvector booleans."""
+    from app.main import _postgres_available, _pgvector_available
+
+    response = client.get("/health")
+    data = response.json()
+    assert isinstance(data["postgres"], bool)
+    assert isinstance(data["pgvector"], bool)
+    assert data["memory"] in ("mem0-pgvector", "disabled")
+
+
+def test_health_degraded_when_neo4j_down():
+    """When Neo4j is down, status should be degraded."""
+    with patch("app.main.is_connected", return_value=False):
+        response = client.get("/health")
+    data = response.json()
+    assert data["status"] == "degraded"
+    assert data["neo4j"] is False
+
+
+def test_health_status_ok_when_neo4j_up():
+    """When Neo4j is up, status should be ok."""
+    with patch("app.main.is_connected", return_value=True):
+        response = client.get("/health")
+    data = response.json()
+    assert data["status"] == "ok"
+    assert data["neo4j"] is True

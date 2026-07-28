@@ -1,325 +1,436 @@
-"""Memory integration — powered by neo4j-agent-memory v0.4+.
+"""Mem0 conversational memory backed by PostgreSQL + pgvector.
 
-Supports two backends, selected by the ``MEMORY_BACKEND`` env var:
-- ``nams`` (default) — hosted Neo4j Agent Memory Service via REST.
-- ``bolt`` — self-hosted Neo4j over the bolt protocol.
-
-LLM and embedding providers are configured via two env vars
-(``MEMORY_LLM`` and ``MEMORY_EMBEDDING``) using LiteLLM-style provider
-strings (e.g. ``anthropic/claude-haiku-4-5``, ``openai/gpt-4o-mini``,
-``bedrock/anthropic.claude-3-haiku-20240307-v1:0``, ``vertex_ai/gemini-1.5-flash``,
-``ollama/llama3``, ``sentence-transformers/all-MiniLM-L6-v2``).
-Native adapters are resolved first; everything else routes through LiteLLM.
+Neo4j remains the authoritative source of FHIR data. Mem0 stores only
+sanitized user/assistant exchanges and never receives raw tool results.
 """
 
 from __future__ import annotations
 
+import asyncio
 import logging
-import uuid
+from typing import Any
+
+import psycopg
+from mem0 import Memory
 
 from app.config import settings
+from app.debug_trace import trace
 
 logger = logging.getLogger(__name__)
 
-_memory = None  # MemoryIntegration | None
-_client = None  # MemoryClient | None
-_error_category: str | None = None  # "auth" | "rate_limit" | "network" | "config" | "unknown"
-_error_detail: str | None = None  # short human-readable detail
+_memory: Memory | None = None
 
 
-# Bucketed error messages shown to the user when NAMS init fails. Keys match
-# _error_category values produced by _classify_memory_error().
-_NAMS_ERROR_MESSAGES = {
-    "auth": (
-        "NAMS authentication failed — verify MEMORY_API_KEY at "
-        "https://memory.neo4jlabs.com (key may be invalid or expired)."
-    ),
-    "rate_limit": (
-        "NAMS rate limit hit — the service is throttling requests. "
-        "Wait a few seconds and retry, or contact Neo4j Labs to raise your quota."
-    ),
-    "network": (
-        "NAMS service unreachable — check your network connection and "
-        "https://status.neo4j.com for service health."
-    ),
-    "config": (
-        "NAMS configuration error — verify MEMORY_API_KEY and "
-        "MEMORY_NAMS_ENDPOINT in your .env."
-    ),
-    "unknown": "NAMS initialization failed — see logs for details.",
-}
-
-
-def _classify_memory_error(exc: BaseException) -> tuple[str, str]:
-    """Bucket a memory-backend exception into (category, short_detail).
-
-    Returns one of: auth, rate_limit, network, config, unknown.
-    Inspection is duck-typed so we don't depend on a specific HTTP client.
-    """
-    # First: explicit status codes from httpx/requests-style exceptions.
-    status = getattr(exc, "status_code", None)
-    if status is None:
-        resp = getattr(exc, "response", None)
-        status = getattr(resp, "status_code", None)
-    if status == 401 or status == 403:
-        return "auth", f"HTTP {status}"
-    if status == 429:
-        return "rate_limit", "HTTP 429"
-    if status is not None and 500 <= status < 600:
-        return "network", f"HTTP {status}"
-
-    # Network-level errors: ConnectionError, TimeoutError, OSError, gaierror.
-    if isinstance(exc, (ConnectionError, TimeoutError)):
-        return "network", type(exc).__name__
-    # OSError covers socket.gaierror and friends without importing socket.
-    if isinstance(exc, OSError):
-        return "network", type(exc).__name__
-
-    # Fall back to scanning the message and exception class name.
-    msg = str(exc).lower()
-    name = type(exc).__name__.lower()
-    if "401" in msg or "403" in msg or "unauthorized" in msg or "forbidden" in msg:
-        return "auth", "auth-error"
-    if "429" in msg or "rate limit" in msg or "too many requests" in msg:
-        return "rate_limit", "rate-limit"
-    if (
-        "timeout" in msg
-        or "connection" in msg
-        or "unreachable" in msg
-        or "dns" in msg
-        or "name resolution" in msg
-        or "connecterror" in name
-    ):
-        return "network", type(exc).__name__
-    if "api_key" in msg or "memory_api_key" in msg or "endpoint" in msg:
-        return "config", type(exc).__name__
-    return "unknown", type(exc).__name__
-
-
-def _resolve_llm_model() -> str | None:
-    """Pick a default LLM provider string when MEMORY_LLM is unset."""
-    if settings.memory_llm:
-        return settings.memory_llm
-    if settings.anthropic_api_key:
-        return "anthropic/claude-haiku-4-5"
-    if settings.openai_api_key:
-        return "openai/gpt-4o-mini"
-    return None
-
-
-def _resolve_embedding_model() -> str | None:
-    """Pick a default embedding provider string when MEMORY_EMBEDDING is unset.
-
-    NAMS manages embeddings server-side; we omit the client-side embedder
-    (and skip pulling sentence-transformers/torch) unless the user has
-    explicitly overridden MEMORY_EMBEDDING.
-    """
-    if settings.memory_embedding:
-        return settings.memory_embedding
-    if settings.memory_backend == "nams":
-        return None
-    # Bolt backend: local-by-default — no API key required.
-    return "sentence-transformers/all-MiniLM-L6-v2"
-
-
-def _build_memory_settings():
-    """Construct a ``MemorySettings`` instance for the active backend."""
-    from neo4j_agent_memory import MemorySettings, NamsConfig
-    from pydantic import SecretStr
-
-    llm_model = _resolve_llm_model()
-    embedding_model = _resolve_embedding_model()
-
-    common: dict = {}
-    if llm_model:
-        common["llm"] = llm_model
-    if embedding_model:
-        common["embedding"] = embedding_model
-
-    if settings.memory_backend == "nams":
-        if not settings.memory_api_key:
-            raise RuntimeError(
-                "MEMORY_BACKEND=nams but MEMORY_API_KEY is not set. "
-                "Set the API key in .env or switch MEMORY_BACKEND=bolt."
-            )
-        return MemorySettings(
-            backend="nams",
-            nams=NamsConfig(
-                api_key=SecretStr(settings.memory_api_key),
-                endpoint=settings.memory_nams_endpoint or "https://memory.neo4jlabs.com/v1",
-            ),
-            **common,
-        )
-
-    return MemorySettings(
-        neo4j={
-            "uri": settings.neo4j_uri,
-            "username": settings.neo4j_username,
-            "password": SecretStr(settings.neo4j_password),
-        },
-        **common,
+def _collection_name() -> str:
+    """Use a dimension-specific collection to avoid incompatible old vectors."""
+    return (
+        f"{settings.mem0_collection_name}_"
+        f"{settings.internal_embedding_dims}d"
     )
 
 
-async def connect_memory() -> None:
-    """Initialize MemoryIntegration. No-ops if the library is unavailable."""
-    global _memory, _client, _error_category, _error_detail
-    _error_category = None
-    _error_detail = None
+def check_pgvector_connection() -> tuple[bool, bool]:
+    """Return (postgres_available, pgvector_extension_enabled)."""
     try:
-        from neo4j_agent_memory import MemoryClient, MemoryIntegration, SessionStrategy
-    except ImportError:
-        logger.info("neo4j-agent-memory not installed — memory disabled")
-        _memory = None
-        _client = None
-        _error_category = "config"
-        _error_detail = "neo4j-agent-memory not installed"
-        return
+        conn = psycopg.connect(
+            host=settings.postgres_host,
+            port=settings.postgres_port,
+            user=settings.postgres_user,
+            password=settings.postgres_password,
+            dbname="postgres",
+        )
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT EXISTS ("
+            "  SELECT 1 FROM pg_database WHERE datname = %s"
+            ")",
+            (settings.postgres_db,),
+        )
+        db_exists = cur.fetchone()[0]
+        cur.close()
+        conn.close()
 
-    strategy_map = {
-        "per_conversation": SessionStrategy.PER_CONVERSATION,
-        "per_day": SessionStrategy.PER_DAY,
-        "persistent": SessionStrategy.PERSISTENT,
+        if not db_exists:
+            logger.warning(
+                'Database "%s" does not exist in PostgreSQL.',
+                settings.postgres_db,
+            )
+            return (True, False)
+
+        conn2 = psycopg.connect(
+            host=settings.postgres_host,
+            port=settings.postgres_port,
+            user=settings.postgres_user,
+            password=settings.postgres_password,
+            dbname=settings.postgres_db,
+        )
+        cur2 = conn2.cursor()
+        cur2.execute(
+            "SELECT EXISTS ("
+            "  SELECT 1 FROM pg_extension WHERE extname = 'vector'"
+            ")"
+        )
+        has_vector = cur2.fetchone()[0]
+        cur2.close()
+        conn2.close()
+
+        if not has_vector:
+            logger.warning(
+                'pgvector extension is not enabled for database "%s". '
+                "Run: CREATE EXTENSION IF NOT EXISTS vector;",
+                settings.postgres_db,
+            )
+            return (True, False)
+
+        return (True, True)
+    except Exception:
+        logger.exception("Failed to connect to PostgreSQL/pgvector")
+        return (False, False)
+
+
+def _build_mem0_config() -> dict[str, Any]:
+    """Build Mem0 configuration for internal OpenAI-compatible services."""
+    return {
+        "llm": {
+            "provider": "openai",
+            "config": {
+                "model": settings.internal_llm_model,
+                "api_key": settings.internal_llm_api_key or "internal",
+                "openai_base_url": settings.internal_llm_base_url,
+                "temperature": 0.1,
+                "max_tokens": 2000,
+            },
+        },
+        "embedder": {
+            "provider": "openai",
+            "config": {
+                "model": settings.internal_embedding_model,
+                "api_key": settings.internal_embedding_api_key or "internal",
+                "openai_base_url": settings.internal_embedding_base_url,
+                # Do not pass embedding_dims here.
+                # BAAI/bge-m3 rejects the OpenAI `dimensions` parameter.
+            },
+        },
+        "vector_store": {
+            "provider": "pgvector",
+            "config": {
+                "host": settings.postgres_host,
+                "port": settings.postgres_port,
+                "user": settings.postgres_user,
+                "password": settings.postgres_password,
+                "dbname": settings.postgres_db,
+                "collection_name": _collection_name(),
+                "embedding_model_dims": settings.internal_embedding_dims,
+            },
+        },
+    }
+
+
+def _normalize_mem0_results(result: Any) -> list[dict[str, Any]]:
+    """Normalize common Mem0 result shapes into a list."""
+    if isinstance(result, dict):
+        values = result.get("results", result.get("memories", []))
+        return values if isinstance(values, list) else []
+    if isinstance(result, list):
+        return result
+    return []
+
+
+def _get_all_memories_sync(
+    mem: Memory,
+    *,
+    user_id: str,
+    session_id: str,
+) -> Any:
+    """Read the current Mem0/pgvector contents for one scoped conversation.
+
+    Mem0 has used more than one get_all signature across releases, so this
+    helper tries the current filters form first and then the older keyword form.
+    """
+    filters = {
+        "user_id": user_id,
+        "agent_id": settings.mem0_agent_id,
+        "run_id": session_id,
     }
 
     try:
-        ms = _build_memory_settings()
-        _client = MemoryClient(ms)
-        await _client.connect()
-        _memory = MemoryIntegration(
-            client=_client,
-            session_strategy=strategy_map.get(
-                settings.session_strategy, SessionStrategy.PER_CONVERSATION
-            ),
-            auto_extract=True,
-            auto_preferences=True,
+        return mem.get_all(filters=filters)
+    except TypeError:
+        return mem.get_all(
+            user_id=user_id,
+            agent_id=settings.mem0_agent_id,
+            run_id=session_id,
         )
-        await _memory.connect()
+
+
+async def log_memory_snapshot(
+    *,
+    user_id: str,
+    session_id: str,
+    reason: str,
+) -> list[dict[str, Any]]:
+    """Log all memory records currently visible in this Mem0/pgvector scope."""
+    mem = get_memory()
+    if mem is None:
+        trace(
+            "memory",
+            "pgvector_snapshot_skipped",
+            reason=reason,
+            detail="Mem0 is not initialized",
+            user_id=user_id,
+            session_id=session_id,
+        )
+        return []
+
+    try:
+        raw_snapshot = await asyncio.to_thread(
+            _get_all_memories_sync,
+            mem,
+            user_id=user_id,
+            session_id=session_id,
+        )
+        normalized = _normalize_mem0_results(raw_snapshot)
+
+        trace(
+            "memory",
+            "pgvector_snapshot",
+            reason=reason,
+            user_id=user_id,
+            session_id=session_id,
+            record_count=len(normalized),
+            raw_result=raw_snapshot,
+            records=normalized,
+        )
+        return normalized
+    except Exception as exc:
+        trace(
+            "memory",
+            "pgvector_snapshot_error",
+            reason=reason,
+            user_id=user_id,
+            session_id=session_id,
+            error_type=type(exc).__name__,
+            error=str(exc),
+        )
+        logger.warning("Unable to read Mem0/pgvector snapshot", exc_info=True)
+        return []
+
+
+async def init_memory() -> bool:
+    """Initialize Mem0 and return whether startup succeeded."""
+    global _memory
+
+    try:
+        config = _build_mem0_config()
+        _memory = await asyncio.to_thread(Memory.from_config, config)
+
         logger.info(
-            "MemoryIntegration connected (backend=%s, strategy=%s, extract=%s, preferences=%s)",
-            settings.memory_backend,
-            settings.session_strategy,
-            True,
-            True,
+            "Mem0 initialized: llm_model=%s embedding_model=%s "
+            "embedding_dims=%s vector_store=%s collection=%s",
+            settings.internal_llm_model,
+            settings.internal_embedding_model,
+            settings.internal_embedding_dims,
+            settings.mem0_vector_store_provider,
+            _collection_name(),
         )
-    except Exception as e:
-        category, detail = _classify_memory_error(e)
-        _error_category = category
-        _error_detail = detail
-        # Log the user-facing message AND the raw exception so operators can
-        # debug without trawling the library internals.
-        if settings.memory_backend == "nams":
-            logger.warning(
-                "%s [%s]: %s",
-                _NAMS_ERROR_MESSAGES.get(category, _NAMS_ERROR_MESSAGES["unknown"]),
-                detail,
-                e,
-            )
-        else:
-            logger.warning("MemoryIntegration init failed [%s/%s]: %s", category, detail, e)
+        return True
+    except Exception:
         _memory = None
-        if _client is not None:
-            try:
-                await _client.close()
-            except Exception:
-                pass
-            _client = None
+        logger.exception(
+            "Failed to initialize Mem0; conversational memory disabled"
+        )
+        return False
 
 
-async def close_memory() -> None:
-    """Shut down MemoryIntegration gracefully."""
-    global _memory, _client, _error_category, _error_detail
-    if _memory is not None:
-        try:
-            await _memory.close()
-        except Exception:
-            pass
-        _memory = None
-    if _client is not None:
-        try:
-            await _client.close()
-        except Exception:
-            pass
-        _client = None
-    _error_category = None
-    _error_detail = None
-
-
-def get_memory():
-    """Get the MemoryIntegration instance (may be None)."""
+def get_memory() -> Memory | None:
+    """Return the initialized Mem0 instance, if available."""
     return _memory
 
 
-def get_client():
-    """Get the underlying MemoryClient (may be None). Used by route adapters."""
-    return _client
+def _sanitize(text: str) -> str:
+    """Apply a conservative size boundary before persistence."""
+    return (text or "").strip()[:]
 
+def _strip_reasoning(text: str) -> str:
+    """Remove model reasoning blocks before saving to Mem0."""
+    text = text or ""
 
-def get_error_category() -> str | None:
-    """Return the last memory init error category, or None on success.
+    if "</think>" in text:
+        text = text.split("</think>", 1)[-1]
 
-    Values: ``auth`` | ``rate_limit`` | ``network`` | ``config`` | ``unknown``.
-    """
-    return _error_category
+    return text.strip()
 
+async def search_memories(
+    *,
+    query: str,
+    user_id: str,
+    session_id: str,
+    limit: int = 8,
+) -> list[dict[str, Any]]:
+    """Search relevant memories and log the full retrieval result."""
+    mem = get_memory()
+    clean_query = _sanitize(query)
 
-def get_error_message() -> str | None:
-    """Return the user-facing message for the last memory init error."""
-    if _error_category is None:
-        return None
-    return _NAMS_ERROR_MESSAGES.get(_error_category, _NAMS_ERROR_MESSAGES["unknown"])
-
-
-def get_error_detail() -> str | None:
-    """Return the short technical detail for the last memory init error."""
-    return _error_detail
-
-
-async def store_message(session_id: str, role: str, content: str) -> dict | None:
-    """Store a message and return extraction results (entities, preferences).
-
-    Catches ``NotSupportedError`` for cases where the active backend (e.g. NAMS)
-    doesn't expose certain extraction sub-features — extracted entities still
-    persist where possible.
-    """
-    if _memory is None:
-        return None
-    try:
-        from neo4j_agent_memory import NotSupportedError
-    except ImportError:
-        NotSupportedError = Exception  # type: ignore[assignment, misc]
-    try:
-        return await _memory.store_message(role, content, session_id=session_id)
-    except NotSupportedError as e:
-        logger.info("Partial store on %s backend: %s", settings.memory_backend, e)
-        return None
-    except Exception as e:
-        logger.warning("Failed to store message: %s", e)
-        return None
-
-
-async def get_context(
-    session_id: str, query: str | None = None, max_items: int = 10
-) -> dict:
-    """Get rich context for a session.
-
-    Returns a dict with keys: messages, entities, preferences, traces.
-    Falls back to empty lists if memory is unavailable.
-    """
-    empty = {"messages": [], "entities": [], "preferences": [], "traces": []}
-    if _memory is None:
-        return empty
-    try:
-        return await _memory.get_context(
-            session_id=session_id, query=query, max_items=max_items
+    if mem is None or not clean_query:
+        trace(
+            "memory",
+            "search_skipped",
+            user_id=user_id,
+            session_id=session_id,
+            reason="Mem0 unavailable or query empty",
         )
-    except Exception as e:
-        logger.warning("Failed to get context: %s", e)
-        return empty
+        return []
+
+    filters = {
+        "user_id": user_id,
+        "agent_id": settings.mem0_agent_id,
+        "run_id": session_id,
+    }
+
+    try:
+        trace(
+            "memory",
+            "search_start",
+            query=clean_query,
+            filters=filters,
+            top_k=max(1, min(limit, 20)),
+        )
+
+        # Mem0 exposes a synchronous API. Run it in a worker thread so the
+        # FastAPI event loop remains responsive while Mem0 performs blocking I/O.
+        result = await asyncio.to_thread(
+            mem.search,
+            query=clean_query,
+            filters=filters,
+            top_k=max(1, min(limit, 20)),
+        )
+
+        # This is the exact object returned by mem.search().
+        trace(
+            "memory",
+            "search_raw_result",
+            query=clean_query,
+            filters=filters,
+            raw_result=result,
+        )
+
+        normalized = _normalize_mem0_results(result)
+
+        trace(
+            "memory",
+            "search_success",
+            query=clean_query,
+            filters=filters,
+            result_count=len(normalized),
+            results=normalized,
+        )
+
+        # Optional full snapshot lets you compare retrieved matches with all
+        # records currently stored for the same user/session.
+        await log_memory_snapshot(
+            user_id=user_id,
+            session_id=session_id,
+            reason="after_search",
+        )
+
+        return normalized
+    except Exception as exc:
+        trace(
+            "memory",
+            "search_error",
+            query=clean_query,
+            filters=filters,
+            error_type=type(exc).__name__,
+            error=str(exc),
+        )
+        logger.warning("Mem0 search failed", exc_info=True)
+        return []
 
 
-def resolve_session_id(hint: str | None = None) -> str:
-    """Resolve session ID based on configured strategy."""
-    if _memory is None:
-        return hint or str(uuid.uuid4())
-    return _memory.resolve_session_id(hint=hint)
+async def save_conversation_memory(
+    *,
+    user_id: str,
+    session_id: str,
+    user_message: str,
+    assistant_message: str,
+) -> list[dict[str, Any]]:
+    """Store one exchange and log both Mem0's result and pgvector contents."""
+    mem = get_memory()
+    clean_user = _sanitize(user_message)
+    clean_assistant = _strip_reasoning(_sanitize(assistant_message))
+
+    if mem is None or not clean_user or not clean_assistant:
+        trace(
+            "memory",
+            "save_skipped",
+            user_id=user_id,
+            session_id=session_id,
+            reason="Mem0 unavailable or message empty",
+        )
+        return []
+
+    messages = [
+        {"role": "user", "content": clean_user},
+        {"role": "assistant", "content": clean_assistant},
+    ]
+
+    try:
+        trace(
+            "memory",
+            "save_start",
+            user_id=user_id,
+            session_id=session_id,
+            agent_id=settings.mem0_agent_id,
+            messages=messages,
+        )
+
+        # Mem0 exposes a synchronous API. Run it in a worker thread so the
+        # FastAPI event loop remains responsive while Mem0 performs blocking I/O.
+        result = await asyncio.to_thread(
+            mem.add,
+            messages,
+            user_id=user_id,
+            agent_id=settings.mem0_agent_id,
+            run_id=session_id,
+        )
+
+        # Exact return value from mem.add(), including ADD/UPDATE/DELETE events.
+        trace(
+            "memory",
+            "save_raw_result",
+            user_id=user_id,
+            session_id=session_id,
+            raw_result=result,
+        )
+
+        normalized = _normalize_mem0_results(result)
+
+        trace(
+            "memory",
+            "save_success",
+            user_id=user_id,
+            session_id=session_id,
+            result_count=len(normalized),
+            results=normalized,
+        )
+
+        # Read back the scoped records after writing so the log shows what is
+        # actually visible through Mem0's pgvector-backed store.
+        await log_memory_snapshot(
+            user_id=user_id,
+            session_id=session_id,
+            reason="after_save",
+        )
+
+        return normalized
+    except Exception as exc:
+        trace(
+            "memory",
+            "save_error",
+            user_id=user_id,
+            session_id=session_id,
+            error_type=type(exc).__name__,
+            error=str(exc),
+        )
+        logger.warning("Mem0 save failed", exc_info=True)
+        return []

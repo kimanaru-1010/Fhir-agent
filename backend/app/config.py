@@ -1,84 +1,90 @@
 """Application configuration from environment variables."""
 
-import logging
-
 from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
-logger = logging.getLogger(__name__)
-
 
 class Settings(BaseSettings):
-    """Application settings loaded from .env file."""
+    """Application settings loaded from ``.env``."""
 
-    # Memory backend: 'nams' (hosted) or 'bolt' (self-hosted Neo4j).
-    # Auto-corrected at runtime by ``_auto_detect_backend`` when the .env
-    # state contradicts the baked default — e.g. user edits .env to swap
-    # backends without updating MEMORY_BACKEND. Explicit env wins always.
-    memory_backend: str = "bolt"
-
-    # NAMS hosted memory service
-    memory_api_key: str = ""
-    memory_nams_endpoint: str = "https://memory.neo4jlabs.com/v1"
-
-    # Self-hosted Neo4j (only used when memory_backend == 'bolt').
-    # Real values live in .env — never bake credentials into source.
+    # Neo4j — authoritative FHIR graph
     neo4j_uri: str = ""
     neo4j_username: str = ""
     neo4j_password: str = ""
 
-    # LiteLLM provider strings for memory layer (optional — sane defaults applied)
-    memory_llm: str = ""
-    memory_embedding: str = ""
+    # Internal OpenAI-compatible chat API used by the main agent and Mem0
+    internal_llm_base_url: str = ""
+    internal_llm_api_key: str = ""
+    internal_llm_model: str = ""
 
-    # LLM provider keys for the agent
-    anthropic_api_key: str = ""
-    openai_api_key: str = ""
+    # Internal OpenAI-compatible embedding API.
+    # It may be the same endpoint as the chat API or a separate service.
+    internal_embedding_base_url: str = ""
+    internal_embedding_api_key: str = ""
+    internal_embedding_model: str = ""
+    internal_embedding_dims: int = 768
+
+    # PostgreSQL — Mem0 pgvector store
+    postgres_host: str = "localhost"
+    postgres_port: int = 5432
+    postgres_user: str = "postgres"
+    postgres_password: str = "postgres"
+    postgres_db: str = "fhir_agent"
+
+    # PostgreSQL — SQLAlchemy async connection
+    database_url: str = (
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/fhir_agent"
+    )
+
+    # Mem0 conversational memory
+    mem0_agent_id: str = "fhir-clinical-agent"
+    mem0_vector_store_provider: str = "pgvector"
+    mem0_collection_name: str = "fhir_agent_memories"
+
+    # JWT authentication
+    jwt_secret_key: str = ""
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = 60
+
+    # Application
     domain_id: str = "healthcare"
-    session_strategy: str = "per_conversation"
     backend_port: int = 8000
     frontend_port: int = 3000
 
-
-
-
-
-
-
-
-
-    model_config = {"env_file": "../.env", "env_file_encoding": "utf-8", "extra": "ignore"}
+    model_config = {
+        "env_file": "../.env",
+        "env_file_encoding": "utf-8",
+        "extra": "ignore",
+    }
 
     @model_validator(mode="after")
-    def _auto_detect_backend(self):
-        """Reconcile memory_backend with credentials present in .env.
-
-        Auto-detect only kicks in when the baked backend can't possibly work:
-        - ``nams`` with no MEMORY_API_KEY but a populated NEO4J_URI → flip to bolt
-        - ``bolt`` with no NEO4J_URI but a populated MEMORY_API_KEY → flip to nams
-
-        If the user explicitly set MEMORY_BACKEND in .env and it disagrees, we
-        respect their choice — pydantic-settings already applied env-over-default
-        precedence, so by the time we get here ``memory_backend`` IS what they
-        asked for. We only auto-correct when the current value is unworkable.
-        """
-        has_key = bool(self.memory_api_key)
-        has_neo4j = bool(self.neo4j_uri)
-
-        if self.memory_backend == "nams" and not has_key and has_neo4j:
-            logger.warning(
-                "MEMORY_BACKEND=nams but MEMORY_API_KEY is empty while "
-                "NEO4J_URI is set — auto-switching to bolt. Set "
-                "MEMORY_BACKEND=nams explicitly in .env to override."
-            )
-            self.memory_backend = "bolt"
-        elif self.memory_backend == "bolt" and not has_neo4j and has_key:
-            logger.warning(
-                "MEMORY_BACKEND=bolt but NEO4J_URI is empty while "
-                "MEMORY_API_KEY is set — auto-switching to nams. Set "
-                "MEMORY_BACKEND=bolt explicitly in .env to override."
-            )
-            self.memory_backend = "nams"
+    def _validate_required_settings(self):
+        required = {
+            "NEO4J_URI": self.neo4j_uri,
+            "INTERNAL_LLM_BASE_URL": self.internal_llm_base_url,
+            "INTERNAL_LLM_MODEL": self.internal_llm_model,
+            "INTERNAL_EMBEDDING_BASE_URL": self.internal_embedding_base_url,
+            "INTERNAL_EMBEDDING_MODEL": self.internal_embedding_model,
+            "POSTGRES_HOST": self.postgres_host,
+            "POSTGRES_PORT": str(self.postgres_port),
+            "POSTGRES_USER": self.postgres_user,
+            "POSTGRES_DB": self.postgres_db,
+            "DATABASE_URL": self.database_url,
+            "MEM0_VECTOR_STORE_PROVIDER": self.mem0_vector_store_provider,
+            "MEM0_COLLECTION_NAME": self.mem0_collection_name,
+            "MEM0_AGENT_ID": self.mem0_agent_id,
+        }
+        missing = [name for name, value in required.items() if not str(value).strip()]
+        if missing:
+            raise ValueError(f"Missing required settings: {', '.join(missing)}")
+        if not self.jwt_secret_key.strip():
+            raise ValueError("JWT_SECRET_KEY must not be empty")
+        if self.jwt_access_token_expire_minutes <= 0:
+            raise ValueError("JWT_ACCESS_TOKEN_EXPIRE_MINUTES must be greater than zero")
+        if self.internal_embedding_dims <= 0:
+            raise ValueError("INTERNAL_EMBEDDING_DIMS must be greater than zero")
+        if self.postgres_port <= 0 or self.postgres_port > 65535:
+            raise ValueError("POSTGRES_PORT must be between 1 and 65535")
         return self
 
 

@@ -13,9 +13,9 @@
   "dependencies": {
     "@chakra-ui/react": "^3.32.0",
     "@emotion/react": "^11.14.0",
-    "lucide-react": "^0.563.0",
-    "@neo4j-nvl/react": "^1.1.0",
     "@neo4j-nvl/base": "^1.1.0",
+    "@neo4j-nvl/react": "^1.1.0",
+    "lucide-react": "^0.563.0",
     "neo4j-driver": "^6.0.1",
     "next": "^15.3.0",
     "react": "^19.0.0",
@@ -30,7 +30,7 @@
     "@types/react-dom": "^19.0.0",
     "eslint": "^9.0.0",
     "eslint-config-next": "^15.3.0",
-    "typescript": "^5.7.0"
+    "typescript": "5.8.2"
   },
   "overrides": {
     "lodash": "^4.17.24",

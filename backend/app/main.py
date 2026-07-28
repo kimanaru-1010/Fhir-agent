@@ -1,5 +1,6 @@
 """Healthcare Context Graph — FastAPI Application."""
 
+import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -9,83 +10,77 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.context_graph_client import connect_neo4j, close_neo4j, is_connected
-from app.memory import (
-    close_memory,
-    connect_memory,
-    get_client,
-    get_error_category,
-    get_error_detail,
-    get_error_message,
-)
+from app.memory import check_pgvector_connection, init_memory
 from app.routes import router
+
+# Auth routes
+from app.api.auth import auth_router, users_router
+from app.api.conversations import router as conversations_router
+from app.api.messages import router as messages_router
 
 logger = logging.getLogger(__name__)
 
-# Backend connection state
-_neo4j_available = False
-_memory_available = False
+_neo4j_available: bool = False
+_memory_available: bool = False
+_postgres_available: bool = False
+_pgvector_available: bool = False
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Manage application lifecycle.
+    """Manage application lifecycle."""
+    global _neo4j_available, _memory_available, _postgres_available, _pgvector_available
 
-    On the NAMS backend, we only initialize the memory client — there is no
-    bolt Neo4j to connect to. On the self-hosted bolt backend, we connect to
-    Neo4j (which in turn initializes the memory integration).
-    """
-    global _neo4j_available, _memory_available
+    # Check PostgreSQL and pgvector extension first
+    _postgres_available, _pgvector_available = await asyncio.to_thread(
+        check_pgvector_connection
+    )
 
-    if settings.memory_backend == "nams":
+    # Connect to Neo4j (FHIR graph)
+    try:
+        await connect_neo4j()
+        _neo4j_available = True
+        logger.info("Neo4j connected successfully")
+    except Exception as e:
+        _neo4j_available = False
+        logger.warning("Neo4j unavailable — starting in degraded mode: %s", e)
+
+    if _neo4j_available:
         try:
-            await connect_memory()
-            _memory_available = get_client() is not None
-            if _memory_available:
-                logger.info("NAMS memory client connected")
-            else:
-                # connect_memory() already logged the classified error.
-                # Re-state it here so the startup banner is self-contained.
-                msg = get_error_message() or "NAMS memory client unavailable"
-                logger.warning("Starting in degraded mode: %s", msg)
+            from app.vector_client import create_vector_index
+            await create_vector_index()
         except Exception as e:
-            _memory_available = False
-            logger.warning("NAMS unavailable — starting in degraded mode: %s", e)
+            logger.warning("Vector index creation failed (non-fatal): %s", e)
+
+    # Initialise Mem0 conversational memory (requires pgvector)
+    if _postgres_available and _pgvector_available:
+        _memory_available = await init_memory()
+        if _memory_available:
+            logger.info("Mem0 conversational memory initialized")
+        else:
+            logger.warning(
+                "Mem0 unavailable; chat will run without conversational memory"
+            )
     else:
-        try:
-            await connect_neo4j()
-            _neo4j_available = True
-            _memory_available = True
-            logger.info("Neo4j connected successfully")
-        except Exception as e:
-            _neo4j_available = False
-            _memory_available = False
-            logger.warning("Neo4j unavailable — starting in degraded mode: %s", e)
-
-        if _neo4j_available:
-            try:
-                from app.vector_client import create_vector_index
-                await create_vector_index()
-            except Exception as e:
-                logger.warning("Vector index creation failed (non-fatal): %s", e)
+        logger.warning(
+            "PostgreSQL or pgvector unavailable; Mem0 not initialized"
+        )
 
     yield
 
-    if settings.memory_backend == "nams":
-        if _memory_available:
-            await close_memory()
-    else:
-        if _neo4j_available:
-            await close_neo4j()
+    if _neo4j_available:
+        await close_neo4j()
 
 
 def get_neo4j_status() -> bool:
-    """Check if Neo4j is available (bolt backend only)."""
+    """Check if Neo4j is available."""
     return _neo4j_available
 
 
 def get_memory_status() -> bool:
-    """Check if the memory backend is available."""
+    """Check if Mem0 is available."""
     return _memory_available
+
 
 app = FastAPI(
     title="Healthcare Context Graph",
@@ -109,33 +104,30 @@ app.add_middleware(
 )
 
 app.include_router(router, prefix="/api")
+app.include_router(auth_router, prefix="/api")
+app.include_router(users_router, prefix="/api")
+app.include_router(conversations_router, prefix="/api")
+app.include_router(messages_router, prefix="/api")
 
 
 @app.get("/health")
 async def health():
-    """Health check endpoint with memory backend connectivity status."""
-    if settings.memory_backend == "nams":
-        memory_ok = get_memory_status()
-        body = {
-            "status": "ok" if memory_ok else "degraded",
-            "memory_backend": "nams",
-            "nams": memory_ok,
-            "domain": "healthcare",
-            "version": "0.1.0",
-        }
-        if not memory_ok:
-            category = get_error_category()
-            if category:
-                body["nams_error"] = category
-                body["nams_error_message"] = get_error_message()
-                body["nams_error_detail"] = get_error_detail()
-            body["nams_dashboard"] = "https://memory.neo4jlabs.com"
-        return body
+    """Return the current status of all required backend services."""
     neo4j_ok = is_connected()
+
+    services_ok = (
+        neo4j_ok
+        and _postgres_available
+        and _pgvector_available
+        and _memory_available
+    )
+
     return {
-        "status": "ok" if neo4j_ok else "degraded",
-        "memory_backend": "bolt",
+        "status": "ok" if services_ok else "degraded",
         "neo4j": neo4j_ok,
+        "postgres": _postgres_available,
+        "pgvector": _pgvector_available,
+        "memory": "mem0-pgvector" if _memory_available else "disabled",
         "domain": "healthcare",
-        "version": "0.1.0",
+        "version": "0.2.0",
     }
