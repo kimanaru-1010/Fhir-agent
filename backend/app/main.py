@@ -15,6 +15,7 @@ from app.routes import router
 
 # Auth routes
 from app.api.auth import auth_router, users_router
+from app.api.conversations import router as conversations_router
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +105,7 @@ app.add_middleware(
 app.include_router(router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
 app.include_router(users_router, prefix="/api")
+app.include_router(conversations_router, prefix="/api")
 
 
 @app.get("/health")

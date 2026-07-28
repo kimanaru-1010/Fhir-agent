@@ -1,9 +1,10 @@
 """Conversation CRUD API — protected by JWT authentication."""
 
+import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,6 +19,7 @@ from app.schemas.conversation import (
 )
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
+logger = logging.getLogger(__name__)
 
 
 async def _get_owned_conversation(
@@ -61,7 +63,11 @@ async def create_conversation(
         await db.commit()
     except Exception:
         await db.rollback()
-        raise
+        logger.exception("Failed to create conversation for user_id=%s", current_user.id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )
     await db.refresh(conversation)
     return conversation
 
@@ -77,12 +83,11 @@ async def list_conversations(
     current_user: User = Depends(get_current_user),
 ):
     """List conversations owned by the authenticated user."""
-    # Count total
-    count_stmt = select(Conversation).where(
+    count_stmt = select(func.count()).select_from(Conversation).where(
         Conversation.user_id == current_user.id,
     )
     count_result = await db.execute(count_stmt)
-    total = len(count_result.scalars().all())
+    total = count_result.scalar_one()
 
     # Fetch page
     result = await db.execute(
@@ -131,7 +136,15 @@ async def update_conversation(
         await db.commit()
     except Exception:
         await db.rollback()
-        raise
+        logger.exception(
+            "Failed to update conversation_id=%s for user_id=%s",
+            conversation_id,
+            current_user.id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )
     await db.refresh(conversation)
     return conversation
 
@@ -149,10 +162,18 @@ async def delete_conversation(
     conversation = await _get_owned_conversation(
         db, conversation_id, current_user.id
     )
-    db.delete(conversation)
     try:
+        await db.delete(conversation)
         await db.commit()
     except Exception:
         await db.rollback()
-        raise
+        logger.exception(
+            "Failed to delete conversation_id=%s for user_id=%s",
+            conversation_id,
+            current_user.id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )
     return None
