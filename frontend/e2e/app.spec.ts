@@ -1,13 +1,35 @@
 import { test, expect } from "@playwright/test";
+import type { APIRequestContext, Page } from "@playwright/test";
 
 const BASE_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 const API_URL = process.env.API_URL || "http://localhost:8000";
 
 // Timeout for LLM responses — these can be slow
 const CHAT_TIMEOUT = 120_000;
+const TEST_PASSWORD = "password123";
+
+async function authenticatePage(page: Page, request: APIRequestContext, testTitle: string) {
+  const username = `e2e_${testTitle.replace(/[^a-z0-9]+/gi, "_").slice(0, 40)}_${Date.now()}`;
+  await request.post(`${API_URL}/api/auth/register`, {
+    data: { username, password: TEST_PASSWORD },
+  });
+  const res = await request.post(`${API_URL}/api/auth/login`, {
+    data: { username, password: TEST_PASSWORD },
+  });
+  expect(res.ok()).toBeTruthy();
+  const body = await res.json();
+  await page.addInitScript(({ token, user }) => {
+    localStorage.setItem("fhir-agent-access-token", token);
+    localStorage.setItem("fhir-agent-user", JSON.stringify(user));
+  }, {
+    token: body.access_token,
+    user: body.user,
+  });
+}
 
 test.describe("Healthcare Context Graph", () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, request }, testInfo) => {
+    await authenticatePage(page, request, testInfo.title);
     await page.goto(BASE_URL);
   });
 

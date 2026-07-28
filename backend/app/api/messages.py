@@ -9,6 +9,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.responses import StreamingResponse
 
 from app.database import get_db
 from app.db.models import Conversation, Message, User
@@ -20,6 +21,10 @@ from app.schemas.message import (
     MessageResponse,
 )
 from app.services.chat import generate_assistant_response, persist_chat_memory
+from app.services.chat_stream import (
+    serialize_message,
+    stream_persisted_exchange,
+)
 
 router = APIRouter(
     prefix="/conversations/{conversation_id}/messages",
@@ -46,6 +51,29 @@ async def get_owned_conversation(
             detail="Conversation not found",
         )
     return conversation
+
+
+async def create_user_message(
+    *,
+    db: AsyncSession,
+    conversation: Conversation,
+    content: str,
+) -> Message:
+    user_message = Message(
+        conversation_id=conversation.id,
+        role="user",
+        content=content,
+    )
+    try:
+        db.add(user_message)
+        conversation.updated_at = datetime.now(timezone.utc)
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        raise
+    await db.refresh(user_message)
+    await db.refresh(conversation)
+    return user_message
 
 
 @router.get(
@@ -161,4 +189,59 @@ async def create_message(
         conversation_id=conversation.id,
         user_message=MessageResponse.model_validate(user_message),
         assistant_message=MessageResponse.model_validate(assistant_message),
+    )
+
+
+@router.post("/stream")
+async def create_message_stream(
+    conversation_id: UUID,
+    req: MessageCreateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    conversation = await get_owned_conversation(
+        db,
+        conversation_id,
+        current_user.id,
+    )
+    try:
+        user_message = await create_user_message(
+            db=db,
+            conversation=conversation,
+            content=req.content,
+        )
+    except Exception:
+        logger.exception(
+            "Failed to persist stream user message for conversation_id=%s user_id=%s",
+            conversation_id,
+            current_user.id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to process message",
+        )
+
+    user_message_payload = serialize_message(user_message)
+
+    async def event_generator():
+        async for event in stream_persisted_exchange(
+            conversation_id=conversation.id,
+            user_id=current_user.id,
+            user_message_id=user_message.id,
+            content=req.content,
+            start_event="message_started",
+            start_payload={
+                "conversation_id": str(conversation.id),
+                "user_message": user_message_payload,
+            },
+        ):
+            yield event
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
     )

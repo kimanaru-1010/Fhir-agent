@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import json as _json
 import logging
 import threading
+from dataclasses import dataclass, field
 
 from neo4j import AsyncGraphDatabase, AsyncDriver
 from neo4j.graph import Node, Relationship, Path
@@ -22,6 +24,19 @@ _connected: bool = False
 # chat endpoint can attach them as graph_data without modifying agent templates.
 # ---------------------------------------------------------------------------
 
+@dataclass
+class _CollectorState:
+    results: list[dict] = field(default_factory=list)
+    tool_calls: list[dict] = field(default_factory=list)
+    event_queue: asyncio.Queue | None = None
+    loop: asyncio.AbstractEventLoop | None = None
+
+
+_collector_state: contextvars.ContextVar[_CollectorState | None] = (
+    contextvars.ContextVar("collector_state", default=None)
+)
+
+
 class CypherResultCollector:
     """Collects Cypher query results for downstream graph visualization.
 
@@ -31,25 +46,28 @@ class CypherResultCollector:
     """
 
     def __init__(self):
-        self.results: list[dict] = []
-        self.tool_calls: list[dict] = []
-        self._event_queue: asyncio.Queue | None = None
-        self._loop: asyncio.AbstractEventLoop | None = None
+        self._global_state = _CollectorState()
+
+    def _state(self) -> _CollectorState:
+        return _collector_state.get() or self._global_state
 
     # -- event queue management ------------------------------------------------
 
-    def set_event_queue(self, queue: asyncio.Queue) -> None:
+    def set_event_queue(self, queue: asyncio.Queue) -> contextvars.Token:
         """Attach an asyncio.Queue for SSE streaming."""
-        self._event_queue = queue
+        state = _CollectorState(event_queue=queue)
         try:
-            self._loop = asyncio.get_running_loop()
+            state.loop = asyncio.get_running_loop()
         except RuntimeError:
-            self._loop = None
+            state.loop = None
+        return _collector_state.set(state)
 
-    def clear_event_queue(self) -> None:
+    def clear_event_queue(self, token: contextvars.Token | None = None) -> None:
         """Detach the event queue."""
-        self._event_queue = None
-        self._loop = None
+        if token is not None:
+            _collector_state.reset(token)
+        else:
+            _collector_state.set(None)
 
     def _push_event(self, event: str, data: dict) -> None:
         """Push an SSE event to the queue if one is attached.
@@ -58,19 +76,20 @@ class CypherResultCollector:
         running via ``asyncio.to_thread``), uses ``call_soon_threadsafe`` to
         schedule the put on the event loop's thread.
         """
-        if self._event_queue is None:
+        state = self._state()
+        if state.event_queue is None:
             return
         payload = {"event": event, "data": data}
         try:
-            loop = self._loop
+            loop = state.loop
             if loop is not None and loop.is_running():
                 # Detect whether we are on the event-loop thread or a worker.
                 loop_thread = getattr(loop, "_thread_id", None)
                 current_tid = threading.current_thread().ident
                 if loop_thread is not None and current_tid != loop_thread:
-                    loop.call_soon_threadsafe(self._event_queue.put_nowait, payload)
+                    loop.call_soon_threadsafe(state.event_queue.put_nowait, payload)
                     return
-            self._event_queue.put_nowait(payload)
+            state.event_queue.put_nowait(payload)
         except RuntimeError:
             pass  # loop closed or queue full — best effort
 
@@ -101,10 +120,11 @@ class CypherResultCollector:
     # -- existing collection methods -------------------------------------------
 
     def collect(self, records: list[dict]) -> None:
-        self.results.extend(records)
+        self._state().results.extend(records)
 
     def collect_tool_call(self, name: str, inputs: dict, output_preview: str = "") -> None:
-        self.tool_calls.append({
+        state = self._state()
+        state.tool_calls.append({
             "name": name,
             "inputs": inputs,
             "output_preview": output_preview[:500],
@@ -114,17 +134,19 @@ class CypherResultCollector:
             "name": name,
             "inputs": inputs,
             "output_preview": output_preview[:500],
-            "graph_data": {"results": list(self.results)},
+            "graph_data": {"results": list(state.results)},
         })
 
     def drain(self) -> list[dict]:
-        results = list(self.results)
-        self.results.clear()
+        state = self._state()
+        results = list(state.results)
+        state.results.clear()
         return results
 
     def drain_tool_calls(self) -> list[dict]:
-        calls = list(self.tool_calls)
-        self.tool_calls.clear()
+        state = self._state()
+        calls = list(state.tool_calls)
+        state.tool_calls.clear()
         return calls
 
 
