@@ -8,7 +8,7 @@ from uuid import UUID, uuid4
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import IntegrityError
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.db.models import Conversation, Message, User
 
@@ -161,39 +161,83 @@ def _configure_execute_calls(
 # ===========================================================================
 
 
+def _post_create_conversation(
+    client: TestClient,
+    payload: dict,
+    *,
+    agent_response: str = "Assistant answer",
+):
+    agent = AsyncMock(return_value=agent_response)
+    memory = AsyncMock()
+    with (
+        patch("app.api.conversations.generate_assistant_response", agent),
+        patch("app.api.conversations.persist_chat_memory", memory),
+    ):
+        response = client.post("/api/conversations", json=payload)
+    return response, agent, memory
+
+
 def test_create_conversation_success():
     user = _make_user(id=uuid4(), username="create_user")
     app, mock_session, mock_result = _make_test_app(current_user=user)
     client = TestClient(app)
-    first_message = "Cho tôi thông tin bệnh nhân Nguyễn Văn A"
+    first_message = "Cho toi thong tin benh nhan Nguyen Van A"
+    assistant_text = "Thong tin benh nhan Nguyen Van A gom..."
 
-    resp = client.post(
-        "/api/conversations",
-        json={"first_message": first_message},
+    resp, agent, memory = _post_create_conversation(
+        client,
+        {"first_message": first_message},
+        agent_response=assistant_text,
     )
+
     assert resp.status_code == 201
     data = resp.json()
-    assert "id" in data
-    assert "user_id" in data
-    assert data["title"] == first_message
-    assert data["first_message"]["role"] == "user"
-    assert data["first_message"]["content"] == first_message
-    assert data["first_message"]["conversation_id"] == data["id"]
+    assert "conversation" in data
+    assert "user_message" in data
+    assert "assistant_message" in data
+    assert data["conversation"]["title"] == first_message
+    assert data["user_message"]["role"] == "user"
+    assert data["assistant_message"]["role"] == "assistant"
+    assert data["user_message"]["content"] == first_message
+    assert data["assistant_message"]["content"] == assistant_text
+    assert data["user_message"]["conversation_id"] == data["conversation"]["id"]
+    assert data["assistant_message"]["conversation_id"] == data["conversation"]["id"]
+
+    conversation_obj, user_message_obj, assistant_message_obj = [
+        call.args[0] for call in mock_session.add.call_args_list
+    ]
+    assert isinstance(conversation_obj, Conversation)
+    assert isinstance(user_message_obj, Message)
+    assert isinstance(assistant_message_obj, Message)
+    assert user_message_obj.role == "user"
+    assert assistant_message_obj.role == "assistant"
+    agent.assert_awaited_once_with(
+        content=first_message,
+        user_id=str(user.id),
+        conversation_id=str(conversation_obj.id),
+    )
+    memory.assert_awaited_once_with(
+        user_id=str(user.id),
+        conversation_id=str(conversation_obj.id),
+        user_message=first_message,
+        assistant_message=assistant_text,
+    )
+    mock_session.commit.assert_awaited_once()
 
 
 def test_create_conversation_generates_title_from_first_message():
     user = _make_user()
     app, _, _ = _make_test_app(current_user=user)
     client = TestClient(app)
+    first_message = "Cho toi thong tin benh nhan Nguyen Van A"
 
-    first_message = "Cho tôi thông tin bệnh nhân Nguyễn Văn A"
-
-    resp = client.post(
-        "/api/conversations",
-        json={"first_message": first_message},
+    resp, _, _ = _post_create_conversation(
+        client,
+        {"first_message": first_message},
     )
+
     assert resp.status_code == 201
-    assert resp.json()["title"] == first_message
+    assert resp.json()["conversation"]["title"] == first_message
 
 
 def test_create_conversation_normalizes_title_whitespace():
@@ -201,29 +245,30 @@ def test_create_conversation_normalizes_title_whitespace():
     app, _, _ = _make_test_app(current_user=user)
     client = TestClient(app)
 
-    resp = client.post(
-        "/api/conversations",
-        json={"first_message": "  Cho tôi   thông tin bệnh nhân A  "},
+    resp, _, _ = _post_create_conversation(
+        client,
+        {"first_message": "  Cho toi   thong tin benh nhan A  "},
     )
+
     assert resp.status_code == 201
     data = resp.json()
-    assert data["title"] == "Cho tôi thông tin bệnh nhân A"
-    assert data["first_message"]["content"] == "Cho tôi   thông tin bệnh nhân A"
+    assert data["conversation"]["title"] == "Cho toi thong tin benh nhan A"
+    assert data["user_message"]["content"] == "Cho toi   thong tin benh nhan A"
 
 
 def test_create_conversation_long_title_truncated():
     user = _make_user()
     app, _, _ = _make_test_app(current_user=user)
     client = TestClient(app)
-
     first_message = "a" * 80
 
-    resp = client.post(
-        "/api/conversations",
-        json={"first_message": first_message},
+    resp, _, _ = _post_create_conversation(
+        client,
+        {"first_message": first_message},
     )
+
     assert resp.status_code == 201
-    title = resp.json()["title"]
+    title = resp.json()["conversation"]["title"]
     assert len(title) <= 60
     assert title.endswith("...")
 
@@ -234,15 +279,13 @@ def test_create_conversation_uses_current_user_id():
     app, mock_session, mock_result = _make_test_app(current_user=user)
     client = TestClient(app)
 
-    resp = client.post(
-        "/api/conversations",
-        json={"first_message": "Should be linked to current user"},
+    resp, _, _ = _post_create_conversation(
+        client,
+        {"first_message": "Should be linked to current user"},
     )
-    assert resp.status_code == 201
 
-    # Verify the Conversation was created with the current user's id
-    call_args = mock_session.add.call_args_list[0]
-    conversation_obj = call_args.args[0]
+    assert resp.status_code == 201
+    conversation_obj = mock_session.add.call_args_list[0].args[0]
     assert conversation_obj.user_id == user.id
 
 
@@ -293,23 +336,29 @@ def test_create_conversation_first_message_too_long():
     assert resp.status_code == 422
 
 
-def test_create_conversation_adds_conversation_and_message():
+def test_create_conversation_adds_conversation_and_two_messages():
     user = _make_user()
     app, mock_session, mock_result = _make_test_app(current_user=user)
     client = TestClient(app)
     first_message = "Hello"
 
-    resp = client.post("/api/conversations", json={"first_message": first_message})
+    resp, _, _ = _post_create_conversation(
+        client,
+        {"first_message": first_message},
+    )
     assert resp.status_code == 201
 
     added_objects = [call.args[0] for call in mock_session.add.call_args_list]
-    assert len(added_objects) == 2
-    conversation_obj, message_obj = added_objects
+    assert len(added_objects) == 3
+    conversation_obj, user_message_obj, assistant_message_obj = added_objects
     assert isinstance(conversation_obj, Conversation)
-    assert isinstance(message_obj, Message)
-    assert message_obj.conversation_id == conversation_obj.id
-    assert message_obj.role == "user"
-    assert message_obj.content == first_message
+    assert isinstance(user_message_obj, Message)
+    assert isinstance(assistant_message_obj, Message)
+    assert user_message_obj.conversation_id == conversation_obj.id
+    assert user_message_obj.role == "user"
+    assert user_message_obj.content == first_message
+    assert assistant_message_obj.conversation_id == conversation_obj.id
+    assert assistant_message_obj.role == "assistant"
 
 
 def test_create_conversation_flushes_before_commit():
@@ -317,14 +366,14 @@ def test_create_conversation_flushes_before_commit():
     app, mock_session, mock_result = _make_test_app(current_user=user)
     client = TestClient(app)
 
-    resp = client.post("/api/conversations", json={"first_message": "Hello"})
+    resp, _, _ = _post_create_conversation(client, {"first_message": "Hello"})
     assert resp.status_code == 201
-    mock_session.flush.assert_awaited_once()
+    assert mock_session.flush.await_count == 2
     mock_session.commit.assert_awaited_once()
 
 
 def test_create_conversation_commit_error():
-    """Commit fails → rollback → re-raise."""
+    """Commit fails -> rollback -> no memory save."""
     user = _make_user()
     app, mock_session, mock_result = _make_test_app(current_user=user)
     client = TestClient(app)
@@ -334,14 +383,22 @@ def test_create_conversation_commit_error():
             statement=None, params=None, orig=Exception("duplicate"),
         ),
     )
+    agent = AsyncMock(return_value="Answer")
+    memory = AsyncMock()
 
-    resp = client.post("/api/conversations", json={"first_message": "Should fail"})
+    with (
+        patch("app.api.conversations.generate_assistant_response", agent),
+        patch("app.api.conversations.persist_chat_memory", memory),
+    ):
+        resp = client.post("/api/conversations", json={"first_message": "Should fail"})
+
     assert resp.status_code == 500
     mock_session.rollback.assert_awaited_once()
+    memory.assert_not_awaited()
 
 
 def test_create_conversation_flush_error():
-    """Flush fails -> rollback -> 500."""
+    """Flush fails -> rollback -> no agent or memory call."""
     user = _make_user()
     app, mock_session, mock_result = _make_test_app(current_user=user)
     client = TestClient(app)
@@ -351,11 +408,59 @@ def test_create_conversation_flush_error():
             statement=None, params=None, orig=Exception("constraint"),
         ),
     )
+    agent = AsyncMock(return_value="Answer")
+    memory = AsyncMock()
 
-    resp = client.post("/api/conversations", json={"first_message": "Should fail"})
+    with (
+        patch("app.api.conversations.generate_assistant_response", agent),
+        patch("app.api.conversations.persist_chat_memory", memory),
+    ):
+        resp = client.post("/api/conversations", json={"first_message": "Should fail"})
+
     assert resp.status_code == 500
     mock_session.rollback.assert_awaited_once()
+    agent.assert_not_awaited()
+    memory.assert_not_awaited()
 
+
+def test_create_conversation_agent_error_rolls_back():
+    user = _make_user()
+    app, mock_session, mock_result = _make_test_app(current_user=user)
+    client = TestClient(app)
+    agent = AsyncMock(side_effect=RuntimeError("agent failed"))
+    memory = AsyncMock()
+
+    with (
+        patch("app.api.conversations.generate_assistant_response", agent),
+        patch("app.api.conversations.persist_chat_memory", memory),
+    ):
+        resp = client.post("/api/conversations", json={"first_message": "Hello"})
+
+    assert resp.status_code == 500
+    assert resp.json()["detail"] == "Unable to create conversation"
+    mock_session.rollback.assert_awaited_once()
+    mock_session.commit.assert_not_awaited()
+    memory.assert_not_awaited()
+
+
+def test_create_conversation_memory_error_after_commit_still_returns_201():
+    user = _make_user()
+    app, mock_session, mock_result = _make_test_app(current_user=user)
+    client = TestClient(app)
+    agent = AsyncMock(return_value="Assistant answer")
+    memory = AsyncMock(side_effect=RuntimeError("mem0 failed"))
+
+    with (
+        patch("app.api.conversations.generate_assistant_response", agent),
+        patch("app.api.conversations.persist_chat_memory", memory),
+    ):
+        resp = client.post("/api/conversations", json={"first_message": "Hello"})
+
+    assert resp.status_code == 201
+    assert resp.json()["assistant_message"]["content"] == "Assistant answer"
+    mock_session.rollback.assert_not_awaited()
+    mock_session.commit.assert_awaited_once()
+    assert "mem0 failed" not in resp.text
 
 # ===========================================================================
 # List tests

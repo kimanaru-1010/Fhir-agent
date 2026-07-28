@@ -5,6 +5,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.schemas.message import MessageResponse
+
 
 class ConversationCreateRequest(BaseModel):
     first_message: str = Field(
@@ -23,27 +25,6 @@ class ConversationCreateRequest(BaseModel):
         return value
 
 
-class FirstMessageResponse(BaseModel):
-    id: UUID
-    conversation_id: UUID
-    role: str
-    content: str
-    created_at: datetime
-
-    model_config = {"from_attributes": True}
-
-
-class ConversationCreateResponse(BaseModel):
-    id: UUID
-    user_id: UUID
-    title: str
-    first_message: FirstMessageResponse
-    created_at: datetime
-    updated_at: datetime
-
-    model_config = {"from_attributes": True}
-
-
 class ConversationResponse(BaseModel):
     id: UUID
     user_id: UUID
@@ -57,3 +38,9 @@ class ConversationResponse(BaseModel):
 class ConversationListResponse(BaseModel):
     items: list[ConversationResponse]
     total: int
+
+
+class ConversationInitialExchangeResponse(BaseModel):
+    conversation: ConversationResponse
+    user_message: MessageResponse
+    assistant_message: MessageResponse

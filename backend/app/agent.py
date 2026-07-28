@@ -1325,21 +1325,30 @@ async def _prepare_run(
     return resolved_session_id, message_history, memory_prompt
 
 
-async def handle_message(
+async def generate_agent_response(
     message: str,
     session_id: str | None = None,
     user_id: str = "anonymous",
 ) -> dict[str, Any]:
-    """Handle an incoming non-streaming chat message."""
+    """Generate a non-streaming agent response without persisting memory."""
     run_id = _generate_run_id()
     run_token = _CURRENT_RUN_ID.set(run_id)
-    handler_token = _CURRENT_HANDLER.set("handle_message")
-    _track_run_start(run_id=run_id, handler_name="handle_message", message=message, supplied_session_id=session_id)
+    handler_token = _CURRENT_HANDLER.set("generate_agent_response")
+    _track_run_start(
+        run_id=run_id,
+        handler_name="generate_agent_response",
+        message=message,
+        supplied_session_id=session_id,
+    )
     try:
         resolved_session_id, message_history, memory_prompt = await _prepare_run(
             message, session_id, user_id=user_id, run_id=run_id,
         )
-        logger.info("MODEL RUN START | run_id=%s | handler=handle_message | session_id=%s", run_id, resolved_session_id)
+        logger.info(
+            "MODEL RUN START | run_id=%s | handler=generate_agent_response | session_id=%s",
+            run_id,
+            resolved_session_id,
+        )
         effective_message = (
             "CONVERSATIONAL MEMORY\n"
             f"{memory_prompt}\n\n"
@@ -1363,16 +1372,14 @@ async def handle_message(
         logger.info("TOKENS | run_id=%s | session=%s | usage=%s", run_id, resolved_session_id, u)
         response_text = result.output or ""
         logger.debug("MODEL FINAL OUTPUT | run_id=%s | session_id=%s\n%s", run_id, resolved_session_id, response_text)
-        logger.info("MODEL RUN END | run_id=%s | handler=handle_message | session_id=%s | chars=%s", run_id, resolved_session_id, len(response_text))
+        logger.info(
+            "MODEL RUN END | run_id=%s | handler=generate_agent_response | session_id=%s | chars=%s",
+            run_id,
+            resolved_session_id,
+            len(response_text),
+        )
         if not response_text.strip():
             response_text = "I could not obtain enough graph evidence to answer the question."
-        # Save the completed conversation to Mem0
-        await save_conversation_memory(
-            user_id=user_id,
-            session_id=resolved_session_id,
-            user_message=message,
-            assistant_message=response_text,
-        )
         _track_run_end(run_id=run_id, outcome="success")
         return {
             "response": response_text,
@@ -1386,6 +1393,26 @@ async def handle_message(
     finally:
         _CURRENT_HANDLER.reset(handler_token)
         _CURRENT_RUN_ID.reset(run_token)
+
+
+async def handle_message(
+    message: str,
+    session_id: str | None = None,
+    user_id: str = "anonymous",
+) -> dict[str, Any]:
+    """Handle an incoming non-streaming chat message and persist memory."""
+    result = await generate_agent_response(
+        message,
+        session_id=session_id,
+        user_id=user_id,
+    )
+    await save_conversation_memory(
+        user_id=user_id,
+        session_id=result["session_id"],
+        user_message=message,
+        assistant_message=result["response"],
+    )
+    return result
 
 
 async def handle_message_stream(

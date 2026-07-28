@@ -1,6 +1,7 @@
 """Conversation CRUD API — protected by JWT authentication."""
 
 import logging
+from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -12,11 +13,12 @@ from app.db.models import Conversation, Message, User
 from app.dependencies.auth import get_current_user
 from app.schemas.conversation import (
     ConversationCreateRequest,
-    ConversationCreateResponse,
+    ConversationInitialExchangeResponse,
     ConversationListResponse,
     ConversationResponse,
-    FirstMessageResponse,
 )
+from app.schemas.message import MessageResponse
+from app.services.chat import generate_assistant_response, persist_chat_memory
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
 logger = logging.getLogger(__name__)
@@ -52,7 +54,7 @@ async def _get_owned_conversation(
 
 @router.post(
     "",
-    response_model=ConversationCreateResponse,
+    response_model=ConversationInitialExchangeResponse,
     status_code=status.HTTP_201_CREATED,
 )
 async def create_conversation(
@@ -60,7 +62,7 @@ async def create_conversation(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Create a conversation and persist the first user message."""
+    """Create a conversation and persist the initial message exchange."""
     conversation = Conversation(
         user_id=current_user.id,
         title=generate_title(req.first_message),
@@ -74,25 +76,55 @@ async def create_conversation(
             role="user",
             content=req.first_message,
         )
-        db.add(message)
+        user_message = message
+        db.add(user_message)
+        await db.flush()
+
+        assistant_content = await generate_assistant_response(
+            content=req.first_message,
+            user_id=str(current_user.id),
+            conversation_id=str(conversation.id),
+        )
+        assistant_message = Message(
+            conversation_id=conversation.id,
+            role="assistant",
+            content=assistant_content,
+        )
+        db.add(assistant_message)
+        conversation.updated_at = datetime.now(timezone.utc)
 
         await db.commit()
     except Exception:
         await db.rollback()
-        logger.exception("Failed to create conversation for user_id=%s", current_user.id)
+        logger.exception(
+            "Failed to create conversation with initial exchange for user_id=%s",
+            current_user.id,
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error",
+            detail="Unable to create conversation",
         )
     await db.refresh(conversation)
-    await db.refresh(message)
-    return ConversationCreateResponse(
-        id=conversation.id,
-        user_id=conversation.user_id,
-        title=conversation.title,
-        first_message=FirstMessageResponse.model_validate(message),
-        created_at=conversation.created_at,
-        updated_at=conversation.updated_at,
+    await db.refresh(user_message)
+    await db.refresh(assistant_message)
+
+    try:
+        await persist_chat_memory(
+            user_id=str(current_user.id),
+            conversation_id=str(conversation.id),
+            user_message=req.first_message,
+            assistant_message=assistant_content,
+        )
+    except Exception:
+        logger.exception(
+            "Failed to persist memory for conversation_id=%s",
+            conversation.id,
+        )
+
+    return ConversationInitialExchangeResponse(
+        conversation=ConversationResponse.model_validate(conversation),
+        user_message=MessageResponse.model_validate(user_message),
+        assistant_message=MessageResponse.model_validate(assistant_message),
     )
 
 

@@ -4,14 +4,12 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.agent import handle_message
 from app.database import get_db
 from app.db.models import Conversation, Message, User
 from app.dependencies.auth import get_current_user
@@ -21,6 +19,7 @@ from app.schemas.message import (
     MessageListResponse,
     MessageResponse,
 )
+from app.services.chat import generate_assistant_response, persist_chat_memory
 
 router = APIRouter(
     prefix="/conversations/{conversation_id}/messages",
@@ -47,41 +46,6 @@ async def get_owned_conversation(
             detail="Conversation not found",
         )
     return conversation
-
-
-async def run_agent_for_message(
-    *,
-    content: str,
-    user_id: str,
-    conversation_id: str,
-) -> str:
-    result = await handle_message(
-        content,
-        session_id=conversation_id,
-        user_id=user_id,
-    )
-    assistant_content = _extract_agent_text(result)
-    if not assistant_content.strip():
-        raise RuntimeError("Agent returned an empty response")
-    return assistant_content
-
-
-def _extract_agent_text(result: Any) -> str:
-    if result is None:
-        return ""
-    if isinstance(result, str):
-        return result
-    if isinstance(result, dict):
-        for key in ("response", "content", "message", "text", "output"):
-            value = result.get(key)
-            if value is not None:
-                return str(value)
-        return str(result)
-    for attr in ("response", "content", "message", "text", "output"):
-        value = getattr(result, attr, None)
-        if value is not None:
-            return str(value)
-    return str(result)
 
 
 @router.get(
@@ -147,7 +111,7 @@ async def create_message(
         db.add(user_message)
         await db.flush()
 
-        assistant_content = await run_agent_for_message(
+        assistant_content = await generate_assistant_response(
             content=req.content,
             user_id=str(current_user.id),
             conversation_id=str(conversation.id),
@@ -179,6 +143,19 @@ async def create_message(
     await db.refresh(user_message)
     await db.refresh(assistant_message)
     await db.refresh(conversation)
+
+    try:
+        await persist_chat_memory(
+            user_id=str(current_user.id),
+            conversation_id=str(conversation.id),
+            user_message=req.content,
+            assistant_message=assistant_content,
+        )
+    except Exception:
+        logger.exception(
+            "Failed to persist memory for conversation_id=%s",
+            conversation.id,
+        )
 
     return MessageExchangeResponse(
         conversation_id=conversation.id,

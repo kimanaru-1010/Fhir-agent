@@ -245,8 +245,12 @@ def test_create_message_success():
     app, mock_session, _ = _make_test_app(current_user=user)
     _configure_execute_results(mock_session, [_result(scalar_one_or_none=conv)])
     agent = AsyncMock(return_value="Assistant answer")
+    memory = AsyncMock()
 
-    with patch("app.api.messages.run_agent_for_message", agent):
+    with (
+        patch("app.api.messages.generate_assistant_response", agent),
+        patch("app.api.messages.persist_chat_memory", memory),
+    ):
         resp = TestClient(app).post(
             f"/api/conversations/{conv.id}/messages",
             json={"content": "  User question  "},
@@ -268,6 +272,12 @@ def test_create_message_success():
     )
     mock_session.flush.assert_awaited_once()
     mock_session.commit.assert_awaited_once()
+    memory.assert_awaited_once_with(
+        user_id=str(user.id),
+        conversation_id=str(conv.id),
+        user_message="User question",
+        assistant_message="Assistant answer",
+    )
     assert conv.updated_at is not None
 
     added = [call.args[0] for call in mock_session.add.call_args_list]
@@ -299,8 +309,12 @@ def test_create_message_other_user_returns_404_and_does_not_call_agent():
     app, mock_session, _ = _make_test_app(current_user=user)
     _configure_execute_results(mock_session, [_result(scalar_one_or_none=None)])
     agent = AsyncMock(return_value="Assistant answer")
+    memory = AsyncMock()
 
-    with patch("app.api.messages.run_agent_for_message", agent):
+    with (
+        patch("app.api.messages.generate_assistant_response", agent),
+        patch("app.api.messages.persist_chat_memory", memory),
+    ):
         resp = TestClient(app).post(
             f"/api/conversations/{uuid4()}/messages",
             json={"content": "Hello"},
@@ -308,6 +322,7 @@ def test_create_message_other_user_returns_404_and_does_not_call_agent():
 
     assert resp.status_code == 404
     agent.assert_not_awaited()
+    memory.assert_not_awaited()
 
 
 def test_create_message_agent_error_rolls_back():
@@ -316,8 +331,12 @@ def test_create_message_agent_error_rolls_back():
     app, mock_session, _ = _make_test_app(current_user=user)
     _configure_execute_results(mock_session, [_result(scalar_one_or_none=conv)])
     agent = AsyncMock(side_effect=RuntimeError("agent exploded"))
+    memory = AsyncMock()
 
-    with patch("app.api.messages.run_agent_for_message", agent):
+    with (
+        patch("app.api.messages.generate_assistant_response", agent),
+        patch("app.api.messages.persist_chat_memory", memory),
+    ):
         resp = TestClient(app).post(
             f"/api/conversations/{conv.id}/messages",
             json={"content": "Hello"},
@@ -327,6 +346,7 @@ def test_create_message_agent_error_rolls_back():
     assert resp.json()["detail"] == "Unable to process message"
     mock_session.rollback.assert_awaited_once()
     mock_session.commit.assert_not_awaited()
+    memory.assert_not_awaited()
     added = [call.args[0] for call in mock_session.add.call_args_list]
     assert len(added) == 1
     assert added[0].role == "user"
@@ -338,7 +358,11 @@ def test_create_message_empty_agent_response_rolls_back():
     app, mock_session, _ = _make_test_app(current_user=user)
     _configure_execute_results(mock_session, [_result(scalar_one_or_none=conv)])
 
-    with patch("app.api.messages.run_agent_for_message", AsyncMock(return_value="")):
+    memory = AsyncMock()
+    with (
+        patch("app.api.messages.generate_assistant_response", AsyncMock(return_value="")),
+        patch("app.api.messages.persist_chat_memory", memory),
+    ):
         resp = TestClient(app).post(
             f"/api/conversations/{conv.id}/messages",
             json={"content": "Hello"},
@@ -347,6 +371,7 @@ def test_create_message_empty_agent_response_rolls_back():
     assert resp.status_code == 500
     mock_session.rollback.assert_awaited_once()
     mock_session.commit.assert_not_awaited()
+    memory.assert_not_awaited()
 
 
 def test_create_message_none_agent_response_rolls_back():
@@ -355,7 +380,11 @@ def test_create_message_none_agent_response_rolls_back():
     app, mock_session, _ = _make_test_app(current_user=user)
     _configure_execute_results(mock_session, [_result(scalar_one_or_none=conv)])
 
-    with patch("app.api.messages.run_agent_for_message", AsyncMock(return_value=None)):
+    memory = AsyncMock()
+    with (
+        patch("app.api.messages.generate_assistant_response", AsyncMock(return_value=None)),
+        patch("app.api.messages.persist_chat_memory", memory),
+    ):
         resp = TestClient(app).post(
             f"/api/conversations/{conv.id}/messages",
             json={"content": "Hello"},
@@ -364,6 +393,7 @@ def test_create_message_none_agent_response_rolls_back():
     assert resp.status_code == 500
     mock_session.rollback.assert_awaited_once()
     mock_session.commit.assert_not_awaited()
+    memory.assert_not_awaited()
 
 
 def test_create_message_flush_error_rolls_back():
@@ -379,7 +409,11 @@ def test_create_message_flush_error_rolls_back():
         )
     )
 
-    with patch("app.api.messages.run_agent_for_message", AsyncMock(return_value="Answer")):
+    memory = AsyncMock()
+    with (
+        patch("app.api.messages.generate_assistant_response", AsyncMock(return_value="Answer")),
+        patch("app.api.messages.persist_chat_memory", memory),
+    ):
         resp = TestClient(app).post(
             f"/api/conversations/{conv.id}/messages",
             json={"content": "Hello"},
@@ -387,6 +421,7 @@ def test_create_message_flush_error_rolls_back():
 
     assert resp.status_code == 500
     mock_session.rollback.assert_awaited_once()
+    memory.assert_not_awaited()
 
 
 def test_create_message_commit_error_rolls_back():
@@ -402,7 +437,11 @@ def test_create_message_commit_error_rolls_back():
         )
     )
 
-    with patch("app.api.messages.run_agent_for_message", AsyncMock(return_value="Answer")):
+    memory = AsyncMock()
+    with (
+        patch("app.api.messages.generate_assistant_response", AsyncMock(return_value="Answer")),
+        patch("app.api.messages.persist_chat_memory", memory),
+    ):
         resp = TestClient(app).post(
             f"/api/conversations/{conv.id}/messages",
             json={"content": "Hello"},
@@ -410,6 +449,30 @@ def test_create_message_commit_error_rolls_back():
 
     assert resp.status_code == 500
     mock_session.rollback.assert_awaited_once()
+    memory.assert_not_awaited()
+
+
+def test_create_message_memory_error_after_commit_still_returns_201():
+    user = _make_user()
+    conv = _make_conversation(user_id=user.id)
+    app, mock_session, _ = _make_test_app(current_user=user)
+    _configure_execute_results(mock_session, [_result(scalar_one_or_none=conv)])
+    memory = AsyncMock(side_effect=RuntimeError("mem0 failed"))
+
+    with (
+        patch("app.api.messages.generate_assistant_response", AsyncMock(return_value="Answer")),
+        patch("app.api.messages.persist_chat_memory", memory),
+    ):
+        resp = TestClient(app).post(
+            f"/api/conversations/{conv.id}/messages",
+            json={"content": "Hello"},
+        )
+
+    assert resp.status_code == 201
+    assert resp.json()["assistant_message"]["content"] == "Answer"
+    mock_session.rollback.assert_not_awaited()
+    mock_session.commit.assert_awaited_once()
+    assert "mem0 failed" not in resp.text
 
 
 def test_message_routes_registered_without_patch_or_delete():
