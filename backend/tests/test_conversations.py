@@ -2,14 +2,11 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 
-import pytest
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from pydantic import BaseModel
-from pytest_mock import MockerFixture
 from sqlalchemy.exc import IntegrityError
 from unittest.mock import AsyncMock, MagicMock
 
@@ -45,7 +42,16 @@ def _build_mock_session() -> tuple[MagicMock, MagicMock]:
     mock_session.delete = AsyncMock()
     mock_session.commit = AsyncMock()
     mock_session.rollback = AsyncMock()
-    mock_session.refresh = AsyncMock()
+    async def _refresh(obj):
+        now = datetime.now(timezone.utc)
+        if getattr(obj, "id", None) is None:
+            obj.id = uuid4()
+        if getattr(obj, "created_at", None) is None:
+            obj.created_at = now
+        if getattr(obj, "updated_at", None) is None:
+            obj.updated_at = now
+
+    mock_session.refresh = AsyncMock(side_effect=_refresh)
 
     return mock_session, mock_result
 
@@ -147,7 +153,7 @@ def _configure_execute_calls(
 # ===========================================================================
 
 
-def test_create_conversation_success(mocker: MockerFixture):
+def test_create_conversation_success():
     user = _make_user(id=uuid4(), username="create_user")
     app, mock_session, mock_result = _make_test_app(current_user=user)
     client = TestClient(app)
@@ -163,7 +169,7 @@ def test_create_conversation_success(mocker: MockerFixture):
     assert "user_id" in data
 
 
-def test_create_conversation_uses_current_user_id(mocker: MockerFixture):
+def test_create_conversation_uses_current_user_id():
     """user_id comes from JWT, not from request body."""
     user = _make_user(id=uuid4(), username="id_user")
     app, mock_session, mock_result = _make_test_app(current_user=user)
@@ -193,7 +199,7 @@ def test_create_conversation_title_trimmed():
     assert data["title"] == "trimmed title"
 
 
-def test_create_conversation_empty_title(mocker: MockerFixture):
+def test_create_conversation_empty_title():
     app, _, _ = _make_test_app()
     client = TestClient(app)
 
@@ -210,7 +216,7 @@ def test_create_conversation_title_too_long():
     assert resp.status_code == 422
 
 
-def test_create_conversation_default_title(mocker: MockerFixture):
+def test_create_conversation_default_title():
     user = _make_user()
     app, mock_session, mock_result = _make_test_app(current_user=user)
     client = TestClient(app)
@@ -220,7 +226,7 @@ def test_create_conversation_default_title(mocker: MockerFixture):
     assert resp.json()["title"] == "New conversation"
 
 
-def test_create_conversation_commit_error(mocker: MockerFixture):
+def test_create_conversation_commit_error():
     """Commit fails → rollback → re-raise."""
     user = _make_user()
     app, mock_session, mock_result = _make_test_app(current_user=user)
@@ -310,6 +316,8 @@ def test_list_conversations_sorted_by_updated_at_desc():
 
     later = _make_conversation(id=uuid4(), user_id=user.id)
     earlier = _make_conversation(id=uuid4(), user_id=user.id)
+    earlier.updated_at = datetime.now(timezone.utc)
+    later.updated_at = earlier.updated_at + timedelta(seconds=1)
 
     # Order in response should be desc
     mock_result.scalar_one.return_value = 1
@@ -377,93 +385,6 @@ def test_get_conversation_invalid_uuid():
     client = TestClient(app)
     resp = client.get("/api/conversations/not-a-uuid")
     assert resp.status_code == 422
-
-
-# ===========================================================================
-# Update tests
-# ===========================================================================
-
-
-def test_update_conversation_success():
-    user = _make_user()
-    app, mock_session, mock_result = _make_test_app(current_user=user)
-    client = TestClient(app)
-
-    conv = _make_conversation(id=uuid4(), user_id=user.id, title="Old title")
-
-    mock_result.scalar_one_or_none.return_value = conv
-    mock_session.refresh = AsyncMock()
-    mock_session.commit = AsyncMock()
-
-    resp = client.patch(
-        f"/api/conversations/{conv.id}",
-        json={"title": "New title"},
-    )
-    assert resp.status_code == 200
-    assert resp.json()["title"] == "New title"
-
-
-def test_update_conversation_trims_title():
-    user = _make_user()
-    app, mock_session, mock_result = _make_test_app(current_user=user)
-    client = TestClient(app)
-
-    conv = _make_conversation(id=uuid4(), user_id=user.id, title="Old")
-
-    mock_result.scalar_one_or_none.return_value = conv
-    mock_session.refresh = AsyncMock()
-    mock_session.commit = AsyncMock()
-
-    resp = client.patch(
-        f"/api/conversations/{conv.id}",
-        json={"title": "  padded  "},
-    )
-    assert resp.status_code == 200
-    assert resp.json()["title"] == "padded"
-
-
-def test_update_conversation_empty_title():
-    app, _, _ = _make_test_app()
-    client = TestClient(app)
-    resp = client.patch("/api/conversations/some-id", json={"title": "  "})
-    assert resp.status_code == 422
-
-
-def test_update_conversation_other_user():
-    """User B cannot update user A's conversation."""
-    user_b = _make_user(id=uuid4(), username="bob")
-    app, mock_session, mock_result = _make_test_app(current_user=user_b)
-    client = TestClient(app)
-
-    mock_result.scalar_one_or_none.return_value = None  # query filters by bob
-
-    fake_id = uuid4()
-
-    resp = client.patch(f"/api/conversations/{fake_id}", json={"title": "Hacked"})
-    assert resp.status_code == 404
-
-
-def test_update_conversation_commit_error():
-    user = _make_user()
-    app, mock_session, mock_result = _make_test_app(current_user=user)
-    client = TestClient(app)
-
-    conv = _make_conversation(id=uuid4(), user_id=user.id)
-
-    mock_result.scalar_one_or_none.return_value = conv
-    mock_session.commit = AsyncMock(
-        side_effect=IntegrityError(
-            statement=None, params=None, orig=Exception("fail"),
-        ),
-    )
-    mock_session.refresh = AsyncMock()
-
-    resp = client.patch(
-        f"/api/conversations/{conv.id}",
-        json={"title": "Broken"},
-    )
-    assert resp.status_code == 500
-    mock_session.rollback.assert_awaited_once()
 
 
 # ===========================================================================
@@ -540,17 +461,11 @@ def test_delete_conversation_commit_error():
 
 def test_security_no_user_id_in_request():
     """No endpoint accepts user_id from client to override ownership."""
-    from app.api.conversations import router as conversations_router
-    from app.schemas.conversation import (
-        ConversationCreateRequest,
-        ConversationUpdateRequest,
-    )
+    from app.schemas.conversation import ConversationCreateRequest
 
-    # Check request schemas don't expose user_id
+    # Check request schema doesn't expose user_id
     create_fields = ConversationCreateRequest.model_fields
-    update_fields = ConversationUpdateRequest.model_fields
     assert "user_id" not in create_fields
-    assert "user_id" not in update_fields
 
 
 def test_security_user_a_cannot_see_user_b_conversation():
@@ -565,20 +480,6 @@ def test_security_user_a_cannot_see_user_b_conversation():
     mock_result.scalar_one_or_none.return_value = None  # alice can't see bob's
 
     resp = client.get(f"/api/conversations/{conv.id}")
-    assert resp.status_code == 404
-
-
-def test_security_user_a_cannot_update_user_b_conversation():
-    user_a = _make_user(id=uuid4(), username="alice")
-    app, mock_session, mock_result = _make_test_app(current_user=user_a)
-    client = TestClient(app)
-
-    user_b = _make_user(id=uuid4(), username="bob")
-    conv = _make_conversation(id=uuid4(), user_id=user_b.id)
-
-    mock_result.scalar_one_or_none.return_value = None
-
-    resp = client.patch(f"/api/conversations/{conv.id}", json={"title": "Hacked"})
     assert resp.status_code == 404
 
 

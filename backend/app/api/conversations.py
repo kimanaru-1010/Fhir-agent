@@ -15,7 +15,6 @@ from app.schemas.conversation import (
     ConversationCreateRequest,
     ConversationListResponse,
     ConversationResponse,
-    ConversationUpdateRequest,
 )
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
@@ -115,38 +114,6 @@ async def get_conversation(
 ):
     """Get a single conversation owned by the authenticated user."""
     return await _get_owned_conversation(db, conversation_id, current_user.id)
-
-
-@router.patch(
-    "/{conversation_id}",
-    response_model=ConversationResponse,
-)
-async def update_conversation(
-    conversation_id: UUID,
-    req: ConversationUpdateRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """Update the title of a conversation owned by the authenticated user."""
-    conversation = await _get_owned_conversation(
-        db, conversation_id, current_user.id
-    )
-    conversation.title = req.title
-    try:
-        await db.commit()
-    except Exception:
-        await db.rollback()
-        logger.exception(
-            "Failed to update conversation_id=%s for user_id=%s",
-            conversation_id,
-            current_user.id,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error",
-        )
-    await db.refresh(conversation)
-    return conversation
 
 
 @router.delete(

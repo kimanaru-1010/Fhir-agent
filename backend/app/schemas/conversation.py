@@ -22,21 +22,6 @@ class ConversationCreateRequest(BaseModel):
         return value
 
 
-class ConversationUpdateRequest(BaseModel):
-    title: str = Field(
-        min_length=1,
-        max_length=200,
-    )
-
-    @field_validator("title")
-    @classmethod
-    def trim_title(cls, value: str) -> str:
-        value = value.strip()
-        if not value:
-            raise ValueError("title must not be blank")
-        return value
-
-
 class ConversationResponse(BaseModel):
     id: UUID
     user_id: UUID
