@@ -1,10 +1,1637 @@
-2026-07-28 06:52:10,404 | WARNING | REQUEST DIAGNOSTIC | event=handler_entry | run_id=8812698abada | handler=generate_agent_response | process_id=1377 | task_id=138603516441216 | supplied_session_id=e3d1dae3-f7c7-4b0d-831f-ba2e693a1479 | message_fingerprint=81f10c39c771889d | active_runs=1 | duplicate_candidates=[]
-2026-07-28 06:52:10,429 | DEBUG | REQUEST CALL STACK | run_id=8812698abada | subprocess_started@_subprocess.py:80 <- run@server.py:74 <- run@runners.py:195 <- run@runners.py:118 <- generate_assistant_response@chat.py:17 <- generate_agent_response@agent.py:1337
-2026-07-28 06:52:18,578 | WARNING | REQUEST DIAGNOSTIC | event=handler_entry | run_id=0726b1711309 | handler=generate_agent_response | process_id=1377 | task_id=138602955220416 | supplied_session_id=773f0eab-d118-4505-b514-064a8d1ed1c6 | message_fingerprint=8e9ab29a786199bf | active_runs=2 | duplicate_candidates=[]
-2026-07-28 06:52:18,584 | DEBUG | REQUEST CALL STACK | run_id=0726b1711309 | subprocess_started@_subprocess.py:80 <- run@server.py:74 <- run@runners.py:195 <- run@runners.py:118 <- generate_assistant_response@chat.py:17 <- generate_agent_response@agent.py:1337
-2026-07-28 06:53:21,573 | INFO | PREPARE RUN | run_id=0726b1711309 | session_id=773f0eab-d118-4505-b514-064a8d1ed1c6 | mem0_results=0 | current_message_chars=62 | estimated_history_chars=0 | active_runs=2
-2026-07-28 06:53:21,573 | DEBUG | MEM0 RESULTS [0726b1711309]
+2026-07-29 03:45:26,314 | WARNING | REQUEST DIAGNOSTIC | event=handler_entry | run_id=2fc99b43aca1 | handler=generate_agent_response | process_id=12 | task_id=128539985584640 | supplied_session_id=0e8a4eb9-fda7-43df-b4be-bc37d72d658e | message_fingerprint=e5b1f9395109ed42 | active_runs=1 | duplicate_candidates=[]
+2026-07-29 03:45:26,338 | DEBUG | REQUEST CALL STACK | run_id=2fc99b43aca1 | subprocess_started@_subprocess.py:80 <- run@server.py:74 <- run@runners.py:195 <- run@runners.py:118 <- generate_assistant_response@chat.py:36 <- generate_agent_response@agent.py:1338
+2026-07-29 03:45:36,046 | INFO | PREPARE RUN | run_id=2fc99b43aca1 | session_id=0e8a4eb9-fda7-43df-b4be-bc37d72d658e | mem0_results=0 | current_message_chars=227 | estimated_history_chars=0 | active_runs=1
+2026-07-29 03:45:36,047 | DEBUG | MEM0 RESULTS [2fc99b43aca1]
 []
-2026-07-28 06:53:21,574 | DEBUG | MEMORY CONTEXT [0726b1711309]
+2026-07-29 03:45:36,049 | DEBUG | MEMORY CONTEXT [2fc99b43aca1]
 No relevant conversational memories were found.
-2026-07-28 06:53:21,574 | INFO | MODEL RUN START | run_id=0726b1711309 | handler=generate_agent_response | session_id=773f0eab-d118-4505-b514-064a8d1ed1c6
+2026-07-29 03:45:36,049 | INFO | MODEL RUN START | run_id=2fc99b43aca1 | handler=generate_agent_response | session_id=0e8a4eb9-fda7-43df-b4be-bc37d72d658e
+2026-07-29 03:45:43,399 | INFO | TOOL START | run_id=2fc99b43aca1 | handler=generate_agent_response | tool=search_patient
+2026-07-29 03:45:43,400 | DEBUG | TOOL INPUT | search_patient | parameters
+{
+  "query": "NAM VU",
+  "limit": 10
+}
+2026-07-29 03:45:44,076 | DEBUG | NEO4J RAW RESULT | search_patient
+[]
+2026-07-29 03:45:44,077 | DEBUG | MODEL TOOL RESULT OBJECT | search_patient
+{
+  "status": "ok",
+  "count": 0,
+  "data": []
+}
+2026-07-29 03:45:44,078 | DEBUG | MODEL TOOL RESULT STRING | search_patient
+{"status": "ok", "count": 0, "data": []}
+2026-07-29 03:45:44,078 | INFO | TOOL END | run_id=2fc99b43aca1 | handler=generate_agent_response | tool=search_patient | status=ok | count=0 | chars=40
+2026-07-29 03:45:46,077 | INFO | TOOL START | run_id=2fc99b43aca1 | handler=generate_agent_response | tool=search_patient
+2026-07-29 03:45:46,078 | DEBUG | TOOL INPUT | search_patient | parameters
+{
+  "query": "Nam Vu",
+  "limit": 10
+}
+2026-07-29 03:45:46,103 | DEBUG | NEO4J RAW RESULT | search_patient
+[]
+2026-07-29 03:45:46,104 | DEBUG | MODEL TOOL RESULT OBJECT | search_patient
+{
+  "status": "ok",
+  "count": 0,
+  "data": []
+}
+2026-07-29 03:45:46,105 | DEBUG | MODEL TOOL RESULT STRING | search_patient
+{"status": "ok", "count": 0, "data": []}
+2026-07-29 03:45:46,105 | INFO | TOOL END | run_id=2fc99b43aca1 | handler=generate_agent_response | tool=search_patient | status=ok | count=0 | chars=40
+2026-07-29 03:45:54,190 | INFO | TOOL START | run_id=2fc99b43aca1 | handler=generate_agent_response | tool=search_patient
+2026-07-29 03:45:54,191 | DEBUG | TOOL INPUT | search_patient | parameters
+{
+  "query": "Vũ",
+  "limit": 10
+}
+2026-07-29 03:45:54,233 | DEBUG | NEO4J RAW RESULT | search_patient
+[
+  {
+    "resource_id": "10796",
+    "resource_type": "Patient",
+    "names": [
+      {
+        "given": [
+          "VŨ"
+        ],
+        "text": "NAM VŨ",
+        "family": "NAM"
+      }
+    ],
+    "identifiers": [
+      {
+        "system": "http://fhir.hl7.org.vn/core/sid/malk",
+        "value": "250916000001"
+      },
+      {
+        "system": "http://fhir.hl7.org.vn/core/sid/cccd",
+        "value": "818053162473"
+      },
+      {
+        "system": "http://fhir.hl7.org.vn/core/sid/mrn",
+        "value": "9030148007"
+      },
+      {
+        "system": "http://fhir.hl7.org.vn/core/sid/bhyt",
+        "value": "CT4068370720873"
+      }
+    ]
+  }
+]
+2026-07-29 03:45:54,234 | DEBUG | MODEL TOOL RESULT OBJECT | search_patient
+{
+  "status": "ok",
+  "count": 1,
+  "data": [
+    {
+      "resource_id": "10796",
+      "resource_type": "Patient",
+      "names": [
+        {
+          "given": [
+            "VŨ"
+          ],
+          "text": "NAM VŨ",
+          "family": "NAM"
+        }
+      ],
+      "identifiers": [
+        {
+          "system": "http://fhir.hl7.org.vn/core/sid/malk",
+          "value": "250916000001"
+        },
+        {
+          "system": "http://fhir.hl7.org.vn/core/sid/cccd",
+          "value": "818053162473"
+        },
+        {
+          "system": "http://fhir.hl7.org.vn/core/sid/mrn",
+          "value": "9030148007"
+        },
+        {
+          "system": "http://fhir.hl7.org.vn/core/sid/bhyt",
+          "value": "CT4068370720873"
+        }
+      ]
+    }
+  ]
+}
+2026-07-29 03:45:54,235 | DEBUG | MODEL TOOL RESULT STRING | search_patient
+{"status": "ok", "count": 1, "data": [{"resource_id": "10796", "resource_type": "Patient", "names": [{"given": ["VŨ"], "text": "NAM VŨ", "family": "NAM"}], "identifiers": [{"system": "http://fhir.hl7.org.vn/core/sid/malk", "value": "250916000001"}, {"system": "http://fhir.hl7.org.vn/core/sid/cccd", "value": "818053162473"}, {"system": "http://fhir.hl7.org.vn/core/sid/mrn", "value": "9030148007"}, {"system": "http://fhir.hl7.org.vn/core/sid/bhyt", "value": "CT4068370720873"}]}]}
+2026-07-29 03:45:54,235 | INFO | TOOL END | run_id=2fc99b43aca1 | handler=generate_agent_response | tool=search_patient | status=ok | count=1 | chars=482
+2026-07-29 03:46:05,073 | INFO | TOOL START | get_graph_schema
+2026-07-29 03:46:06,288 | DEBUG | GRAPH SCHEMA RAW RESULT
+{
+  "labels": [
+    "ActivityDefinition",
+    "BackboneElement",
+    "Claim",
+    "CodeSystem",
+    "CodeableConcept",
+    "Coding",
+    "Composition",
+    "Condition",
+    "Coverage",
+    "DiagnosticReport",
+    "EmbeddedResource",
+    "Encounter",
+    "ExplanationOfBenefit",
+    "Extension",
+    "FHIRResource",
+    "FHIR_ELEMENT",
+    "Identifier",
+    "Library",
+    "Location",
+    "Medication",
+    "MedicationRequest",
+    "Meta",
+    "Observation",
+    "Organization",
+    "Parameters",
+    "Patient",
+    "PlanDefinition",
+    "Practitioner",
+    "PractitionerRole",
+    "Procedure",
+    "Reference",
+    "ServiceRequest",
+    "StructureDefinition",
+    "action",
+    "actor",
+    "address",
+    "adjudication",
+    "admitSource",
+    "amount",
+    "assigner",
+    "attester",
+    "author",
+    "base",
+    "beneficiary",
+    "benefitPeriod",
+    "binding",
+    "category",
+    "class",
+    "clinicalStatus",
+    "code",
+    "codeFilter",
+    "coding",
+    "component",
+    "concept",
+    "condition",
+    "constraint",
+    "contact",
+    "content",
+    "context",
+    "coverage",
+    "custodian",
+    "dataRequirement",
+    "denominator",
+    "designation",
+    "diagnosis",
+    "diagnosisCodeableConcept",
+    "differential",
+    "dischargeDisposition",
+    "discriminator",
+    "dispenseRequest",
+    "document",
+    "dosageInstruction",
+    "doseAndRate",
+    "doseQuantity",
+    "dynamicValue",
+    "element",
+    "encounter",
+    "example",
+    "expression",
+    "extension",
+    "form",
+    "high",
+    "hospitalization",
+    "identifier",
+    "imagingStudy",
+    "individual",
+    "ingredient",
+    "input",
+    "insurance",
+    "insurer",
+    "item",
+    "itemCodeableConcept",
+    "jurisdiction",
+    "length",
+    "location",
+    "low",
+    "managingOrganization",
+    "mapping",
+    "medicationCodeableConcept",
+    "meta",
+    "name",
+    "net",
+    "note",
+    "numerator",
+    "organization",
+    "origin",
+    "output",
+    "parameter",
+    "partOf",
+    "participant",
+    "party",
+    "patient",
+    "patternCodeableConcept",
+    "patternCoding",
+    "payment",
+    "payor",
+    "performer",
+    "period",
+    "physicalType",
+    "practitioner",
+    "priority",
+    "productOrService",
+    "property",
+    "provider",
+    "quantity",
+    "reason",
+    "reasonCode",
+    "reasonReference",
+    "referenceRange",
+    "relatedAction",
+    "relatedArtifact",
+    "relationship",
+    "requester",
+    "requisition",
+    "resource",
+    "result",
+    "resultsInterpreter",
+    "role",
+    "route",
+    "section",
+    "serviceProvider",
+    "serviceType",
+    "slicing",
+    "snapshot",
+    "strength",
+    "subType",
+    "subject",
+    "subscriber",
+    "telecom",
+    "text",
+    "topic",
+    "total",
+    "trigger",
+    "type",
+    "unitPrice",
+    "use",
+    "useContext",
+    "valueCodeableConcept",
+    "valueCoding",
+    "valueMoney",
+    "valueQuantity",
+    "valueReference",
+    "verificationStatus"
+  ],
+  "relationship_types": [
+    "BASE_DEFINITION",
+    "CONFORMS_TO",
+    "DEFINED_BY",
+    "RESOLVES_TO",
+    "action",
+    "actor",
+    "address",
+    "adjudication",
+    "admitSource",
+    "amount",
+    "assigner",
+    "attester",
+    "author",
+    "base",
+    "beneficiary",
+    "benefitPeriod",
+    "binding",
+    "category",
+    "class",
+    "clinicalStatus",
+    "code",
+    "codeFilter",
+    "coding",
+    "component",
+    "concept",
+    "condition",
+    "constraint",
+    "contact",
+    "contained",
+    "content",
+    "context",
+    "coverage",
+    "custodian",
+    "dataRequirement",
+    "denominator",
+    "designation",
+    "diagnosis",
+    "diagnosisCodeableConcept",
+    "differential",
+    "dischargeDisposition",
+    "discriminator",
+    "dispenseRequest",
+    "document",
+    "dosageInstruction",
+    "doseAndRate",
+    "doseQuantity",
+    "dynamicValue",
+    "element",
+    "encounter",
+    "example",
+    "expression",
+    "extension",
+    "form",
+    "high",
+    "hospitalization",
+    "identifier",
+    "imagingStudy",
+    "individual",
+    "ingredient",
+    "input",
+    "insurance",
+    "insurer",
+    "item",
+    "itemCodeableConcept",
+    "jurisdiction",
+    "length",
+    "location",
+    "low",
+    "managingOrganization",
+    "mapping",
+    "medicationCodeableConcept",
+    "meta",
+    "name",
+    "net",
+    "note",
+    "numerator",
+    "organization",
+    "origin",
+    "output",
+    "parameter",
+    "partOf",
+    "participant",
+    "party",
+    "patient",
+    "patternCodeableConcept",
+    "patternCoding",
+    "payment",
+    "payor",
+    "performer",
+    "period",
+    "physicalType",
+    "practitioner",
+    "priority",
+    "productOrService",
+    "property",
+    "provider",
+    "quantity",
+    "reason",
+    "reasonCode",
+    "reasonReference",
+    "referenceRange",
+    "relatedAction",
+    "relatedArtifact",
+    "relationship",
+    "requester",
+    "requisition",
+    "result",
+    "resultsInterpreter",
+    "role",
+    "route",
+    "section",
+    "serviceProvider",
+    "serviceType",
+    "slicing",
+    "snapshot",
+    "strength",
+    "subType",
+    "subject",
+    "subscriber",
+    "telecom",
+    "text",
+    "topic",
+    "total",
+    "trigger",
+    "type",
+    "unitPrice",
+    "use",
+    "useContext",
+    "valueCodeableConcept",
+    "valueCoding",
+    "valueMoney",
+    "valueQuantity",
+    "valueReference",
+    "verificationStatus"
+  ]
+}
+2026-07-29 03:46:06,289 | DEBUG | MODEL TOOL RESULT STRING | get_graph_schema
+{"status": "ok", "data": {"labels": ["ActivityDefinition", "BackboneElement", "Claim", "CodeSystem", "CodeableConcept", "Coding", "Composition", "Condition", "Coverage", "DiagnosticReport", "EmbeddedResource", "Encounter", "ExplanationOfBenefit", "Extension", "FHIRResource", "FHIR_ELEMENT", "Identifier", "Library", "Location", "Medication", "MedicationRequest", "Meta", "Observation", "Organization", "Parameters", "Patient", "PlanDefinition", "Practitioner", "PractitionerRole", "Procedure", "Reference", "ServiceRequest", "StructureDefinition", "action", "actor", "address", "adjudication", "admitSource", "amount", "assigner", "attester", "author", "base", "beneficiary", "benefitPeriod", "binding", "category", "class", "clinicalStatus", "code", "codeFilter", "coding", "component", "concept", "condition", "constraint", "contact", "content", "context", "coverage", "custodian", "dataRequirement", "denominator", "designation", "diagnosis", "diagnosisCodeableConcept", "differential", "dischargeDisposition", "discriminator", "dispenseRequest", "document", "dosageInstruction", "doseAndRate", "doseQuantity", "dynamicValue", "element", "encounter", "example", "expression", "extension", "form", "high", "hospitalization", "identifier", "imagingStudy", "individual", "ingredient", "input", "insurance", "insurer", "item", "itemCodeableConcept", "jurisdiction", "length", "location", "low", "managingOrganization", "mapping", "medicationCodeableConcept", "meta", "name", "net", "note", "numerator", "organization", "origin", "output", "parameter", "partOf", "participant", "party", "patient", "patternCodeableConcept", "patternCoding", "payment", "payor", "performer", "period", "physicalType", "practitioner", "priority", "productOrService", "property", "provider", "quantity", "reason", "reasonCode", "reasonReference", "referenceRange", "relatedAction", "relatedArtifact", "relationship", "requester", "requisition", "resource", "result", "resultsInterpreter", "role", "route", "section", "serviceProvider", "serviceType", "slicing", "snapshot", "strength", "subType", "subject", "subscriber", "telecom", "text", "topic", "total", "trigger", "type", "unitPrice", "use", "useContext", "valueCodeableConcept", "valueCoding", "valueMoney", "valueQuantity", "valueReference", "verificationStatus"], "relationship_types": ["BASE_DEFINITION", "CONFORMS_TO", "DEFINED_BY", "RESOLVES_TO", "action", "actor", "address", "adjudication", "admitSource", "amount", "assigner", "attester", "author", "base", "beneficiary", "benefitPeriod", "binding", "category", "class", "clinicalStatus", "code", "codeFilter", "coding", "component", "concept", "condition", "constraint", "contact", "contained", "content", "context", "coverage", "custodian", "dataRequirement", "denominator", "designation", "diagnosis", "diagnosisCodeableConcept", "differential", "dischargeDisposition", "discriminator", "dispenseRequest", "document", "dosageInstruction", "doseAndRate", "doseQuantity", "dynamicValue", "element", "encounter", "example", "expression", "extension", "form", "high", "hospitalization", "identifier", "imagingStudy", "individual", "ingredient", "input", "insurance", "insurer", "item", "itemCodeableConcept", "jurisdiction", "length", "location", "low", "managingOrganization", "mapping", "medicationCodeableConcept", "meta", "name", "net", "note", "numerator", "organization", "origin", "output", "parameter", "partOf", "participant", "party", "patient", "patternCodeableConcept", "patternCoding", "payment", "payor", "performer", "period", "physicalType", "practitioner", "priority", "productOrService", "property", "provider", "quantity", "reason", "reasonCode", "reasonReference", "referenceRange", "relatedAction", "relatedArtifact", "relationship", "requester", "requisition", "result", "resultsInterpreter", "role", "route", "section", "serviceProvider", "serviceType", "slicing", "snapshot", "strength", "subType", "subject", "subscriber", "telecom", "text", "topic", "total", "trigger", "type", "unitPrice", "use", "useContext", "valueCodeableConcept", "valueCoding", "valueMoney", "valueQuantity", "valueReference", "verificationStatus"]}}
+2026-07-29 03:46:06,289 | INFO | TOOL END | get_graph_schema | status=ok
+2026-07-29 03:46:12,866 | INFO | TOOL START | run_id=2fc99b43aca1 | handler=generate_agent_response | tool=run_cypher
+2026-07-29 03:46:12,867 | DEBUG | TOOL INPUT | run_cypher | parameters
+{
+  "domain": "healthcare"
+}
+2026-07-29 03:46:12,989 | DEBUG | NEO4J RAW RESULT | run_cypher
+[]
+2026-07-29 03:46:12,993 | DEBUG | MODEL TOOL RESULT OBJECT | run_cypher
+{
+  "status": "ok",
+  "count": 0,
+  "data": []
+}
+2026-07-29 03:46:12,995 | DEBUG | MODEL TOOL RESULT STRING | run_cypher
+{"status": "ok", "count": 0, "data": []}
+2026-07-29 03:46:12,996 | INFO | TOOL END | run_id=2fc99b43aca1 | handler=generate_agent_response | tool=run_cypher | status=ok | count=0 | chars=40
+2026-07-29 03:46:16,103 | INFO | TOOL START | run_id=2fc99b43aca1 | handler=generate_agent_response | tool=run_cypher
+2026-07-29 03:46:16,104 | DEBUG | TOOL INPUT | run_cypher | parameters
+{
+  "domain": "healthcare"
+}
+2026-07-29 03:46:16,165 | DEBUG | NEO4J RAW RESULT | run_cypher
+[]
+2026-07-29 03:46:16,166 | DEBUG | MODEL TOOL RESULT OBJECT | run_cypher
+{
+  "status": "ok",
+  "count": 0,
+  "data": []
+}
+2026-07-29 03:46:16,166 | DEBUG | MODEL TOOL RESULT STRING | run_cypher
+{"status": "ok", "count": 0, "data": []}
+2026-07-29 03:46:16,167 | INFO | TOOL END | run_id=2fc99b43aca1 | handler=generate_agent_response | tool=run_cypher | status=ok | count=0 | chars=40
+2026-07-29 03:46:18,314 | INFO | TOOL START | run_id=2fc99b43aca1 | handler=generate_agent_response | tool=run_cypher
+2026-07-29 03:46:18,315 | DEBUG | TOOL INPUT | run_cypher | parameters
+{
+  "domain": "healthcare"
+}
+2026-07-29 03:46:18,388 | DEBUG | NEO4J RAW RESULT | run_cypher
+[]
+2026-07-29 03:46:18,390 | DEBUG | MODEL TOOL RESULT OBJECT | run_cypher
+{
+  "status": "ok",
+  "count": 0,
+  "data": []
+}
+2026-07-29 03:46:18,391 | DEBUG | MODEL TOOL RESULT STRING | run_cypher
+{"status": "ok", "count": 0, "data": []}
+2026-07-29 03:46:18,393 | INFO | TOOL END | run_id=2fc99b43aca1 | handler=generate_agent_response | tool=run_cypher | status=ok | count=0 | chars=40
+2026-07-29 03:46:20,215 | INFO | TOOL START | run_id=2fc99b43aca1 | handler=generate_agent_response | tool=run_cypher
+2026-07-29 03:46:20,216 | DEBUG | TOOL INPUT | run_cypher | parameters
+{
+  "domain": "healthcare"
+}
+2026-07-29 03:46:20,274 | DEBUG | NEO4J RAW RESULT | run_cypher
+[]
+2026-07-29 03:46:20,275 | DEBUG | MODEL TOOL RESULT OBJECT | run_cypher
+{
+  "status": "ok",
+  "count": 0,
+  "data": []
+}
+2026-07-29 03:46:20,276 | DEBUG | MODEL TOOL RESULT STRING | run_cypher
+{"status": "ok", "count": 0, "data": []}
+2026-07-29 03:46:20,276 | INFO | TOOL END | run_id=2fc99b43aca1 | handler=generate_agent_response | tool=run_cypher | status=ok | count=0 | chars=40
+2026-07-29 03:46:24,196 | INFO | TOOL START | run_id=2fc99b43aca1 | handler=generate_agent_response | tool=get_related_resources
+2026-07-29 03:46:24,197 | DEBUG | TOOL INPUT | get_related_resources | parameters
+{
+  "resource_type": "Patient",
+  "resource_id": "10796",
+  "related_type": "Encounter",
+  "limit": 100
+}
+2026-07-29 03:46:24,571 | DEBUG | NEO4J RAW RESULT | get_related_resources
+[
+  {
+    "resource_type": "Encounter",
+    "resource_id": "10797"
+  },
+  {
+    "resource_type": "Encounter",
+    "resource_id": "10842"
+  }
+]
+2026-07-29 03:46:24,572 | DEBUG | MODEL TOOL RESULT OBJECT | get_related_resources
+{
+  "status": "ok",
+  "count": 2,
+  "data": [
+    {
+      "resource_type": "Encounter",
+      "resource_id": "10797"
+    },
+    {
+      "resource_type": "Encounter",
+      "resource_id": "10842"
+    }
+  ]
+}
+2026-07-29 03:46:24,573 | DEBUG | MODEL TOOL RESULT STRING | get_related_resources
+{"status": "ok", "count": 2, "data": [{"resource_type": "Encounter", "resource_id": "10797"}, {"resource_type": "Encounter", "resource_id": "10842"}]}
+2026-07-29 03:46:24,573 | INFO | TOOL END | run_id=2fc99b43aca1 | handler=generate_agent_response | tool=get_related_resources | status=ok | count=2 | chars=150
+2026-07-29 03:46:29,185 | INFO | TOOL START | run_id=2fc99b43aca1 | handler=generate_agent_response | tool=list_resource_fields_batch
+2026-07-29 03:46:29,185 | DEBUG | TOOL INPUT | list_resource_fields_batch | parameters
+{
+  "resource_type": "Encounter",
+  "resource_ids": [
+    "10797",
+    "10842"
+  ],
+  "limit": 100,
+  "blocked_relationships": [
+    "RESOLVES_TO",
+    "DEFINED_BY"
+  ]
+}
+2026-07-29 03:46:29,500 | DEBUG | NEO4J RAW RESULT | list_resource_fields_batch
+[
+  {
+    "resource_id": "10797",
+    "resource_found": true,
+    "resource_type": "Encounter",
+    "root_properties": {
+      "language": "vi",
+      "id": "10797",
+      "status": "arrived",
+      "resourceType": "Encounter"
+    },
+    "fields": [
+      {
+        "direct_properties": {
+          "code": "AMB",
+          "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+          "display": "ambulatory"
+        },
+        "has_internal_children": false,
+        "node_id": "495410",
+        "labels": [
+          "FHIR_ELEMENT",
+          "Coding",
+          "class"
+        ],
+        "field_name": "class"
+      },
+      {
+        "direct_properties": {
+          "system": "http://fhir.hl7.org.vn/core/sid/ma-luot-kcb",
+          "value": "250916000001"
+        },
+        "has_internal_children": true,
+        "node_id": "495407",
+        "labels": [
+          "FHIR_ELEMENT",
+          "identifier",
+          "Identifier"
+        ],
+        "field_name": "identifier"
+      },
+      {
+        "direct_properties": {
+          "lastUpdated": "2026-06-26T10:28:34.175+07:00",
+          "versionId": "1",
+          "profile": [
+            "http://fhir.hl7.org.vn/core/StructureDefinition/vn-core-encounter"
+          ]
+        },
+        "has_internal_children": false,
+        "node_id": "495406",
+        "labels": [
+          "FHIR_ELEMENT",
+          "meta",
+          "Meta"
+        ],
+        "field_name": "meta"
+      },
+      {
+        "direct_properties": {
+          "start": "2025-09-16T20:03:00+07:00"
+        },
+        "has_internal_children": false,
+        "node_id": "495414",
+        "labels": [
+          "FHIR_ELEMENT",
+          "BackboneElement",
+          "period"
+        ],
+        "field_name": "period"
+      },
+      {
+        "direct_properties": {
+          "reference": "Organization/10666"
+        },
+        "has_internal_children": false,
+        "node_id": "495415",
+        "labels": [
+          "FHIR_ELEMENT",
+          "Reference",
+          "serviceProvider"
+        ],
+        "field_name": "serviceProvider"
+      },
+      {
+        "direct_properties": {
+          "reference": "Patient/10796",
+          "display": "NAM VŨ"
+        },
+        "has_internal_children": false,
+        "node_id": "495413",
+        "labels": [
+          "FHIR_ELEMENT",
+          "Reference",
+          "subject"
+        ],
+        "field_name": "subject"
+      },
+      {
+        "direct_properties": {},
+        "has_internal_children": true,
+        "node_id": "495411",
+        "labels": [
+          "FHIR_ELEMENT",
+          "type",
+          "CodeableConcept"
+        ],
+        "field_name": "type"
+      }
+    ]
+  },
+  {
+    "resource_id": "10842",
+    "resource_found": true,
+    "resource_type": "Encounter",
+    "root_properties": {
+      "language": "vi",
+      "id": "10842",
+      "status": "finished",
+      "resourceType": "Encounter"
+    },
+    "fields": [
+      {
+        "direct_properties": {
+          "code": "AMB",
+          "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+          "display": "ambulatory"
+        },
+        "has_internal_children": false,
+        "node_id": "495432",
+        "labels": [
+          "FHIR_ELEMENT",
+          "Coding",
+          "class"
+        ],
+        "field_name": "class"
+      },
+      {
+        "direct_properties": {},
+        "has_internal_children": true,
+        "node_id": "495443",
+        "labels": [
+          "FHIR_ELEMENT",
+          "BackboneElement",
+          "diagnosis"
+        ],
+        "field_name": "diagnosis"
+      },
+      {
+        "direct_properties": {},
+        "has_internal_children": true,
+        "node_id": "495439",
+        "labels": [
+          "FHIR_ELEMENT",
+          "BackboneElement",
+          "diagnosis"
+        ],
+        "field_name": "diagnosis"
+      },
+      {
+        "direct_properties": {
+          "url": "http://fhir.hl7.org.vn/core/StructureDefinition/vn-ext-treatment-outcome"
+        },
+        "has_internal_children": true,
+        "node_id": "495424",
+        "labels": [
+          "FHIR_ELEMENT",
+          "extension",
+          "Extension"
+        ],
+        "field_name": "extension"
+      },
+      {
+        "direct_properties": {
+          "valueString": "Nội khoa",
+          "url": "http://fhir.hl7.org.vn/core/StructureDefinition/vn-ext-pp-dieu-tri"
+        },
+        "has_internal_children": false,
+        "node_id": "495427",
+        "labels": [
+          "FHIR_ELEMENT",
+          "extension",
+          "Extension"
+        ],
+        "field_name": "extension"
+      },
+      {
+        "direct_properties": {
+          "valueString": "GCT-202509-0002",
+          "url": "http://fhir.hl7.org.vn/core/StructureDefinition/vn-ext-referral-number"
+        },
+        "has_internal_children": false,
+        "node_id": "495428",
+        "labels": [
+          "FHIR_ELEMENT",
+          "extension",
+          "Extension"
+        ],
+        "field_name": "extension"
+      },
+      {
+        "direct_properties": {
+          "url": "http://fhir.hl7.org.vn/core/StructureDefinition/vn-ext-insurance-visit-type"
+        },
+        "has_internal_children": true,
+        "node_id": "495418",
+        "labels": [
+          "FHIR_ELEMENT",
+          "extension",
+          "Extension"
+        ],
+        "field_name": "extension"
+      },
+      {
+        "direct_properties": {
+          "url": "http://fhir.hl7.org.vn/core/StructureDefinition/vn-ext-referral-mode"
+        },
+        "has_internal_children": true,
+        "node_id": "495421",
+        "labels": [
+          "FHIR_ELEMENT",
+          "extension",
+          "Extension"
+        ],
+        "field_name": "extension"
+      },
+      {
+        "direct_properties": {},
+        "has_internal_children": true,
+        "node_id": "495447",
+        "labels": [
+          "FHIR_ELEMENT",
+          "BackboneElement",
+          "hospitalization"
+        ],
+        "field_name": "hospitalization"
+      },
+      {
+        "direct_properties": {
+          "system": "http://fhir.hl7.org.vn/core/sid/ma-luot-kcb",
+          "value": "250924000002"
+        },
+        "has_internal_children": true,
+        "node_id": "495429",
+        "labels": [
+          "FHIR_ELEMENT",
+          "identifier",
+          "Identifier"
+        ],
+        "field_name": "identifier"
+      },
+      {
+        "direct_properties": {
+          "unit": "d",
+          "system": "http://unitsofmeasure.org",
+          "code": "d",
+          "value": 6
+        },
+        "has_internal_children": false,
+        "node_id": "495437",
+        "labels": [
+          "FHIR_ELEMENT",
+          "Coding",
+          "length"
+        ],
+        "field_name": "length"
+      },
+      {
+        "direct_properties": {},
+        "has_internal_children": true,
+        "node_id": "495452",
+        "labels": [
+          "FHIR_ELEMENT",
+          "BackboneElement",
+          "location"
+        ],
+        "field_name": "location"
+      },
+      {
+        "direct_properties": {
+          "lastUpdated": "2026-06-26T10:56:05.830+07:00",
+          "versionId": "1",
+          "profile": [
+            "http://fhir.hl7.org.vn/core/StructureDefinition/vn-core-encounter"
+          ]
+        },
+        "has_internal_children": false,
+        "node_id": "495417",
+        "labels": [
+          "FHIR_ELEMENT",
+          "meta",
+          "Meta"
+        ],
+        "field_name": "meta"
+      },
+      {
+        "direct_properties": {
+          "start": "2025-09-24T12:27:00+07:00",
+          "end": "2025-09-30T17:27:00+07:00"
+        },
+        "has_internal_children": false,
+        "node_id": "495436",
+        "labels": [
+          "FHIR_ELEMENT",
+          "BackboneElement",
+          "period"
+        ],
+        "field_name": "period"
+      },
+      {
+        "direct_properties": {
+          "text": "tái khám"
+        },
+        "has_internal_children": false,
+        "node_id": "495438",
+        "labels": [
+          "FHIR_ELEMENT",
+          "BackboneElement",
+          "reasonCode"
+        ],
+        "field_name": "reasonCode"
+      },
+      {
+        "direct_properties": {
+          "reference": "Organization/10666"
+        },
+        "has_internal_children": false,
+        "node_id": "495454",
+        "labels": [
+          "FHIR_ELEMENT",
+          "Reference",
+          "serviceProvider"
+        ],
+        "field_name": "serviceProvider"
+      },
+      {
+        "direct_properties": {
+          "reference": "Patient/10796",
+          "display": "NAM VŨ"
+        },
+        "has_internal_children": false,
+        "node_id": "495435",
+        "labels": [
+          "FHIR_ELEMENT",
+          "Reference",
+          "subject"
+        ],
+        "field_name": "subject"
+      },
+      {
+        "direct_properties": {},
+        "has_internal_children": true,
+        "node_id": "495433",
+        "labels": [
+          "FHIR_ELEMENT",
+          "type",
+          "CodeableConcept"
+        ],
+        "field_name": "type"
+      }
+    ]
+  }
+]
+2026-07-29 03:46:29,502 | DEBUG | MODEL TOOL RESULT OBJECT | list_resource_fields_batch
+{
+  "status": "ok",
+  "count": 2,
+  "data": [
+    {
+      "resource_id": "10797",
+      "resource_found": true,
+      "resource_type": "Encounter",
+      "root_properties": {
+        "language": "vi",
+        "id": "10797",
+        "status": "arrived",
+        "resourceType": "Encounter"
+      },
+      "fields": [
+        {
+          "direct_properties": {
+            "code": "AMB",
+            "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+            "display": "ambulatory"
+          },
+          "has_internal_children": false,
+          "node_id": "495410",
+          "labels": [
+            "FHIR_ELEMENT",
+            "Coding",
+            "class"
+          ],
+          "field_name": "class"
+        },
+        {
+          "direct_properties": {
+            "system": "http://fhir.hl7.org.vn/core/sid/ma-luot-kcb",
+            "value": "250916000001"
+          },
+          "has_internal_children": true,
+          "node_id": "495407",
+          "labels": [
+            "FHIR_ELEMENT",
+            "identifier",
+            "Identifier"
+          ],
+          "field_name": "identifier"
+        },
+        {
+          "direct_properties": {
+            "lastUpdated": "2026-06-26T10:28:34.175+07:00",
+            "versionId": "1",
+            "profile": [
+              "http://fhir.hl7.org.vn/core/StructureDefinition/vn-core-encounter"
+            ]
+          },
+          "has_internal_children": false,
+          "node_id": "495406",
+          "labels": [
+            "FHIR_ELEMENT",
+            "meta",
+            "Meta"
+          ],
+          "field_name": "meta"
+        },
+        {
+          "direct_properties": {
+            "start": "2025-09-16T20:03:00+07:00"
+          },
+          "has_internal_children": false,
+          "node_id": "495414",
+          "labels": [
+            "FHIR_ELEMENT",
+            "BackboneElement",
+            "period"
+          ],
+          "field_name": "period"
+        },
+        {
+          "direct_properties": {
+            "reference": "Organization/10666"
+          },
+          "has_internal_children": false,
+          "node_id": "495415",
+          "labels": [
+            "FHIR_ELEMENT",
+            "Reference",
+            "serviceProvider"
+          ],
+          "field_name": "serviceProvider"
+        },
+        {
+          "direct_properties": {
+            "reference": "Patient/10796",
+            "display": "NAM VŨ"
+          },
+          "has_internal_children": false,
+          "node_id": "495413",
+          "labels": [
+            "FHIR_ELEMENT",
+            "Reference",
+            "subject"
+          ],
+          "field_name": "subject"
+        },
+        {
+          "direct_properties": {},
+          "has_internal_children": true,
+          "node_id": "495411",
+          "labels": [
+            "FHIR_ELEMENT",
+            "type",
+            "CodeableConcept"
+          ],
+          "field_name": "type"
+        }
+      ]
+    },
+    {
+      "resource_id": "10842",
+      "resource_found": true,
+      "resource_type": "Encounter",
+      "root_properties": {
+        "language": "vi",
+        "id": "10842",
+        "status": "finished",
+        "resourceType": "Encounter"
+      },
+      "fields": [
+        {
+          "direct_properties": {
+            "code": "AMB",
+            "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+            "display": "ambulatory"
+          },
+          "has_internal_children": false,
+          "node_id": "495432",
+          "labels": [
+            "FHIR_ELEMENT",
+            "Coding",
+            "class"
+          ],
+          "field_name": "class"
+        },
+        {
+          "direct_properties": {},
+          "has_internal_children": true,
+          "node_id": "495443",
+          "labels": [
+            "FHIR_ELEMENT",
+            "BackboneElement",
+            "diagnosis"
+          ],
+          "field_name": "diagnosis"
+        },
+        {
+          "direct_properties": {},
+          "has_internal_children": true,
+          "node_id": "495439",
+          "labels": [
+            "FHIR_ELEMENT",
+            "BackboneElement",
+            "diagnosis"
+          ],
+          "field_name": "diagnosis"
+        },
+        {
+          "direct_properties": {
+            "url": "http://fhir.hl7.org.vn/core/StructureDefinition/vn-ext-treatment-outcome"
+          },
+          "has_internal_children": true,
+          "node_id": "495424",
+          "labels": [
+            "FHIR_ELEMENT",
+            "extension",
+            "Extension"
+          ],
+          "field_name": "extension"
+        },
+        {
+          "direct_properties": {
+            "valueString": "Nội khoa",
+            "url": "http://fhir.hl7.org.vn/core/StructureDefinition/vn-ext-pp-dieu-tri"
+          },
+          "has_internal_children": false,
+          "node_id": "495427",
+          "labels": [
+            "FHIR_ELEMENT",
+            "extension",
+            "Extension"
+          ],
+          "field_name": "extension"
+        },
+        {
+          "direct_properties": {
+            "valueString": "GCT-202509-0002",
+            "url": "http://fhir.hl7.org.vn/core/StructureDefinition/vn-ext-referral-number"
+          },
+          "has_internal_children": false,
+          "node_id": "495428",
+          "labels": [
+            "FHIR_ELEMENT",
+            "extension",
+            "Extension"
+          ],
+          "field_name": "extension"
+        },
+        {
+          "direct_properties": {
+            "url": "http://fhir.hl7.org.vn/core/StructureDefinition/vn-ext-insurance-visit-type"
+          },
+          "has_internal_children": true,
+          "node_id": "495418",
+          "labels": [
+            "FHIR_ELEMENT",
+            "extension",
+            "Extension"
+          ],
+          "field_name": "extension"
+        },
+        {
+          "direct_properties": {
+            "url": "http://fhir.hl7.org.vn/core/StructureDefinition/vn-ext-referral-mode"
+          },
+          "has_internal_children": true,
+          "node_id": "495421",
+          "labels": [
+            "FHIR_ELEMENT",
+            "extension",
+            "Extension"
+          ],
+          "field_name": "extension"
+        },
+        {
+          "direct_properties": {},
+          "has_internal_children": true,
+          "node_id": "495447",
+          "labels": [
+            "FHIR_ELEMENT",
+            "BackboneElement",
+            "hospitalization"
+          ],
+          "field_name": "hospitalization"
+        },
+        {
+          "direct_properties": {
+            "system": "http://fhir.hl7.org.vn/core/sid/ma-luot-kcb",
+            "value": "250924000002"
+          },
+          "has_internal_children": true,
+          "node_id": "495429",
+          "labels": [
+            "FHIR_ELEMENT",
+            "identifier",
+            "Identifier"
+          ],
+          "field_name": "identifier"
+        },
+        {
+          "direct_properties": {
+            "unit": "d",
+            "system": "http://unitsofmeasure.org",
+            "code": "d",
+            "value": 6
+          },
+          "has_internal_children": false,
+          "node_id": "495437",
+          "labels": [
+            "FHIR_ELEMENT",
+            "Coding",
+            "length"
+          ],
+          "field_name": "length"
+        },
+        {
+          "direct_properties": {},
+          "has_internal_children": true,
+          "node_id": "495452",
+          "labels": [
+            "FHIR_ELEMENT",
+            "BackboneElement",
+            "location"
+          ],
+          "field_name": "location"
+        },
+        {
+          "direct_properties": {
+            "lastUpdated": "2026-06-26T10:56:05.830+07:00",
+            "versionId": "1",
+            "profile": [
+              "http://fhir.hl7.org.vn/core/StructureDefinition/vn-core-encounter"
+            ]
+          },
+          "has_internal_children": false,
+          "node_id": "495417",
+          "labels": [
+            "FHIR_ELEMENT",
+            "meta",
+            "Meta"
+          ],
+          "field_name": "meta"
+        },
+        {
+          "direct_properties": {
+            "start": "2025-09-24T12:27:00+07:00",
+            "end": "2025-09-30T17:27:00+07:00"
+          },
+          "has_internal_children": false,
+          "node_id": "495436",
+          "labels": [
+            "FHIR_ELEMENT",
+            "BackboneElement",
+            "period"
+          ],
+          "field_name": "period"
+        },
+        {
+          "direct_properties": {
+            "text": "tái khám"
+          },
+          "has_internal_children": false,
+          "node_id": "495438",
+          "labels": [
+            "FHIR_ELEMENT",
+            "BackboneElement",
+            "reasonCode"
+          ],
+          "field_name": "reasonCode"
+        },
+        {
+          "direct_properties": {
+            "reference": "Organization/10666"
+          },
+          "has_internal_children": false,
+          "node_id": "495454",
+          "labels": [
+            "FHIR_ELEMENT",
+            "Reference",
+            "serviceProvider"
+          ],
+          "field_name": "serviceProvider"
+        },
+        {
+          "direct_properties": {
+            "reference": "Patient/10796",
+            "display": "NAM VŨ"
+          },
+          "has_internal_children": false,
+          "node_id": "495435",
+          "labels": [
+            "FHIR_ELEMENT",
+            "Reference",
+            "subject"
+          ],
+          "field_name": "subject"
+        },
+        {
+          "direct_properties": {},
+          "has_internal_children": true,
+          "node_id": "495433",
+          "labels": [
+            "FHIR_ELEMENT",
+            "type",
+            "CodeableConcept"
+          ],
+          "field_name": "type"
+        }
+      ]
+    }
+  ]
+}
+2026-07-29 03:46:29,502 | DEBUG | MODEL TOOL RESULT STRING | list_resource_fields_batch
+{"status": "ok", "count": 2, "data": [{"resource_id": "10797", "resource_found": true, "resource_type": "Encounter", "root_properties": {"language": "vi", "id": "10797", "status": "arrived", "resourceType": "Encounter"}, "fields": [{"direct_properties": {"code": "AMB", "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode", "display": "ambulatory"}, "has_internal_children": false, "node_id": "495410", "labels": ["FHIR_ELEMENT", "Coding", "class"], "field_name": "class"}, {"direct_properties": {"system": "http://fhir.hl7.org.vn/core/sid/ma-luot-kcb", "value": "250916000001"}, "has_internal_children": true, "node_id": "495407", "labels": ["FHIR_ELEMENT", "identifier", "Identifier"], "field_name": "identifier"}, {"direct_properties": {"lastUpdated": "2026-06-26T10:28:34.175+07:00", "versionId": "1", "profile": ["http://fhir.hl7.org.vn/core/StructureDefinition/vn-core-encounter"]}, "has_internal_children": false, "node_id": "495406", "labels": ["FHIR_ELEMENT", "meta", "Meta"], "field_name": "meta"}, {"direct_properties": {"start": "2025-09-16T20:03:00+07:00"}, "has_internal_children": false, "node_id": "495414", "labels": ["FHIR_ELEMENT", "BackboneElement", "period"], "field_name": "period"}, {"direct_properties": {"reference": "Organization/10666"}, "has_internal_children": false, "node_id": "495415", "labels": ["FHIR_ELEMENT", "Reference", "serviceProvider"], "field_name": "serviceProvider"}, {"direct_properties": {"reference": "Patient/10796", "display": "NAM VŨ"}, "has_internal_children": false, "node_id": "495413", "labels": ["FHIR_ELEMENT", "Reference", "subject"], "field_name": "subject"}, {"direct_properties": {}, "has_internal_children": true, "node_id": "495411", "labels": ["FHIR_ELEMENT", "type", "CodeableConcept"], "field_name": "type"}]}, {"resource_id": "10842", "resource_found": true, "resource_type": "Encounter", "root_properties": {"language": "vi", "id": "10842", "status": "finished", "resourceType": "Encounter"}, "fields": [{"direct_properties": {"code": "AMB", "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode", "display": "ambulatory"}, "has_internal_children": false, "node_id": "495432", "labels": ["FHIR_ELEMENT", "Coding", "class"], "field_name": "class"}, {"direct_properties": {}, "has_internal_children": true, "node_id": "495443", "labels": ["FHIR_ELEMENT", "BackboneElement", "diagnosis"], "field_name": "diagnosis"}, {"direct_properties": {}, "has_internal_children": true, "node_id": "495439", "labels": ["FHIR_ELEMENT", "BackboneElement", "diagnosis"], "field_name": "diagnosis"}, {"direct_properties": {"url": "http://fhir.hl7.org.vn/core/StructureDefinition/vn-ext-treatment-outcome"}, "has_internal_children": true, "node_id": "495424", "labels": ["FHIR_ELEMENT", "extension", "Extension"], "field_name": "extension"}, {"direct_properties": {"valueString": "Nội khoa", "url": "http://fhir.hl7.org.vn/core/StructureDefinition/vn-ext-pp-dieu-tri"}, "has_internal_children": false, "node_id": "495427", "labels": ["FHIR_ELEMENT", "extension", "Extension"], "field_name": "extension"}, {"direct_properties": {"valueString": "GCT-202509-0002", "url": "http://fhir.hl7.org.vn/core/StructureDefinition/vn-ext-referral-number"}, "has_internal_children": false, "node_id": "495428", "labels": ["FHIR_ELEMENT", "extension", "Extension"], "field_name": "extension"}, {"direct_properties": {"url": "http://fhir.hl7.org.vn/core/StructureDefinition/vn-ext-insurance-visit-type"}, "has_internal_children": true, "node_id": "495418", "labels": ["FHIR_ELEMENT", "extension", "Extension"], "field_name": "extension"}, {"direct_properties": {"url": "http://fhir.hl7.org.vn/core/StructureDefinition/vn-ext-referral-mode"}, "has_internal_children": true, "node_id": "495421", "labels": ["FHIR_ELEMENT", "extension", "Extension"], "field_name": "extension"}, {"direct_properties": {}, "has_internal_children": true, "node_id": "495447", "labels": ["FHIR_ELEMENT", "BackboneElement", "hospitalization"], "field_name": "hospitalization"}, {"direct_properties": {"system": "http://fhir.hl7.org.vn/core/sid/ma-luot-kcb", "value": "250924000002"}, "has_internal_children": true, "node_id": "495429", "labels": ["FHIR_ELEMENT", "identifier", "Identifier"], "field_name": "identifier"}, {"direct_properties": {"unit": "d", "system": "http://unitsofmeasure.org", "code": "d", "value": 6}, "has_internal_children": false, "node_id": "495437", "labels": ["FHIR_ELEMENT", "Coding", "length"], "field_name": "length"}, {"direct_properties": {}, "has_internal_children": true, "node_id": "495452", "labels": ["FHIR_ELEMENT", "BackboneElement", "location"], "field_name": "location"}, {"direct_properties": {"lastUpdated": "2026-06-26T10:56:05.830+07:00", "versionId": "1", "profile": ["http://fhir.hl7.org.vn/core/StructureDefinition/vn-core-encounter"]}, "has_internal_children": false, "node_id": "495417", "labels": ["FHIR_ELEMENT", "meta", "Meta"], "field_name": "meta"}, {"direct_properties": {"start": "2025-09-24T12:27:00+07:00", "end": "2025-09-30T17:27:00+07:00"}, "has_internal_children": false, "node_id": "495436", "labels": ["FHIR_ELEMENT", "BackboneElement", "period"], "field_name": "period"}, {"direct_properties": {"text": "tái khám"}, "has_internal_children": false, "node_id": "495438", "labels": ["FHIR_ELEMENT", "BackboneElement", "reasonCode"], "field_name": "reasonCode"}, {"direct_properties": {"reference": "Organization/10666"}, "has_internal_children": false, "node_id": "495454", "labels": ["FHIR_ELEMENT", "Reference", "serviceProvider"], "field_name": "serviceProvider"}, {"direct_properties": {"reference": "Patient/10796", "display": "NAM VŨ"}, "has_internal_children": false, "node_id": "495435", "labels": ["FHIR_ELEMENT", "Reference", "subject"], "field_name": "subject"}, {"direct_properties": {}, "has_internal_children": true, "node_id": "495433", "labels": ["FHIR_ELEMENT", "type", "CodeableConcept"], "field_name": "type"}]}]}
+2026-07-29 03:46:29,503 | INFO | TOOL END | run_id=2fc99b43aca1 | handler=generate_agent_response | tool=list_resource_fields_batch | status=ok | count=2 | chars=5914
+2026-07-29 03:48:15,457 | WARNING | REQUEST DIAGNOSTIC | event=handler_entry | run_id=8ae501b5233a | handler=generate_agent_response | process_id=12 | task_id=128539470681600 | supplied_session_id=6b746d52-f0f7-4c21-9efb-3e52c1df01c5 | message_fingerprint=e5b1f9395109ed42 | active_runs=2 | duplicate_candidates=[]
+2026-07-29 03:48:15,465 | DEBUG | REQUEST CALL STACK | run_id=8ae501b5233a | subprocess_started@_subprocess.py:80 <- run@server.py:74 <- run@runners.py:195 <- run@runners.py:118 <- generate_assistant_response@chat.py:36 <- generate_agent_response@agent.py:1338
+2026-07-29 03:48:15,661 | INFO | PREPARE RUN | run_id=8ae501b5233a | session_id=6b746d52-f0f7-4c21-9efb-3e52c1df01c5 | mem0_results=0 | current_message_chars=227 | estimated_history_chars=0 | active_runs=2
+2026-07-29 03:48:15,662 | DEBUG | MEM0 RESULTS [8ae501b5233a]
+[]
+2026-07-29 03:48:15,663 | DEBUG | MEMORY CONTEXT [8ae501b5233a]
+No relevant conversational memories were found.
+2026-07-29 03:48:15,663 | INFO | MODEL RUN START | run_id=8ae501b5233a | handler=generate_agent_response | session_id=6b746d52-f0f7-4c21-9efb-3e52c1df01c5
+2026-07-29 03:48:18,299 | INFO | TOOL START | run_id=8ae501b5233a | handler=generate_agent_response | tool=run_cypher
+2026-07-29 03:48:18,300 | DEBUG | TOOL INPUT | run_cypher | parameters
+{
+  "domain": "healthcare"
+}
+2026-07-29 03:48:18,350 | DEBUG | NEO4J RAW RESULT | run_cypher
+[]
+2026-07-29 03:48:18,350 | DEBUG | MODEL TOOL RESULT OBJECT | run_cypher
+{
+  "status": "ok",
+  "count": 0,
+  "data": []
+}
+2026-07-29 03:48:18,351 | DEBUG | MODEL TOOL RESULT STRING | run_cypher
+{"status": "ok", "count": 0, "data": []}
+2026-07-29 03:48:18,352 | INFO | TOOL END | run_id=8ae501b5233a | handler=generate_agent_response | tool=run_cypher | status=ok | count=0 | chars=40
+2026-07-29 03:48:19,844 | INFO | TOOL START | run_id=8ae501b5233a | handler=generate_agent_response | tool=run_cypher
+2026-07-29 03:48:19,844 | DEBUG | TOOL INPUT | run_cypher | parameters
+{
+  "domain": "healthcare"
+}
+2026-07-29 03:48:19,874 | DEBUG | NEO4J RAW RESULT | run_cypher
+[]
+2026-07-29 03:48:19,875 | DEBUG | MODEL TOOL RESULT OBJECT | run_cypher
+{
+  "status": "ok",
+  "count": 0,
+  "data": []
+}
+2026-07-29 03:48:19,876 | DEBUG | MODEL TOOL RESULT STRING | run_cypher
+{"status": "ok", "count": 0, "data": []}
+2026-07-29 03:48:19,877 | INFO | TOOL END | run_id=8ae501b5233a | handler=generate_agent_response | tool=run_cypher | status=ok | count=0 | chars=40
+2026-07-29 03:48:21,809 | INFO | TOOL START | run_id=8ae501b5233a | handler=generate_agent_response | tool=run_cypher
+2026-07-29 03:48:21,810 | DEBUG | TOOL INPUT | run_cypher | parameters
+{
+  "domain": "healthcare"
+}
+2026-07-29 03:48:21,837 | DEBUG | NEO4J RAW RESULT | run_cypher
+[]
+2026-07-29 03:48:21,837 | DEBUG | MODEL TOOL RESULT OBJECT | run_cypher
+{
+  "status": "ok",
+  "count": 0,
+  "data": []
+}
+2026-07-29 03:48:21,838 | DEBUG | MODEL TOOL RESULT STRING | run_cypher
+{"status": "ok", "count": 0, "data": []}
+2026-07-29 03:48:21,839 | INFO | TOOL END | run_id=8ae501b5233a | handler=generate_agent_response | tool=run_cypher | status=ok | count=0 | chars=40
+2026-07-29 03:48:23,726 | INFO | TOOL START | run_id=8ae501b5233a | handler=generate_agent_response | tool=run_cypher
+2026-07-29 03:48:23,727 | DEBUG | TOOL INPUT | run_cypher | parameters
+{
+  "domain": "healthcare"
+}
+2026-07-29 03:48:23,745 | DEBUG | NEO4J RAW RESULT | run_cypher
+[]
+2026-07-29 03:48:23,746 | DEBUG | MODEL TOOL RESULT OBJECT | run_cypher
+{
+  "status": "ok",
+  "count": 0,
+  "data": []
+}
+2026-07-29 03:48:23,746 | DEBUG | MODEL TOOL RESULT STRING | run_cypher
+{"status": "ok", "count": 0, "data": []}
+2026-07-29 03:48:23,747 | INFO | TOOL END | run_id=8ae501b5233a | handler=generate_agent_response | tool=run_cypher | status=ok | count=0 | chars=40
+2026-07-29 03:48:25,340 | INFO | TOOL START | run_id=8ae501b5233a | handler=generate_agent_response | tool=run_cypher
+2026-07-29 03:48:25,341 | DEBUG | TOOL INPUT | run_cypher | parameters
+{
+  "domain": "healthcare"
+}
+2026-07-29 03:48:25,360 | DEBUG | NEO4J RAW RESULT | run_cypher
+[
+  {
+    "id": "10796"
+  },
+  {
+    "id": "10871"
+  },
+  {
+    "id": "11151"
+  },
+  {
+    "id": "11160"
+  },
+  {
+    "id": "11527"
+  }
+]
+2026-07-29 03:48:25,360 | DEBUG | MODEL TOOL RESULT OBJECT | run_cypher
+{
+  "status": "ok",
+  "count": 5,
+  "data": [
+    {
+      "id": "10796"
+    },
+    {
+      "id": "10871"
+    },
+    {
+      "id": "11151"
+    },
+    {
+      "id": "11160"
+    },
+    {
+      "id": "11527"
+    }
+  ]
+}
+2026-07-29 03:48:25,361 | DEBUG | MODEL TOOL RESULT STRING | run_cypher
+{"status": "ok", "count": 5, "data": [{"id": "10796"}, {"id": "10871"}, {"id": "11151"}, {"id": "11160"}, {"id": "11527"}]}
+2026-07-29 03:48:25,361 | INFO | TOOL END | run_id=8ae501b5233a | handler=generate_agent_response | tool=run_cypher | status=ok | count=5 | chars=123
+2026-07-29 03:48:26,740 | INFO | TOOL START | run_id=8ae501b5233a | handler=generate_agent_response | tool=list_resource_fields
+2026-07-29 03:48:26,741 | DEBUG | TOOL INPUT | list_resource_fields | parameters
+{
+  "resource_type": "Patient",
+  "resource_id": "10796",
+  "blocked_relationships": [
+    "RESOLVES_TO",
+    "DEFINED_BY"
+  ]
+}
+2026-07-29 03:48:26,865 | DEBUG | NEO4J RAW RESULT | list_resource_fields
+[
+  {
+    "resource_type": "Patient",
+    "resource_id": "10796",
+    "root_properties": {
+      "gender": "male",
+      "language": "vi",
+      "id": "10796",
+      "birthDate": "1947-03-31",
+      "resourceType": "Patient"
+    },
+    "fields": [
+      {
+        "direct_properties": {
+          "lastUpdated": "2026-06-26T10:28:34.175+07:00",
+          "versionId": "1",
+          "profile": [
+            "http://fhir.hl7.org.vn/core/StructureDefinition/vn-core-patient"
+          ]
+        },
+        "has_internal_children": false,
+        "node_id": "489162",
+        "labels": [
+          "FHIR_ELEMENT",
+          "meta",
+          "Meta"
+        ],
+        "field_name": "meta"
+      },
+      {
+        "direct_properties": {
+          "system": "http://fhir.hl7.org.vn/core/sid/malk",
+          "value": "250916000001"
+        },
+        "has_internal_children": true,
+        "node_id": "489172",
+        "labels": [
+          "FHIR_ELEMENT",
+          "identifier",
+          "Identifier"
+        ],
+        "field_name": "identifier"
+      },
+      {
+        "direct_properties": {
+          "system": "http://fhir.hl7.org.vn/core/sid/cccd",
+          "value": "818053162473"
+        },
+        "has_internal_children": true,
+        "node_id": "489163",
+        "labels": [
+          "FHIR_ELEMENT",
+          "identifier",
+          "Identifier"
+        ],
+        "field_name": "identifier"
+      },
+      {
+        "direct_properties": {
+          "system": "http://fhir.hl7.org.vn/core/sid/mrn",
+          "value": "9030148007"
+        },
+        "has_internal_children": true,
+        "node_id": "489169",
+        "labels": [
+          "FHIR_ELEMENT",
+          "identifier",
+          "Identifier"
+        ],
+        "field_name": "identifier"
+      },
+      {
+        "direct_properties": {
+          "system": "http://fhir.hl7.org.vn/core/sid/bhyt",
+          "value": "CT4068370720873"
+        },
+        "has_internal_children": true,
+        "node_id": "489166",
+        "labels": [
+          "FHIR_ELEMENT",
+          "identifier",
+          "Identifier"
+        ],
+        "field_name": "identifier"
+      },
+      {
+        "direct_properties": {
+          "given": [
+            "VŨ"
+          ],
+          "text": "NAM VŨ",
+          "family": "NAM"
+        },
+        "has_internal_children": false,
+        "node_id": "489175",
+        "labels": [
+          "FHIR_ELEMENT",
+          "BackboneElement",
+          "name"
+        ],
+        "field_name": "name"
+      }
+    ]
+  }
+]
+2026-07-29 03:48:26,866 | DEBUG | MODEL TOOL RESULT OBJECT | list_resource_fields
+{
+  "status": "ok",
+  "count": 1,
+  "data": [
+    {
+      "resource_type": "Patient",
+      "resource_id": "10796",
+      "root_properties": {
+        "gender": "male",
+        "language": "vi",
+        "id": "10796",
+        "birthDate": "1947-03-31",
+        "resourceType": "Patient"
+      },
+      "fields": [
+        {
+          "direct_properties": {
+            "lastUpdated": "2026-06-26T10:28:34.175+07:00",
+            "versionId": "1",
+            "profile": [
+              "http://fhir.hl7.org.vn/core/StructureDefinition/vn-core-patient"
+            ]
+          },
+          "has_internal_children": false,
+          "node_id": "489162",
+          "labels": [
+            "FHIR_ELEMENT",
+            "meta",
+            "Meta"
+          ],
+          "field_name": "meta"
+        },
+        {
+          "direct_properties": {
+            "system": "http://fhir.hl7.org.vn/core/sid/malk",
+            "value": "250916000001"
+          },
+          "has_internal_children": true,
+          "node_id": "489172",
+          "labels": [
+            "FHIR_ELEMENT",
+            "identifier",
+            "Identifier"
+          ],
+          "field_name": "identifier"
+        },
+        {
+          "direct_properties": {
+            "system": "http://fhir.hl7.org.vn/core/sid/cccd",
+            "value": "818053162473"
+          },
+          "has_internal_children": true,
+          "node_id": "489163",
+          "labels": [
+            "FHIR_ELEMENT",
+            "identifier",
+            "Identifier"
+          ],
+          "field_name": "identifier"
+        },
+        {
+          "direct_properties": {
+            "system": "http://fhir.hl7.org.vn/core/sid/mrn",
+            "value": "9030148007"
+          },
+          "has_internal_children": true,
+          "node_id": "489169",
+          "labels": [
+            "FHIR_ELEMENT",
+            "identifier",
+            "Identifier"
+          ],
+          "field_name": "identifier"
+        },
+        {
+          "direct_properties": {
+            "system": "http://fhir.hl7.org.vn/core/sid/bhyt",
+            "value": "CT4068370720873"
+          },
+          "has_internal_children": true,
+          "node_id": "489166",
+          "labels": [
+            "FHIR_ELEMENT",
+            "identifier",
+            "Identifier"
+          ],
+          "field_name": "identifier"
+        },
+        {
+          "direct_properties": {
+            "given": [
+              "VŨ"
+            ],
+            "text": "NAM VŨ",
+            "family": "NAM"
+          },
+          "has_internal_children": false,
+          "node_id": "489175",
+          "labels": [
+            "FHIR_ELEMENT",
+            "BackboneElement",
+            "name"
+          ],
+          "field_name": "name"
+        }
+      ]
+    }
+  ]
+}
+2026-07-29 03:48:26,867 | DEBUG | MODEL TOOL RESULT STRING | list_resource_fields
+{"status": "ok", "count": 1, "data": [{"resource_type": "Patient", "resource_id": "10796", "root_properties": {"gender": "male", "language": "vi", "id": "10796", "birthDate": "1947-03-31", "resourceType": "Patient"}, "fields": [{"direct_properties": {"lastUpdated": "2026-06-26T10:28:34.175+07:00", "versionId": "1", "profile": ["http://fhir.hl7.org.vn/core/StructureDefinition/vn-core-patient"]}, "has_internal_children": false, "node_id": "489162", "labels": ["FHIR_ELEMENT", "meta", "Meta"], "field_name": "meta"}, {"direct_properties": {"system": "http://fhir.hl7.org.vn/core/sid/malk", "value": "250916000001"}, "has_internal_children": true, "node_id": "489172", "labels": ["FHIR_ELEMENT", "identifier", "Identifier"], "field_name": "identifier"}, {"direct_properties": {"system": "http://fhir.hl7.org.vn/core/sid/cccd", "value": "818053162473"}, "has_internal_children": true, "node_id": "489163", "labels": ["FHIR_ELEMENT", "identifier", "Identifier"], "field_name": "identifier"}, {"direct_properties": {"system": "http://fhir.hl7.org.vn/core/sid/mrn", "value": "9030148007"}, "has_internal_children": true, "node_id": "489169", "labels": ["FHIR_ELEMENT", "identifier", "Identifier"], "field_name": "identifier"}, {"direct_properties": {"system": "http://fhir.hl7.org.vn/core/sid/bhyt", "value": "CT4068370720873"}, "has_internal_children": true, "node_id": "489166", "labels": ["FHIR_ELEMENT", "identifier", "Identifier"], "field_name": "identifier"}, {"direct_properties": {"given": ["VŨ"], "text": "NAM VŨ", "family": "NAM"}, "has_internal_children": false, "node_id": "489175", "labels": ["FHIR_ELEMENT", "BackboneElement", "name"], "field_name": "name"}]}]}
+2026-07-29 03:48:26,867 | INFO | TOOL END | run_id=8ae501b5233a | handler=generate_agent_response | tool=list_resource_fields | status=ok | count=1 | chars=1671
+2026-07-29 03:48:35,948 | DEBUG | MODEL USAGE | run_id=8ae501b5233a
+"RunUsage(input_tokens=29487, output_tokens=1198, requests=7, tool_calls=6)"
+2026-07-29 03:48:35,948 | INFO | TOKENS | run_id=8ae501b5233a | session=6b746d52-f0f7-4c21-9efb-3e52c1df01c5 | usage=RunUsage(input_tokens=29487, output_tokens=1198, requests=7, tool_calls=6)
+2026-07-29 03:48:35,949 | DEBUG | MODEL FINAL OUTPUT | run_id=8ae501b5233a | session_id=6b746d52-f0f7-4c21-9efb-3e52c1df01c5
+I’m ready to help with your clinical questions using the available FHIR data. Please let me know what specific information you’d like to retrieve (e.g., patient details, encounter information, observations, medications, etc.), and I’ll use the appropriate tools to gather the evidence and provide an answer.
+2026-07-29 03:48:35,950 | INFO | MODEL RUN END | run_id=8ae501b5233a | handler=generate_agent_response | session_id=6b746d52-f0f7-4c21-9efb-3e52c1df01c5 | chars=307
+2026-07-29 03:48:35,950 | WARNING | REQUEST DIAGNOSTIC | event=handler_exit | run_id=8ae501b5233a | handler=generate_agent_response | outcome=success | duration_sec=20.494 | tool_calls=6 | tool_result_chars=1954 | active_runs=1

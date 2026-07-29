@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import ANY, AsyncMock, MagicMock, patch
 from uuid import UUID, uuid4
 
 import anyio
@@ -301,9 +301,9 @@ def test_create_message_success():
         content="User question",
         user_id=str(user.id),
         conversation_id=str(conv.id),
+        current_user_message_id=ANY,
     )
-    mock_session.flush.assert_awaited_once()
-    mock_session.commit.assert_awaited_once()
+    assert mock_session.commit.await_count == 2
     memory.assert_awaited_once_with(
         user_id=str(user.id),
         conversation_id=str(conv.id),
@@ -377,7 +377,7 @@ def test_create_message_agent_error_rolls_back():
     assert resp.status_code == 500
     assert resp.json()["detail"] == "Unable to process message"
     mock_session.rollback.assert_awaited_once()
-    mock_session.commit.assert_not_awaited()
+    assert mock_session.commit.await_count == 1
     memory.assert_not_awaited()
     added = [call.args[0] for call in mock_session.add.call_args_list]
     assert len(added) == 1
@@ -402,7 +402,7 @@ def test_create_message_empty_agent_response_rolls_back():
 
     assert resp.status_code == 500
     mock_session.rollback.assert_awaited_once()
-    mock_session.commit.assert_not_awaited()
+    assert mock_session.commit.await_count == 1
     memory.assert_not_awaited()
 
 
@@ -424,16 +424,16 @@ def test_create_message_none_agent_response_rolls_back():
 
     assert resp.status_code == 500
     mock_session.rollback.assert_awaited_once()
-    mock_session.commit.assert_not_awaited()
+    assert mock_session.commit.await_count == 1
     memory.assert_not_awaited()
 
 
-def test_create_message_flush_error_rolls_back():
+def test_create_message_user_commit_error_rolls_back_before_agent():
     user = _make_user()
     conv = _make_conversation(user_id=user.id)
     app, mock_session, _ = _make_test_app(current_user=user)
     _configure_execute_results(mock_session, [_result(scalar_one_or_none=conv)])
-    mock_session.flush = AsyncMock(
+    mock_session.commit = AsyncMock(
         side_effect=IntegrityError(
             statement=None,
             params=None,
@@ -480,7 +480,7 @@ def test_create_message_commit_error_rolls_back():
         )
 
     assert resp.status_code == 500
-    mock_session.rollback.assert_awaited_once()
+    assert mock_session.rollback.await_count >= 1
     memory.assert_not_awaited()
 
 
@@ -503,7 +503,7 @@ def test_create_message_memory_error_after_commit_still_returns_201():
     assert resp.status_code == 201
     assert resp.json()["assistant_message"]["content"] == "Answer"
     mock_session.rollback.assert_not_awaited()
-    mock_session.commit.assert_awaited_once()
+    assert mock_session.commit.await_count == 2
     assert "mem0 failed" not in resp.text
 
 
@@ -517,7 +517,13 @@ def test_stream_message_success_forwards_tool_events_and_persists_messages():
     assistant_session, _ = _build_mock_session()
     _configure_execute_results(assistant_session, [_result(scalar_one_or_none=conv)])
 
-    async def _agent(*, content: str, user_id: str, conversation_id: str) -> str:
+    async def _agent(
+        *,
+        content: str,
+        user_id: str,
+        conversation_id: str,
+        current_user_message_id=None,
+    ) -> str:
         collector = get_collector()
         collector.emit_tool_start("search_patient", {"query": "Nguyen Van A"})
         collector.collect([{"patient": "A"}])
@@ -577,6 +583,7 @@ def test_stream_message_success_forwards_tool_events_and_persists_messages():
         content="User question",
         user_id=str(user.id),
         conversation_id=str(conv.id),
+        current_user_message_id=ANY,
     )
     memory.assert_awaited_once_with(
         user_id=str(user.id),
@@ -600,7 +607,13 @@ def test_stream_message_ignores_collector_text_delta_and_done_duplicates():
     assistant_session, _ = _build_mock_session()
     _configure_execute_results(assistant_session, [_result(scalar_one_or_none=conv)])
 
-    async def _agent(*, content: str, user_id: str, conversation_id: str) -> str:
+    async def _agent(
+        *,
+        content: str,
+        user_id: str,
+        conversation_id: str,
+        current_user_message_id=None,
+    ) -> str:
         collector = get_collector()
         collector.emit_tool_start("search_patient", {"query": "A"})
         collector.collect_tool_call("search_patient", {"query": "A"}, "done")

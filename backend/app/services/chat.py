@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 from typing import Any
+from uuid import UUID
 
 from app.agent import generate_agent_response
 from app.memory import save_conversation_memory
+from app.services.short_term_memory import (
+    ShortTermMemoryService,
+    build_conversation_context,
+)
 
 
 async def generate_assistant_response(
@@ -13,11 +18,26 @@ async def generate_assistant_response(
     content: str,
     user_id: str,
     conversation_id: str,
+    current_user_message_id: UUID | None = None,
 ) -> str:
+    short_term_context = ""
+    if current_user_message_id is not None:
+        context = await ShortTermMemoryService().prepare_context(
+            conversation_id=UUID(conversation_id),
+            user_id=UUID(user_id),
+            current_user_message_id=current_user_message_id,
+            current_content=content,
+        )
+        short_term_context = build_conversation_context(
+            summary=context.summary,
+            recent_messages=context.recent_messages,
+        )
+
     result = await generate_agent_response(
         content,
         session_id=conversation_id,
         user_id=user_id,
+        short_term_context=short_term_context,
     )
     assistant_content = extract_agent_text(result)
     if not assistant_content.strip():

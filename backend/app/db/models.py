@@ -7,6 +7,7 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Integer,
     String,
     Text,
     func,
@@ -97,6 +98,29 @@ class Conversation(Base):
         onupdate=func.now(),
     )
 
+    summary: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+        server_default="",
+    )
+
+    summary_through_message_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("messages.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    summary_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    memory_version: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default="0",
+    )
+
     user: Mapped["User"] = relationship(
         back_populates="conversations",
     )
@@ -105,6 +129,7 @@ class Conversation(Base):
         back_populates="conversation",
         cascade="all, delete-orphan",
         order_by="Message.created_at",
+        foreign_keys="Message.conversation_id",
     )
 
 
@@ -148,4 +173,5 @@ class Message(Base):
 
     conversation: Mapped["Conversation"] = relationship(
         back_populates="messages",
+        foreign_keys=[conversation_id],
     )

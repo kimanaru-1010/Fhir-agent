@@ -1329,6 +1329,7 @@ async def generate_agent_response(
     message: str,
     session_id: str | None = None,
     user_id: str = "anonymous",
+    short_term_context: str = "",
 ) -> dict[str, Any]:
     """Generate a non-streaming agent response without persisting memory."""
     run_id = _generate_run_id()
@@ -1349,14 +1350,24 @@ async def generate_agent_response(
             run_id,
             resolved_session_id,
         )
-        effective_message = (
-            "CONVERSATIONAL MEMORY\n"
-            f"{memory_prompt}\n\n"
-            "CURRENT USER REQUEST\n"
-            f"{message}"
-            if memory_prompt
-            else message
+        context_sections = [
+            "CONVERSATIONAL MEMORY",
+            memory_prompt,
+        ]
+        if short_term_context.strip():
+            context_sections.extend(
+                [
+                    "SHORT-TERM CONVERSATION CONTEXT",
+                    short_term_context.strip(),
+                ]
+            )
+        context_sections.extend(
+            [
+                "CURRENT USER REQUEST",
+                message,
+            ]
         )
+        effective_message = "\n".join(context_sections)
 
         result = await agent.run(
             effective_message,

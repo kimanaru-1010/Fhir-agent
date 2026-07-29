@@ -8,6 +8,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from app.memory import (
+    FHIR_MEMORY_EXTRACTION_PROMPT,
     _build_mem0_config,
     _sanitize,
     check_pgvector_connection,
@@ -198,7 +199,87 @@ def test_save_conversation_memory_passes_correct_args(mock_mem0):
         user_id="doctor-1",
         agent_id="fhir-clinical-agent",
         run_id="chat-1",
+        prompt=FHIR_MEMORY_EXTRACTION_PROMPT,
     )
+
+
+def test_save_conversation_memory_passes_custom_fhir_prompt(mock_mem0):
+    import asyncio
+
+    user_id = "doctor-1"
+    session_id = "chat-1"
+
+    asyncio.run(
+        save_conversation_memory(
+            user_id=user_id,
+            session_id=session_id,
+            user_message="  Tim Nguyen Van A.  ",
+            assistant_message="  Da xac dinh Patient/123.  ",
+        )
+    )
+
+    args, kwargs = mock_mem0.add.call_args
+    assert args[0] == [
+        {"role": "user", "content": "Tim Nguyen Van A."},
+        {"role": "assistant", "content": "Da xac dinh Patient/123."},
+    ]
+    assert kwargs["prompt"] == FHIR_MEMORY_EXTRACTION_PROMPT
+    assert kwargs["user_id"] == user_id
+    assert kwargs["agent_id"] == "fhir-clinical-agent"
+    assert kwargs["run_id"] == session_id
+
+
+def test_save_conversation_memory_strips_reasoning_before_saving(mock_mem0):
+    import asyncio
+
+    asyncio.run(
+        save_conversation_memory(
+            user_id="doctor-1",
+            session_id="chat-1",
+            user_message="Tim Nguyen Van A.",
+            assistant_message="<think>internal reasoning</think>\nDa xac dinh Patient/123.",
+        )
+    )
+
+    messages = mock_mem0.add.call_args.args[0]
+    assert messages == [
+        {"role": "user", "content": "Tim Nguyen Van A."},
+        {"role": "assistant", "content": "Da xac dinh Patient/123."},
+    ]
+
+
+def test_save_conversation_memory_no_memory_instance_returns_empty():
+    import asyncio
+
+    with patch("app.memory.get_memory", return_value=None):
+        result = asyncio.run(
+            save_conversation_memory(
+                user_id="doctor-1",
+                session_id="chat-1",
+                user_message="Tim Nguyen Van A.",
+                assistant_message="Da xac dinh Patient/123.",
+            )
+        )
+
+    assert result == []
+
+
+def test_save_conversation_memory_normalizes_results(mock_mem0):
+    import asyncio
+
+    memory = "[entity_context] The currently selected patient is Patient/123."
+    mock_mem0.add.return_value = {"results": [{"memory": memory}]}
+
+    result = asyncio.run(
+        save_conversation_memory(
+            user_id="doctor-1",
+            session_id="chat-1",
+            user_message="Tim Nguyen Van A.",
+            assistant_message="Da xac dinh Patient/123.",
+        )
+    )
+
+    assert result == [{"memory": memory}]
 
 
 def test_save_conversation_memory_different_sessions(mock_mem0):

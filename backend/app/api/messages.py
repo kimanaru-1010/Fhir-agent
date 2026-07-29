@@ -129,20 +129,29 @@ async def create_message(
         conversation_id,
         current_user.id,
     )
-    user_message = Message(
-        conversation_id=conversation.id,
-        role="user",
-        content=req.content,
-    )
+    try:
+        user_message = await create_user_message(
+            db=db,
+            conversation=conversation,
+            content=req.content,
+        )
+    except Exception:
+        logger.exception(
+            "Failed to persist user message for conversation_id=%s user_id=%s",
+            conversation_id,
+            current_user.id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to process message",
+        )
 
     try:
-        db.add(user_message)
-        await db.flush()
-
         assistant_content = await generate_assistant_response(
             content=req.content,
             user_id=str(current_user.id),
             conversation_id=str(conversation.id),
+            current_user_message_id=user_message.id,
         )
         if not assistant_content.strip():
             raise RuntimeError("Agent returned an empty response")

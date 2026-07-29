@@ -51,7 +51,7 @@ services:
       MEM0_AGENT_ID: ${MEM0_AGENT_ID:-fhir-clinical-agent}
       MEM0_VECTOR_STORE_PROVIDER: pgvector
       MEM0_COLLECTION_NAME: ${MEM0_COLLECTION_NAME:-fhir_agent_memories}
-      CORS_ORIGINS: http://localhost:${FRONTEND_PORT:-3000}
+      CORS_ORIGINS: http://localhost:${FRONTEND_PORT:-3000},http://127.0.0.1:${FRONTEND_PORT:-3000}
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/fhir_agent
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}

@@ -37,6 +37,41 @@ def test_generate_agent_response_does_not_save_memory():
     anyio.run(run_test)
 
 
+def test_generate_agent_response_includes_short_term_context_without_message_history():
+    async def run_test():
+        model_result = MagicMock()
+        model_result.output = "Assistant response"
+        model_result.usage.return_value = {"total_tokens": 10}
+        runner = AsyncMock(return_value=model_result)
+
+        with (
+            patch(
+                "app.agent._prepare_run",
+                AsyncMock(return_value=("conversation-1", [], "No memories")),
+            ),
+            patch("app.agent.agent.run", runner),
+        ):
+            await generate_agent_response(
+                "Nguoi nay co thuoc active nao?",
+                session_id="conversation-1",
+                user_id="user-1",
+                short_term_context=(
+                    "SHORT-TERM CONVERSATION SUMMARY\n"
+                    "Patient/123 was identified earlier."
+                ),
+            )
+
+        effective_message = runner.await_args.args[0]
+        assert "CONVERSATIONAL MEMORY" in effective_message
+        assert "SHORT-TERM CONVERSATION CONTEXT" in effective_message
+        assert "Patient/123 was identified earlier." in effective_message
+        assert "CURRENT USER REQUEST" in effective_message
+        assert effective_message.count("Nguoi nay co thuoc active nao?") == 1
+        assert runner.await_args.kwargs["message_history"] == []
+
+    anyio.run(run_test)
+
+
 def test_handle_message_wraps_generation_and_saves_memory():
     async def run_test():
         generated = {

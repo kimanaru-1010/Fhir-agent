@@ -18,6 +18,108 @@ from app.debug_trace import trace
 
 logger = logging.getLogger(__name__)
 
+FHIR_MEMORY_EXTRACTION_PROMPT = """
+Extract only information that will be useful in future conversations for a
+FHIR clinical graph assistant.
+
+Each extracted memory MUST begin with exactly one of these labels:
+
+- [user_preference]
+- [entity_context]
+- [query_constraint]
+- [conversation_goal]
+- [unresolved_task]
+
+Memory types:
+
+1. [user_preference]
+   Stable preferences explicitly stated by the user, including preferred
+   language, answer style, output format, and reusable defaults.
+
+2. [entity_context]
+   FHIR resources currently selected, referenced, or discussed.
+   Preserve exact references such as Patient/123, Encounter/456, or
+   MedicationRequest/789.
+
+3. [query_constraint]
+   Explicit filters or restrictions requested by the user, including status,
+   date range, resource type, exclusions, and result limits.
+
+4. [conversation_goal]
+   The retrieval, investigation, comparison, or analysis task currently being
+   pursued.
+
+5. [unresolved_task]
+   Missing information, pending selections, unanswered questions, or work that
+   remains incomplete.
+
+Rules:
+
+- Use information from both user and assistant messages when necessary.
+- Preserve FHIR resource types, resource IDs, references, codes, dates,
+  quantities, and statuses exactly as written.
+- Never invent, normalize, translate, shorten, or modify identifiers.
+- Store one independent fact per memory.
+- Keep each memory concise, factual, and self-contained.
+- Do not store greetings, acknowledgements, repetition, or generic statements.
+- Do not store raw JSON, raw Neo4j output, Cypher queries, tool diagnostics,
+  logs, internal reasoning, or complete assistant answers.
+- Do not store mutable clinical data as a permanent truth.
+- Prefer investigation context over copied clinical values.
+- Do not infer information that is not explicitly supported.
+- Return no memories when nothing useful is present.
+
+Examples:
+
+User:
+Chi lay cac thuoc dang active.
+
+Assistant:
+Toi se chi xet MedicationRequest co trang thai active.
+
+Memories:
+- [query_constraint] Only active medication records should be included.
+
+User:
+Tim benh nhan Nguyen Van A.
+
+Assistant:
+Da xac dinh Patient/123.
+
+Memories:
+- [entity_context] The currently selected patient is Patient/123.
+
+User:
+Toi muon cau tra loi ngan bang tieng Viet.
+
+Assistant:
+Da hieu.
+
+Memories:
+- [user_preference] User prefers concise Vietnamese responses.
+
+User:
+Patient nay co glucose bao nhieu?
+
+Assistant:
+Observation/456 hien bao glucose 7.2 mmol/L.
+
+Memories:
+- [conversation_goal] User is investigating glucose observations for the currently selected patient.
+- [entity_context] Observation/456 is referenced in the current investigation.
+
+Do not store the glucose value as a permanent fact.
+
+User:
+Cam on.
+
+Assistant:
+Khong co gi.
+
+Memories:
+- None.
+"""
+
 _memory: Memory | None = None
 
 
@@ -392,6 +494,7 @@ async def save_conversation_memory(
             user_id=user_id,
             agent_id=settings.mem0_agent_id,
             run_id=session_id,
+            prompt=FHIR_MEMORY_EXTRACTION_PROMPT,
         )
 
         # Exact return value from mem.add(), including ADD/UPDATE/DELETE events.

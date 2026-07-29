@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import json
-from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import uuid4
+from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -84,7 +83,13 @@ def test_create_conversation_stream_success_starts_conversation_and_persists_exc
 
     assistant_session.execute = AsyncMock(side_effect=_lookup_created_conversation)
 
-    async def _agent(*, content: str, user_id: str, conversation_id: str) -> str:
+    async def _agent(
+        *,
+        content: str,
+        user_id: str,
+        conversation_id: str,
+        current_user_message_id=None,
+    ) -> str:
         collector = get_collector()
         collector.emit_tool_start("search_patient", {"query": "Nguyen Van A"})
         collector.collect([{"patient": "A"}])
@@ -148,6 +153,7 @@ def test_create_conversation_stream_success_starts_conversation_and_persists_exc
         content="First question",
         user_id=str(user.id),
         conversation_id=started["conversation"]["id"],
+        current_user_message_id=ANY,
     )
     memory.assert_awaited_once_with(
         user_id=str(user.id),
