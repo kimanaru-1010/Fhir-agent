@@ -61,20 +61,24 @@ def split_messages_for_compaction(
     protected_message_ids: set[UUID] | None = None,
 ) -> tuple[list[ConversationMessage], list[ConversationMessage]]:
     protected = protected_message_ids or set()
-    recent_reversed: list[ConversationMessage] = []
+    split_index = len(messages)
     recent_tokens = 0
 
-    for message in reversed(messages):
+    for index in range(len(messages) - 1, -1, -1):
+        message = messages[index]
         message_tokens = token_counter.count_messages([message])
-        must_keep = message.id in protected
-        if must_keep or recent_tokens + message_tokens <= recent_token_budget:
-            recent_reversed.append(message)
+        if message.id in protected:
+            split_index = index
             recent_tokens += message_tokens
+            continue
 
-    recent_ids = {message.id for message in recent_reversed}
-    old_messages = [message for message in messages if message.id not in recent_ids]
-    recent_messages = [message for message in messages if message.id in recent_ids]
-    return old_messages, recent_messages
+        if recent_tokens + message_tokens > recent_token_budget:
+            break
+
+        recent_tokens += message_tokens
+        split_index = index
+
+    return messages[:split_index], messages[split_index:]
 
 
 def build_conversation_context(
@@ -251,21 +255,33 @@ class ShortTermMemoryService:
             summary=new_summary,
             cutoff_id=cutoff_id,
         )
-        if not persisted and retry_on_version_mismatch and self.session_factory is not None:
-            async with self.session_factory() as session:
-                refreshed = await self._load_state(
-                    session=session,
+        if not persisted:
+            if retry_on_version_mismatch and self.session_factory is not None:
+                async with self.session_factory() as session:
+                    refreshed = await self._load_state(
+                        session=session,
+                        conversation_id=conversation_id,
+                        user_id=user_id,
+                        current_user_message_id=current_user_message_id,
+                    )
+                return await self._prepare_from_state(
+                    refreshed,
                     conversation_id=conversation_id,
                     user_id=user_id,
                     current_user_message_id=current_user_message_id,
+                    current_content=current_content,
+                    retry_on_version_mismatch=False,
                 )
-            return await self._prepare_from_state(
-                refreshed,
-                conversation_id=conversation_id,
-                user_id=user_id,
-                current_user_message_id=current_user_message_id,
+
+            logger.warning(
+                "SHORT_TERM_COMPACTION_FAILED | conversation_id=%s error_type=%s",
+                conversation_id,
+                "SummaryPersistConflict",
+            )
+            return self._bounded_fallback_context(
+                summary=summary,
+                messages=state.unsummarized_messages,
                 current_content=current_content,
-                retry_on_version_mismatch=False,
             )
 
         tokens_after = self._estimate_context_tokens(
