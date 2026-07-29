@@ -1,10 +1,24 @@
-2026-07-28 06:52:10,404 | WARNING | REQUEST DIAGNOSTIC | event=handler_entry | run_id=8812698abada | handler=generate_agent_response | process_id=1377 | task_id=138603516441216 | supplied_session_id=e3d1dae3-f7c7-4b0d-831f-ba2e693a1479 | message_fingerprint=81f10c39c771889d | active_runs=1 | duplicate_candidates=[]
-2026-07-28 06:52:10,429 | DEBUG | REQUEST CALL STACK | run_id=8812698abada | subprocess_started@_subprocess.py:80 <- run@server.py:74 <- run@runners.py:195 <- run@runners.py:118 <- generate_assistant_response@chat.py:17 <- generate_agent_response@agent.py:1337
-2026-07-28 06:52:18,578 | WARNING | REQUEST DIAGNOSTIC | event=handler_entry | run_id=0726b1711309 | handler=generate_agent_response | process_id=1377 | task_id=138602955220416 | supplied_session_id=773f0eab-d118-4505-b514-064a8d1ed1c6 | message_fingerprint=8e9ab29a786199bf | active_runs=2 | duplicate_candidates=[]
-2026-07-28 06:52:18,584 | DEBUG | REQUEST CALL STACK | run_id=0726b1711309 | subprocess_started@_subprocess.py:80 <- run@server.py:74 <- run@runners.py:195 <- run@runners.py:118 <- generate_assistant_response@chat.py:17 <- generate_agent_response@agent.py:1337
-2026-07-28 06:53:21,573 | INFO | PREPARE RUN | run_id=0726b1711309 | session_id=773f0eab-d118-4505-b514-064a8d1ed1c6 | mem0_results=0 | current_message_chars=62 | estimated_history_chars=0 | active_runs=2
-2026-07-28 06:53:21,573 | DEBUG | MEM0 RESULTS [0726b1711309]
-[]
-2026-07-28 06:53:21,574 | DEBUG | MEMORY CONTEXT [0726b1711309]
-No relevant conversational memories were found.
-2026-07-28 06:53:21,574 | INFO | MODEL RUN START | run_id=0726b1711309 | handler=generate_agent_response | session_id=773f0eab-d118-4505-b514-064a8d1ed1c6
+2026-07-29 02:00:11,682 | WARNING | REQUEST DIAGNOSTIC | event=handler_entry | run_id=a9fc07367c7e | handler=generate_agent_response | process_id=1031 | task_id=123243302386368 | supplied_session_id=conversation-1 | message_fingerprint=185f8db32271fe25 | active_runs=1 | duplicate_candidates=[]
+2026-07-29 02:00:11,707 | DEBUG | REQUEST CALL STACK | run_id=a9fc07367c7e | run_forever@base_events.py:645 <- _run_once@base_events.py:1999 <- _run@events.py:88 <- wrapper@_asyncio.py:2464 <- run_test@test_agent.py:26 <- generate_agent_response@agent.py:1338
+2026-07-29 02:00:11,708 | INFO | MODEL RUN START | run_id=a9fc07367c7e | handler=generate_agent_response | session_id=conversation-1
+2026-07-29 02:00:11,710 | DEBUG | MODEL USAGE | run_id=a9fc07367c7e
+{
+  "total_tokens": 10
+}
+2026-07-29 02:00:11,711 | INFO | TOKENS | run_id=a9fc07367c7e | session=conversation-1 | usage={'total_tokens': 10}
+2026-07-29 02:00:11,711 | DEBUG | MODEL FINAL OUTPUT | run_id=a9fc07367c7e | session_id=conversation-1
+Assistant response
+2026-07-29 02:00:11,712 | INFO | MODEL RUN END | run_id=a9fc07367c7e | handler=generate_agent_response | session_id=conversation-1 | chars=18
+2026-07-29 02:00:11,713 | WARNING | REQUEST DIAGNOSTIC | event=handler_exit | run_id=a9fc07367c7e | handler=generate_agent_response | outcome=success | duration_sec=0.031 | tool_calls=0 | tool_result_chars=0 | active_runs=0
+2026-07-29 02:00:11,718 | WARNING | REQUEST DIAGNOSTIC | event=handler_entry | run_id=f2811fc47fb1 | handler=generate_agent_response | process_id=1031 | task_id=123243302386368 | supplied_session_id=conversation-1 | message_fingerprint=fca3787cac7475fc | active_runs=1 | duplicate_candidates=[]
+2026-07-29 02:00:11,727 | DEBUG | REQUEST CALL STACK | run_id=f2811fc47fb1 | run_forever@base_events.py:645 <- _run_once@base_events.py:1999 <- _run@events.py:88 <- wrapper@_asyncio.py:2464 <- run_test@test_agent.py:54 <- generate_agent_response@agent.py:1338
+2026-07-29 02:00:11,728 | INFO | MODEL RUN START | run_id=f2811fc47fb1 | handler=generate_agent_response | session_id=conversation-1
+2026-07-29 02:00:11,728 | DEBUG | MODEL USAGE | run_id=f2811fc47fb1
+{
+  "total_tokens": 10
+}
+2026-07-29 02:00:11,729 | INFO | TOKENS | run_id=f2811fc47fb1 | session=conversation-1 | usage={'total_tokens': 10}
+2026-07-29 02:00:11,730 | DEBUG | MODEL FINAL OUTPUT | run_id=f2811fc47fb1 | session_id=conversation-1
+Assistant response
+2026-07-29 02:00:11,730 | INFO | MODEL RUN END | run_id=f2811fc47fb1 | handler=generate_agent_response | session_id=conversation-1 | chars=18
+2026-07-29 02:00:11,731 | WARNING | REQUEST DIAGNOSTIC | event=handler_exit | run_id=f2811fc47fb1 | handler=generate_agent_response | outcome=success | duration_sec=0.013 | tool_calls=0 | tool_result_chars=0 | active_runs=0

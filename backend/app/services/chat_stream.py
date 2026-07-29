@@ -99,6 +99,7 @@ async def stream_persisted_exchange(
                 content=content,
                 user_id=str(user_id),
                 conversation_id=str(conversation_id),
+                current_user_message_id=user_message_id,
             )
         )
 

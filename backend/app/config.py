@@ -41,6 +41,14 @@ class Settings(BaseSettings):
     mem0_vector_store_provider: str = "pgvector"
     mem0_collection_name: str = "fhir_agent_memories"
 
+    # Short-term conversational memory
+    short_term_enabled: bool = True
+    short_term_max_tokens: int = 12000
+    short_term_recent_tokens: int = 6000
+    short_term_summary_max_tokens: int = 2000
+    short_term_compaction_threshold: float = 0.75
+    short_term_chars_per_token: float = 4.0
+
     # JWT authentication
     jwt_secret_key: str = ""
     jwt_algorithm: str = "HS256"
@@ -85,6 +93,20 @@ class Settings(BaseSettings):
             raise ValueError("INTERNAL_EMBEDDING_DIMS must be greater than zero")
         if self.postgres_port <= 0 or self.postgres_port > 65535:
             raise ValueError("POSTGRES_PORT must be between 1 and 65535")
+        if self.short_term_max_tokens <= 0:
+            raise ValueError("SHORT_TERM_MAX_TOKENS must be greater than zero")
+        if self.short_term_recent_tokens <= 0:
+            raise ValueError("SHORT_TERM_RECENT_TOKENS must be greater than zero")
+        if self.short_term_summary_max_tokens <= 0:
+            raise ValueError("SHORT_TERM_SUMMARY_MAX_TOKENS must be greater than zero")
+        if self.short_term_recent_tokens >= self.short_term_max_tokens:
+            raise ValueError("SHORT_TERM_RECENT_TOKENS must be less than SHORT_TERM_MAX_TOKENS")
+        if not 0 < self.short_term_compaction_threshold <= 1:
+            raise ValueError(
+                "SHORT_TERM_COMPACTION_THRESHOLD must be greater than zero and less than or equal to one"
+            )
+        if self.short_term_chars_per_token <= 0:
+            raise ValueError("SHORT_TERM_CHARS_PER_TOKEN must be greater than zero")
         return self
 
 

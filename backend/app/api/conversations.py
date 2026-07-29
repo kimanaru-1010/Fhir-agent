@@ -99,27 +99,28 @@ async def create_conversation(
     current_user: User = Depends(get_current_user),
 ):
     """Create a conversation and persist the initial message exchange."""
-    conversation = Conversation(
-        user_id=current_user.id,
-        title=generate_title(req.first_message),
-    )
     try:
-        db.add(conversation)
-        await db.flush()
-
-        message = Message(
-            conversation_id=conversation.id,
-            role="user",
-            content=req.first_message,
+        conversation, user_message = await create_conversation_with_user_message(
+            db=db,
+            user_id=current_user.id,
+            first_message=req.first_message,
         )
-        user_message = message
-        db.add(user_message)
-        await db.flush()
+    except Exception:
+        logger.exception(
+            "Failed to create conversation user message for user_id=%s",
+            current_user.id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to create conversation",
+        )
 
+    try:
         assistant_content = await generate_assistant_response(
             content=req.first_message,
             user_id=str(current_user.id),
             conversation_id=str(conversation.id),
+            current_user_message_id=user_message.id,
         )
         assistant_message = Message(
             conversation_id=conversation.id,
@@ -133,7 +134,7 @@ async def create_conversation(
     except Exception:
         await db.rollback()
         logger.exception(
-            "Failed to create conversation with initial exchange for user_id=%s",
+            "Failed to create conversation assistant message for user_id=%s",
             current_user.id,
         )
         raise HTTPException(

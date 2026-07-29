@@ -8,7 +8,7 @@ from uuid import UUID, uuid4
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import IntegrityError
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
 from app.db.models import Conversation, Message, User
 
@@ -215,6 +215,7 @@ def test_create_conversation_success():
         content=first_message,
         user_id=str(user.id),
         conversation_id=str(conversation_obj.id),
+        current_user_message_id=ANY,
     )
     memory.assert_awaited_once_with(
         user_id=str(user.id),
@@ -222,7 +223,7 @@ def test_create_conversation_success():
         user_message=first_message,
         assistant_message=assistant_text,
     )
-    mock_session.commit.assert_awaited_once()
+    assert mock_session.commit.await_count == 2
 
 
 def test_create_conversation_generates_title_from_first_message():
@@ -368,8 +369,8 @@ def test_create_conversation_flushes_before_commit():
 
     resp, _, _ = _post_create_conversation(client, {"first_message": "Hello"})
     assert resp.status_code == 201
-    assert mock_session.flush.await_count == 2
-    mock_session.commit.assert_awaited_once()
+    assert mock_session.flush.await_count == 1
+    assert mock_session.commit.await_count == 2
 
 
 def test_create_conversation_commit_error():
@@ -439,7 +440,7 @@ def test_create_conversation_agent_error_rolls_back():
     assert resp.status_code == 500
     assert resp.json()["detail"] == "Unable to create conversation"
     mock_session.rollback.assert_awaited_once()
-    mock_session.commit.assert_not_awaited()
+    assert mock_session.commit.await_count == 1
     memory.assert_not_awaited()
 
 
@@ -459,7 +460,7 @@ def test_create_conversation_memory_error_after_commit_still_returns_201():
     assert resp.status_code == 201
     assert resp.json()["assistant_message"]["content"] == "Assistant answer"
     mock_session.rollback.assert_not_awaited()
-    mock_session.commit.assert_awaited_once()
+    assert mock_session.commit.await_count == 2
     assert "mem0 failed" not in resp.text
 
 # ===========================================================================
