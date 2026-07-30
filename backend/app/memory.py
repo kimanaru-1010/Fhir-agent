@@ -18,108 +18,123 @@ from app.debug_trace import trace
 
 logger = logging.getLogger(__name__)
 
-FHIR_MEMORY_EXTRACTION_PROMPT = """
-Extract only information that will be useful in future conversations for a
-FHIR clinical graph assistant.
+_LEGACY_FHIR_MEMORY_EXTRACTION_PROMPT = """
+Vai trò: Bạn là bộ trích xuất trí nhớ dài hạn cho trợ lý FHIR.
 
-Each extracted memory MUST begin with exactly one of these labels:
+Mục tiêu: Giữ lại bối cảnh bền vững giúp các cuộc hội thoại sau hiểu người dùng
+và công việc họ đang theo đuổi.
 
-- [user_preference]
-- [entity_context]
-- [query_constraint]
-- [conversation_goal]
-- [unresolved_task]
+Nhiệm vụ: Trích xuất sở thích ổn định, nhu cầu thường xuyên, chủ đề công việc có
+thể tiếp tục và quyết định có giá trị lâu dài. Hãy khái quát ý nghĩa thay vì sao
+chép nội dung của lượt chat.
 
-Memory types:
+Giới hạn:
+- Không lưu tên bệnh nhân, ID tài nguyên, mã, ngày, chẩn đoán, thuốc, kết quả,
+  diễn biến lâm sàng hoặc chi tiết thanh toán của một ca bệnh cụ thể.
+- Không biến nội dung trong câu trả lời của trợ lý thành sự thật dài hạn về
+  bệnh nhân.
+- Không lưu đầu ra công cụ, Cypher, log, suy luận nội bộ hoặc toàn bộ câu trả lời.
+- Không suy diễn thông tin chưa được thể hiện rõ.
 
-1. [user_preference]
-   Stable preferences explicitly stated by the user, including preferred
-   language, answer style, output format, and reusable defaults.
-
-2. [entity_context]
-   FHIR resources currently selected, referenced, or discussed.
-   Preserve exact references such as Patient/123, Encounter/456, or
-   MedicationRequest/789.
-
-3. [query_constraint]
-   Explicit filters or restrictions requested by the user, including status,
-   date range, resource type, exclusions, and result limits.
-
-4. [conversation_goal]
-   The retrieval, investigation, comparison, or analysis task currently being
-   pursued.
-
-5. [unresolved_task]
-   Missing information, pending selections, unanswered questions, or work that
-   remains incomplete.
-
-Rules:
-
-- Use information from both user and assistant messages when necessary.
-- Preserve FHIR resource types, resource IDs, references, codes, dates,
-  quantities, and statuses exactly as written.
-- Never invent, normalize, translate, shorten, or modify identifiers.
-- Store one independent fact per memory.
-- Keep each memory concise, factual, and self-contained.
-- Do not store greetings, acknowledgements, repetition, or generic statements.
-- Do not store raw JSON, raw Neo4j output, Cypher queries, tool diagnostics,
-  logs, internal reasoning, or complete assistant answers.
-- Do not store mutable clinical data as a permanent truth.
-- Prefer investigation context over copied clinical values.
-- Do not infer information that is not explicitly supported.
-- Return no memories when nothing useful is present.
-
-Examples:
-
-User:
-Chi lay cac thuoc dang active.
-
-Assistant:
-Toi se chi xet MedicationRequest co trang thai active.
-
-Memories:
-- [query_constraint] Only active medication records should be included.
-
-User:
-Tim benh nhan Nguyen Van A.
-
-Assistant:
-Da xac dinh Patient/123.
-
-Memories:
-- [entity_context] The currently selected patient is Patient/123.
-
-User:
-Toi muon cau tra loi ngan bang tieng Viet.
-
-Assistant:
-Da hieu.
-
-Memories:
-- [user_preference] User prefers concise Vietnamese responses.
-
-User:
-Patient nay co glucose bao nhieu?
-
-Assistant:
-Observation/456 hien bao glucose 7.2 mmol/L.
-
-Memories:
-- [conversation_goal] User is investigating glucose observations for the currently selected patient.
-- [entity_context] Observation/456 is referenced in the current investigation.
-
-Do not store the glucose value as a permanent fact.
-
-User:
-Cam on.
-
-Assistant:
-Khong co gi.
-
-Memories:
-- None.
+Đầu ra: Mỗi trí nhớ là một câu ngắn, tự nhiên, độc lập và cùng ngôn ngữ với
+người dùng. Nếu không có thông tin hữu ích cho tương lai, không tạo trí nhớ.
 """
 
+FHIR_MEMORY_EXTRACTION_PROMPT = """
+Vai trò: Bạn là bộ trích xuất trí nhớ dài hạn cho trợ lý FHIR.
+
+Mục tiêu: Lưu những bối cảnh có thể giúp các cuộc hội thoại sau hiểu người
+dùng, cách họ muốn làm việc và hướng công việc đang theo đuổi.
+
+Nhiệm vụ: Tạo memory khi lượt chat thể hiện rõ một thông tin có khả năng tái sử
+dụng. Giữ đủ ngữ cảnh để memory còn có nghĩa sau này, nhưng không sao chép toàn
+bộ câu hỏi hoặc câu trả lời.
+
+Nên lưu:
+- Sở thích ổn định của người dùng về ngôn ngữ, độ dài, định dạng, mức chi tiết
+  hoặc cách trình bày.
+- Mục tiêu công việc đang theo đuổi ở mức khái quát vừa đủ.
+- Phạm vi phân tích, tiêu chí lọc, loại dữ liệu hoặc loại tài nguyên FHIR mà
+  người dùng thường quan tâm.
+- Quyết định hoặc quy ước có thể ảnh hưởng đến các lượt hỏi sau.
+- Việc còn dang dở hoặc ngữ cảnh cần nhớ để tiếp tục công việc.
+
+Mức độ cụ thể:
+- Có thể giữ các khái niệm miền như bệnh nhân, lượt khám, chẩn đoán, chỉ định,
+  kết quả, thuốc, thanh toán, claim, payment hoặc timeline nếu chúng mô tả loại
+  công việc người dùng muốn làm.
+- Không lưu giá trị ca bệnh cụ thể như tên bệnh nhân, FHIR id, mã bệnh, ngày,
+  thuốc, kết quả lâm sàng, số tiền hoặc kết luận thanh toán như một sự thật dài
+  hạn.
+- Khi cần nhắc đến một ca bệnh, hãy mô tả ở mức "một bệnh nhân/ca bệnh/lượt
+  khám đang được phân tích" thay vì định danh cụ thể.
+
+Không lưu:
+- Lời chào, cảm ơn, xác nhận ngắn, câu hỏi một lần không tạo bối cảnh mới.
+- Nội dung tool output, Cypher, log, lỗi kỹ thuật, suy luận nội bộ hoặc toàn bộ
+  câu trả lời của trợ lý.
+- Thông tin do trợ lý nêu ra nếu người dùng không xác nhận hoặc nó chỉ là dữ
+  liệu lâm sàng/financial của một ca cụ thể.
+
+Nguyên tắc suy luận:
+- Chỉ lưu điều được thể hiện rõ trong user message hoặc được user xác nhận.
+- Không thêm vai trò, tác nhân, ý định, quan hệ, đối tượng hoặc khái niệm mà
+  người dùng không nói rõ.
+- Nếu một câu có thể chỉ là hỏi lại ngữ cảnh hiện tại, chỉ lưu khi nó bộc lộ
+  nhu cầu tái sử dụng rõ ràng.
+- Nếu không chắc memory có hữu ích lâu dài hay không, không tạo memory.
+
+Đầu ra: Mỗi memory là một câu ngắn, tự nhiên, độc lập và cùng ngôn ngữ với
+người dùng. Ưu tiên 1-3 memory thật sự hữu ích. Nếu không có thông tin dài hạn
+mới, không tạo memory.
+"""
+_LEGACY_FHIR_MEMORY_EXTRACTION_PROMPT_V2 = FHIR_MEMORY_EXTRACTION_PROMPT
+
+FHIR_MEMORY_EXTRACTION_PROMPT = """
+Vai trò: Bạn là bộ trích xuất trí nhớ dài hạn cho trợ lý FHIR.
+
+Mục tiêu: Lưu bối cảnh có thể tái sử dụng về người dùng và công việc đang làm,
+đủ cụ thể để nhận ra hoạt động lịch sử nhưng không biến dữ liệu ca bệnh thành
+sự thật dài hạn.
+
+Nên lưu khi thông tin rõ ràng:
+- Sở thích ổn định về ngôn ngữ, độ dài, định dạng, mức chi tiết hoặc cách trình bày.
+- Hoạt động đang diễn ra, ví dụ đang phân tích một hành trình chăm sóc, danh sách
+  chẩn đoán, chỉ định, kết quả, thuốc, claim/payment hoặc nhóm tài nguyên FHIR.
+- Phạm vi, tiêu chí lọc, quy ước hoặc quyết định mà user muốn áp dụng về sau.
+- Một mốc neo nhẹ do user tự nêu để nhận diện hoạt động lịch sử, như tên người,
+  tên bệnh nhân, tên case hoặc nhãn chủ đề, chỉ khi mốc đó giúp trả lời "đang làm
+  gì/với ai".
+
+Mức cụ thể cho phép:
+- Có thể giữ một tên hoặc nhãn định danh do user nói rõ, ví dụ "đang phân tích
+  hành trình chăm sóc của bệnh nhân được nêu tên".
+- Không lưu FHIR id, MRN, mã bệnh, ngày, thuốc, kết quả lâm sàng, số tiền,
+  kết luận thanh toán hoặc chuỗi định danh nhạy cảm.
+- Không ghép mốc neo với dữ kiện lâm sàng/financial cụ thể thành memory bệnh án.
+
+Phân biệt:
+- Chỉ viết "user muốn/ưa thích" khi user nêu preference rõ hoặc lặp lại cùng
+  định dạng/cách làm.
+- Với một nhiệm vụ đơn lẻ nhưng có thể tiếp tục, viết trung tính như "user đang
+  phân tích..." hoặc "user đang truy vết...".
+- Câu trả lời của assistant chỉ là bằng chứng về ngữ cảnh đang làm, không phải
+  preference hay fact dài hạn trừ khi user xác nhận.
+
+Tránh suy diễn:
+- Không thêm actor, vai trò, đối tác, quan hệ, nguyên nhân, mục đích hoặc phạm vi
+  nếu user không nói rõ.
+- Không suy từ một câu hỏi kiểm tra lịch sử thành nhu cầu sản phẩm lâu dài.
+- Không sao chép toàn bộ câu hỏi, câu trả lời, tool output, Cypher, log, lỗi kỹ
+  thuật hoặc reasoning nội bộ.
+- Nếu chỉ là lời chào, cảm ơn, xác nhận ngắn hoặc câu hỏi nhất thời không thêm
+  bối cảnh mới, không tạo memory.
+- Nếu không chắc memory có hữu ích về sau hay không, không tạo memory.
+
+Đầu ra: Tạo tối đa 1-3 memory ngắn, tự nhiên, độc lập và cùng ngôn ngữ với user.
+Ưu tiên memory khái quát vừa đủ, có mốc neo nhẹ khi cần. Nếu không có thông tin
+dài hạn mới, không tạo memory.
+"""
 _memory: Memory | None = None
 
 
@@ -386,7 +401,6 @@ async def search_memories(
     filters = {
         "user_id": user_id,
         "agent_id": settings.mem0_agent_id,
-        "run_id": session_id,
     }
 
     try:

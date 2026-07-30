@@ -150,5 +150,10 @@ cp .env.example .env
 **Build errors after `npm install`**
 - Delete `node_modules` and `package-lock.json`, then run `npm install` again
 - Ensure Node.js 18+ is installed
+c:\Users\LENOVO\projects\fhir-agent\backend\.venv\Scripts\activate.bat
 uv run --no-sync uvicorn app.main:app --reload --port 8000
 npm run dev -- --port 3000
+
+docker exec fhir-postgres psql -U postgres -d fhir_agent -c "DELETE FROM fhir_agent_memories_1024d;"
+
+docker exec fhir-postgres psql -U postgres -d fhir_agent -c "SELECT COUNT(*) FROM fhir_agent_memories_1024d;"

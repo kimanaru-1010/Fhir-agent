@@ -6,7 +6,53 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import anyio
 
-from app.agent import generate_agent_response, handle_message
+from app.agent import (
+    SYSTEM_PROMPT,
+    _format_memory_context,
+    _LEGACY_SYSTEM_PROMPT,
+    _LEGACY_SYSTEM_PROMPT_V2,
+    generate_agent_response,
+    handle_message,
+)
+
+
+def test_system_prompt_is_bounded_and_preserves_legacy_prompt():
+    assert "TARGETED GRAPH EXPLORATION" in _LEGACY_SYSTEM_PROMPT
+    assert "BOUNDED TOOL USE" in _LEGACY_SYSTEM_PROMPT_V2
+    assert len(SYSTEM_PROMPT) < len(_LEGACY_SYSTEM_PROMPT_V2)
+    assert len(SYSTEM_PROMPT) < len(_LEGACY_SYSTEM_PROMPT)
+    assert "provide every required argument" in SYSTEM_PROMPT
+    assert "Do not repeat the same call" in SYSTEM_PROMPT
+    assert "Use read-only Cypher only" in SYSTEM_PROMPT
+    assert "complete matching set" in SYSTEM_PROMPT
+    assert "Answer directly in the user's language" in SYSTEM_PROMPT
+
+
+def test_format_memory_context_includes_timestamps_and_conflict_rule():
+    memories = [
+        {
+            "memory": "User prefers responses in Vietnamese.",
+            "created_at": "2026-07-01T08:00:00+00:00",
+        },
+        {
+            "memory": "User prefers responses in English.",
+            "created_at": "2026-07-29T08:00:00+00:00",
+        },
+    ]
+
+    context = _format_memory_context(memories)
+
+    assert "ordered by relevance, not by time" in context
+    assert "prefer the memory with the latest created_at timestamp" in context
+    assert "The current request always overrides all memories" in context
+    assert (
+        "[created_at=2026-07-01T08:00:00+00:00] "
+        "User prefers responses in Vietnamese."
+    ) in context
+    assert (
+        "[created_at=2026-07-29T08:00:00+00:00] "
+        "User prefers responses in English."
+    ) in context
 
 
 def test_generate_agent_response_does_not_save_memory():
@@ -62,10 +108,13 @@ def test_generate_agent_response_includes_short_term_context_without_message_his
             )
 
         effective_message = runner.await_args.args[0]
-        assert "CONVERSATIONAL MEMORY" in effective_message
-        assert "SHORT-TERM CONVERSATION CONTEXT" in effective_message
+        assert "<long_term_memory>" in effective_message
+        assert "</long_term_memory>" in effective_message
+        assert "<conversation_history>" in effective_message
+        assert "</conversation_history>" in effective_message
         assert "Patient/123 was identified earlier." in effective_message
-        assert "CURRENT USER REQUEST" in effective_message
+        assert "<current_request>" in effective_message
+        assert "</current_request>" in effective_message
         assert effective_message.count("Nguoi nay co thuoc active nao?") == 1
         assert runner.await_args.kwargs["message_history"] == []
 

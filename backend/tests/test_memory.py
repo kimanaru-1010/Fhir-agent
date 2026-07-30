@@ -148,7 +148,6 @@ def test_search_memories_uses_correct_filters(mock_mem0, mocker: MockerFixture):
         filters={
             "user_id": "doctor-1",
             "agent_id": "fhir-clinical-agent",
-            "run_id": "chat-1",
         },
         top_k=8,
     )
