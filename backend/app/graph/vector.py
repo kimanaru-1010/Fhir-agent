@@ -1,10 +1,10 @@
-"""Vector search client."""
+﻿"""Vector search client."""
 
 from __future__ import annotations
 
 import logging
 
-from app.context_graph_client import execute_cypher
+from app.graph.client import execute_cypher
 
 logger = logging.getLogger(__name__)
 

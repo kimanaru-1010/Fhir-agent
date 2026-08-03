@@ -1,4 +1,4 @@
-"""Smoke test for Mem0 + PostgreSQL pgvector integration.
+﻿"""Smoke test for Mem0 + PostgreSQL pgvector integration.
 
 Usage:
     uv run python scripts/test_mem0_pgvector.py
@@ -13,8 +13,8 @@ import sys
 # Ensure the backend root is on sys.path so `app` is importable.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.config import settings
-from app.memory import init_memory, search_memories, save_conversation_memory
+from app.core.config import settings
+from app.services.long_term_memory import init_memory, search_memories, save_conversation_memory
 
 
 TEST_USER_ID = "smoke-test-user"
@@ -29,7 +29,7 @@ async def run() -> int:
     print("[1/5] Initialising Mem0 with pgvector config ...", end=" ")
     ok = await init_memory()
     if not ok:
-        print("FAIL — Mem0 initialisation failed")
+        print("FAIL â€” Mem0 initialisation failed")
         return 1
     print("OK")
 
@@ -42,7 +42,7 @@ async def run() -> int:
         assistant_message=ADD_MSG,
     )
     if not added:
-        print("FAIL — save_conversation_memory returned empty")
+        print("FAIL â€” save_conversation_memory returned empty")
         return 1
     print(f"OK ({len(added)} event(s))")
 
@@ -55,7 +55,7 @@ async def run() -> int:
         limit=5,
     )
     if not results:
-        print("FAIL — search returned no results")
+        print("FAIL â€” search returned no results")
         return 1
     print(f"OK ({len(results)} result(s))")
 
@@ -69,7 +69,7 @@ async def run() -> int:
             found = True
             break
     if not found:
-        print("FAIL — added memory not found in search results")
+        print("FAIL â€” added memory not found in search results")
         print(f"DEBUG results were: {results}", file=sys.stderr)
         return 1
     print("OK")
@@ -131,7 +131,7 @@ async def run() -> int:
                     pass
         print("OK (cleaned up)")
     except Exception:
-        print("OK (skip — cleanup best-effort)")
+        print("OK (skip â€” cleanup best-effort)")
 
     print("\nAll smoke tests passed!")
     return 0

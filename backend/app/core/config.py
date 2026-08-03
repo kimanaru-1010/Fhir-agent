@@ -59,6 +59,21 @@ class Settings(BaseSettings):
     backend_port: int = 8000
     frontend_port: int = 3000
 
+    # Skin diagnostic workflow
+    skin_vision_base_url: str = ""
+    skin_vision_model: str = ""
+    skin_reasoning_base_url: str = ""
+    skin_reasoning_model: str = ""
+    skin_embedding_base_url: str = ""
+    skin_embedding_api_key: str = ""
+    skin_embedding_model: str = ""
+    skin_llm_max_tokens: int = 4096
+    skin_kb_enabled: bool = True
+    skin_qdrant_url: str = "http://localhost:6333"
+    skin_qdrant_collection: str = "skin_disease_symptoms"
+    skin_kb_min_score: float = 0.6
+    skin_session_ttl_hours: int = 24
+
     model_config = {
         "env_file": "../.env",
         "env_file_encoding": "utf-8",
@@ -107,6 +122,12 @@ class Settings(BaseSettings):
             )
         if self.short_term_chars_per_token <= 0:
             raise ValueError("SHORT_TERM_CHARS_PER_TOKEN must be greater than zero")
+        if self.skin_llm_max_tokens <= 0:
+            raise ValueError("SKIN_LLM_MAX_TOKENS must be greater than zero")
+        if self.skin_session_ttl_hours <= 0:
+            raise ValueError("SKIN_SESSION_TTL_HOURS must be greater than zero")
+        if not 0 <= self.skin_kb_min_score <= 1:
+            raise ValueError("SKIN_KB_MIN_SCORE must be between zero and one")
         return self
 
 

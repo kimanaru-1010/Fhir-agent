@@ -58,6 +58,39 @@ export interface MessageExchangeResponse {
   assistant_message: ChatMessage;
 }
 
+export interface SkinPendingQuestion {
+  question: string;
+  pqrst_category: string;
+  purpose: string;
+  discriminates: string[];
+  question_num: number | null;
+  total: number | null;
+}
+
+export interface SkinDiagnosticResult {
+  ranked_diagnoses: Record<string, unknown>[];
+  reasoning: string;
+  visual_observations: string;
+  visual_differentials: string[];
+  qa_history: string;
+}
+
+export interface SkinDiagnosticStatus {
+  run_id: string;
+  status: "idle" | "running" | "interrupt" | "completed" | "error";
+  current_step: string;
+  progress: number;
+  pending_questions: SkinPendingQuestion[] | null;
+  result: SkinDiagnosticResult | Record<string, never>;
+  error: string | null;
+}
+
+export interface SkinDiagnosticStartResponse {
+  run_id: string;
+  status: string;
+  current_step: string;
+}
+
 export class ApiError extends Error {
   status: number;
   detail: string;
@@ -233,4 +266,40 @@ export async function openMessageStream(
     body: JSON.stringify({ content }),
     signal,
   });
+}
+
+export async function startSkinDiagnostic(
+  image: File,
+  anamnesis: string,
+): Promise<SkinDiagnosticStartResponse> {
+  const body = new FormData();
+  body.append("image", image);
+  body.append("anamnesis", anamnesis);
+
+  const response = await apiFetch("/skin-diagnostics/start", {
+    method: "POST",
+    body,
+  });
+  if (!response.ok) {
+    throw new ApiError(response.status, await readError(response));
+  }
+  return response.json() as Promise<SkinDiagnosticStartResponse>;
+}
+
+export async function getSkinDiagnosticStatus(runId: string): Promise<SkinDiagnosticStatus> {
+  return jsonRequest<SkinDiagnosticStatus>(`/skin-diagnostics/${runId}/status`);
+}
+
+export async function submitSkinDiagnosticAnswers(
+  runId: string,
+  answers: { question_num: number | null; answer: string }[],
+): Promise<{ status: string; current_step: string }> {
+  return jsonRequest<{ status: string; current_step: string }>(
+    `/skin-diagnostics/${runId}/answers`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ answers }),
+    },
+  );
 }

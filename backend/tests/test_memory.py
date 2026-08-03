@@ -1,4 +1,4 @@
-"""Unit tests for the Mem0 memory adapter (backend/app/memory.py)."""
+﻿"""Unit tests for the Mem0 memory adapter (backend/app/memory.py)."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from pytest_mock import MockerFixture
 
-from app.memory import (
+from app.services.long_term_memory import (
     FHIR_MEMORY_EXTRACTION_PROMPT,
     _build_mem0_config,
     _sanitize,
@@ -30,7 +30,7 @@ def mock_mem0():
     mem.search = MagicMock(return_value={"results": []})
     mem.add = MagicMock(return_value={"results": [{"id": "1", "memory": "test", "event": "ADD"}]})
 
-    with patch("app.memory._memory", mem):
+    with patch("app.services.long_term_memory._memory", mem):
         yield mem
 
 
@@ -42,7 +42,7 @@ def mock_mem0_error():
     mem.add = MagicMock(side_effect=RuntimeError("mem0 unavailable"))
     mem.get_all = MagicMock(return_value={"results": []})
 
-    with patch("app.memory._memory", mem):
+    with patch("app.services.long_term_memory._memory", mem):
         yield mem
 
 
@@ -66,13 +66,13 @@ def test_sanitize_trims():
 
 
 # ---------------------------------------------------------------------------
-# init_memory — graceful failure
+# init_memory â€” graceful failure
 # ---------------------------------------------------------------------------
 
 
 def test_init_memory_logs_on_failure():
-    with patch("app.memory.asyncio.to_thread", side_effect=ValueError("bad config")), \
-         patch("app.memory.logger") as mock_logger:
+    with patch("app.services.long_term_memory.asyncio.to_thread", side_effect=ValueError("bad config")), \
+         patch("app.services.long_term_memory.logger") as mock_logger:
         pytest.importorskip("mem0")  # skip if mem0 not installed
         import asyncio
 
@@ -81,7 +81,7 @@ def test_init_memory_logs_on_failure():
 
 
 # ---------------------------------------------------------------------------
-# _build_mem0_config — pgvector provider
+# _build_mem0_config â€” pgvector provider
 # ---------------------------------------------------------------------------
 
 
@@ -124,12 +124,12 @@ def test_build_mem0_config_collection_name_includes_dims():
 
 
 # ---------------------------------------------------------------------------
-# search_memories — correct parameters
+# search_memories â€” correct parameters
 # ---------------------------------------------------------------------------
 
 
 def test_search_memories_uses_correct_filters(mock_mem0, mocker: MockerFixture):
-    mocker.patch("app.memory.get_memory", return_value=mock_mem0)
+    mocker.patch("app.services.long_term_memory.get_memory", return_value=mock_mem0)
 
     # Patch get_memory in the module scope
     import asyncio
@@ -164,7 +164,7 @@ def test_search_memories_filters_low_scores(
             {"id": "unscored", "memory": "Compatible"},
         ]
     }
-    mocker.patch("app.memory.get_memory", return_value=mock_mem0)
+    mocker.patch("app.services.long_term_memory.get_memory", return_value=mock_mem0)
 
     import asyncio
 
@@ -180,7 +180,7 @@ def test_search_memories_filters_low_scores(
 
 
 def test_search_memories_empty_when_no_memory():
-    with patch("app.memory._memory", None):
+    with patch("app.services.long_term_memory._memory", None):
         import asyncio
 
         result = asyncio.run(
@@ -200,7 +200,7 @@ def test_search_memories_returns_empty_on_error(mock_mem0_error):
 
 
 # ---------------------------------------------------------------------------
-# save_conversation_memory — correct parameters
+# save_conversation_memory â€” correct parameters
 # ---------------------------------------------------------------------------
 
 
@@ -276,7 +276,7 @@ def test_save_conversation_memory_strips_reasoning_before_saving(mock_mem0):
 def test_save_conversation_memory_no_memory_instance_returns_empty():
     import asyncio
 
-    with patch("app.memory.get_memory", return_value=None):
+    with patch("app.services.long_term_memory.get_memory", return_value=None):
         result = asyncio.run(
             save_conversation_memory(
                 user_id="doctor-1",
@@ -336,7 +336,7 @@ def test_save_conversation_memory_different_sessions(mock_mem0):
 
 
 def test_save_conversation_memory_different_users_same_session(mock_mem0):
-    """Same session, different users — agent_id still matches but run_id is shared."""
+    """Same session, different users â€” agent_id still matches but run_id is shared."""
     import asyncio
 
     asyncio.run(
@@ -411,7 +411,7 @@ def test_save_conversation_memory_returns_empty_on_error(mock_mem0_error):
 
 
 # ---------------------------------------------------------------------------
-# check_pgvector_connection — unit tests (mocked)
+# check_pgvector_connection â€” unit tests (mocked)
 # ---------------------------------------------------------------------------
 
 
@@ -420,7 +420,10 @@ def test_check_pgvector_connection_success():
     mock_conn = MagicMock()
     mock_conn.cursor.return_value.fetchone.return_value = (True,)
 
-    with patch("app.memory.psycopg.connect", return_value=mock_conn):
+    mock_psycopg = MagicMock()
+    mock_psycopg.connect.return_value = mock_conn
+
+    with patch("app.services.long_term_memory._import_psycopg", return_value=mock_psycopg):
         result = check_pgvector_connection()
     assert result == (True, True)
 
@@ -435,17 +438,19 @@ def test_check_pgvector_connection_no_vector_ext():
         (False,),  # no vector extension
     ]
 
-    with patch("app.memory.psycopg.connect", return_value=mock_conn):
+    mock_psycopg = MagicMock()
+    mock_psycopg.connect.return_value = mock_conn
+
+    with patch("app.services.long_term_memory._import_psycopg", return_value=mock_psycopg):
         result = check_pgvector_connection()
     assert result == (True, False)
 
 
 def test_check_pgvector_connection_connect_fails():
     """When connection raises, return (False, False)."""
-    import psycopg
+    mock_psycopg = MagicMock()
+    mock_psycopg.connect.side_effect = RuntimeError("conn refused")
 
-    with patch(
-        "app.memory.psycopg.connect", side_effect=psycopg.OperationalError("conn refused")
-    ):
+    with patch("app.services.long_term_memory._import_psycopg", return_value=mock_psycopg):
         result = check_pgvector_connection()
     assert result == (False, False)

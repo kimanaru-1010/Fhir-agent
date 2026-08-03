@@ -1,4 +1,4 @@
-"""Tests for auth API — register, login, and /users/me."""
+﻿"""Tests for auth API â€” register, login, and /users/me."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from app.db.models import User
 from app.services.auth import create_access_token
 
 # Pre-imports for override
-from app import database as _db_module
+from app.db import session as _db_module
 from app.dependencies import auth as _auth_dep
 
 
@@ -277,7 +277,7 @@ def test_login_same_error(mocker: MockerFixture):
 
 
 def test_login_token_sub_is_uuid(mocker: MockerFixture):
-    from app.config import settings
+    from app.core.config import settings
 
     app, client, mock_user, _ = _login_user_mocker(mocker)
 
@@ -379,7 +379,7 @@ def test_users_me_valid_token(mocker: MockerFixture):
 
 
 def test_users_me_no_token():
-    """No token → get_current_user raises 401."""
+    """No token â†’ get_current_user raises 401."""
     app, _, _ = _build_me_app_with_user(return_user=False)
     client = TestClient(app)
 
@@ -388,7 +388,7 @@ def test_users_me_no_token():
 
 
 def test_users_me_bad_token():
-    """Invalid token → decode fails → 401."""
+    """Invalid token â†’ decode fails â†’ 401."""
     app, _, _ = _build_me_app_with_user(return_user=False)
     client = TestClient(app)
 
@@ -400,8 +400,8 @@ def test_users_me_bad_token():
 
 
 def test_users_me_expired_token():
-    """Expired signature → 401."""
-    from app.config import settings
+    """Expired signature â†’ 401."""
+    from app.core.config import settings
 
     app, _, _ = _build_me_app_with_user(return_user=False)
     client = TestClient(app)
@@ -426,7 +426,7 @@ def test_users_me_expired_token():
 
 
 def test_users_me_token_valid_but_user_deleted():
-    """Token is valid but the user row no longer exists → 401."""
+    """Token is valid but the user row no longer exists â†’ 401."""
     app, mock_session, mock_result = _make_test_app(
         override_current_user=False,
     )

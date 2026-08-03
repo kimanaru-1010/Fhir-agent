@@ -1,4 +1,4 @@
-"""Tests for Healthcare Context Graph API."""
+﻿"""Tests for Healthcare Context Graph API."""
 
 import os
 import pytest
@@ -13,11 +13,14 @@ from app.main import app
 @pytest.fixture(autouse=True)
 def mock_backend():
     """Mock Neo4j connection so tests don't need a real database."""
-    with patch("app.context_graph_client.connect_neo4j", new_callable=AsyncMock), \
-         patch("app.context_graph_client.close_neo4j", new_callable=AsyncMock), \
+    with patch("app.graph.client.connect_neo4j", new_callable=AsyncMock), \
+         patch("app.graph.client.close_neo4j", new_callable=AsyncMock), \
          patch("app.main.is_connected", return_value=True), \
          patch("app.main.init_memory", new_callable=AsyncMock), \
-         patch("app.vector_client.create_vector_index", new_callable=AsyncMock):
+         patch("app.main._postgres_available", True), \
+         patch("app.main._pgvector_available", True), \
+         patch("app.main._memory_available", True), \
+         patch("app.graph.vector.create_vector_index", new_callable=AsyncMock):
         yield
 
 

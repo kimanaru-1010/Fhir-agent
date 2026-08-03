@@ -1,0 +1,1027 @@
+[
+  {
+    "disease": "Rạn da",
+    "symptom_keywords": [
+      "vệt da dài, song song nhau, hơi lõm so với da xung quanh",
+      "màu đỏ tím (mới) hoặc trắng bạc như xà cừ (cũ)",
+      "bề mặt vệt tổn thương nhăn nheo, da mỏng hơn vùng lành",
+      "vị trí thường ở bụng, đùi, ngực hoặc mông",
+      "giai đoạn mới hình thành có thể ngứa nhẹ, giai đoạn cũ ổn định thường không ngứa không đau",
+      "sờ vào thấy hơi lõm nhẹ so với da xung quanh"
+    ]
+  },
+  {
+    "disease": "Bạch biến",
+    "symptom_keywords": [
+      "mảng da trắng mất sắc tố hoàn toàn, ranh giới cực rõ với da lành",
+      "lông trên vùng da trắng cũng bạc màu theo",
+      "không bong vảy, bề mặt da phẳng mịn bình thường",
+      "phân bố đối xứng hai bên cơ thể",
+      "hay gặp quanh mắt, miệng, bàn tay, các khớp xương",
+      "không ngứa, không đau",
+      "sờ mịn, kết cấu da không khác biệt so với da lành"
+    ]
+  },
+  {
+    "disease": "Da vẽ nổi",
+    "symptom_keywords": [
+      "vệt gồ đỏ nổi cao, hiện rõ đúng theo đường vật cứng vừa cọ qua da",
+      "vệt sưng có viền đỏ nhạt bao quanh",
+      "sờ vào vệt thấy gồ nhẹ như lằn roi",
+      "vệt xuất hiện và mất dần trong vòng 30 phút",
+      "ngứa nhẹ đến ngứa nhiều ngay khi vệt nổi lên"
+    ]
+  },
+  {
+    "disease": "U sừng hóa gai",
+    "symptom_keywords": [
+      "khối u tròn, gồ cao, có hõm ở giữa chứa nút sừng màu trắng như miệng núi lửa",
+      "bề mặt khối u bóng, viền cuộn tròn đều đặn",
+      "sờ chắc, ranh giới rõ với da xung quanh",
+      "vị trí ở vùng da hở như mặt, mu tay, cẳng tay",
+      "thường không đau, đôi khi hơi nhạy cảm khi chạm vào"
+    ]
+  },
+  {
+    "disease": "U hắc tố ác tính",
+    "symptom_keywords": [
+      "nốt sắc tố loang lổ nhiều màu: đen, nâu, xanh xám lẫn lộn",
+      "bờ viền không đều, răng cưa, không tròn trịa",
+      "hai nửa tổn thương không đối xứng nhau",
+      "đường kính thường trên 6mm",
+      "bề mặt loét, rỉ dịch hoặc chảy máu khi chạm nhẹ",
+      "dấu hiệu ABCDE: asymmetry, border irregular, color variegated, diameter >6mm, evolving",
+      "có thể ngứa hoặc thay đổi cảm giác tại chỗ, chảy máu tự nhiên không do va chạm",
+      "bề mặt có thể sờ thấy gồ ghề, chỗ loét sờ ướt do rỉ dịch"
+    ]
+  },
+  {
+    "disease": "Mụn cóc thường",
+    "symptom_keywords": [
+      "sẩn sùi cứng, bề mặt gồ ghề như súp lơ",
+      "màu da hoặc hơi xám, có chấm đen nhỏ li ti trên bề mặt (mao mạch tắc)",
+      "sờ cứng chắc, ranh giới rõ với da lành",
+      "hay mọc ở ngón tay, mu bàn tay, quanh móng",
+      "thường không đau, ấn hoặc tì mạnh có thể hơi đau"
+    ]
+  },
+  {
+    "disease": "Mụn cóc lòng bàn chân",
+    "symptom_keywords": [
+      "tổn thương phẳng, lõm vào trong lòng bàn chân do bị đè ép",
+      "bề mặt có nhiều chấm đen nhỏ li ti ở giữa (mao mạch tắc)",
+      "sờ thấy vùng da dày cứng hơn xung quanh",
+      "vị trí ở gót chân hoặc dưới các đầu ngón chân",
+      "đau khi đứng hoặc đi lại, cảm giác như có sạn dưới chân"
+    ]
+  },
+  {
+    "disease": "Mụn cóc phẳng",
+    "symptom_keywords": [
+      "nhiều sẩn nhỏ dẹt, hơi gồ, bề mặt mịn phẳng",
+      "màu da hoặc hồng nhạt, kích thước khá đều nhau",
+      "mọc tập trung thành đám một vùng",
+      "hay gặp ở mặt, mu bàn tay, cẳng chân",
+      "thường không ngứa, không đau",
+      "sờ hơi gồ nhẹ, mịn"
+    ]
+  },
+  {
+    "disease": "Nấm da Dermatophyte",
+    "symptom_keywords": [
+      "mảng đỏ hình tròn hoặc bầu dục, viền rõ, hơi gồ cao",
+      "trung tâm mảng nhạt màu hơn viền ngoài (central clearing)",
+      "viền ngoài đỏ, có vảy mịn và mụn nước nhỏ li ti",
+      "một hoặc nhiều mảng rải rác ở thân mình, tay chân",
+      "ngứa, ngứa tăng khi đổ mồ hôi",
+      "sờ thấy vảy mịn, hơi nhám ở viền tổn thương"
+    ]
+  },
+  {
+    "disease": "Bệnh phong thể BT",
+    "symptom_keywords": [
+      "mảng da nhạt hơn hoặc hơi đỏ, ranh giới gồ nhẹ và rõ nét",
+      "không có lông và không có vảy tại vùng tổn thương",
+      "bề mặt tổn thương khô, phẳng",
+      "sờ dọc dây thần kinh ngoại biên gần đó thấy to hơn bình thường",
+      "mất cảm giác đau, nóng, lạnh tại vùng tổn thương"
+    ]
+  },
+  {
+    "disease": "Dãn mao mạch da do lạm dụng corticoid bôi",
+    "symptom_keywords": [
+      "da vùng bôi thuốc mỏng, trong, nhìn rõ các mạch máu nhỏ li ti đỏ tím",
+      "da đỏ rực, bề mặt mỏng dễ nhìn thấy mạch dưới da",
+      "dễ bầm tím dù chỉ va chạm rất nhẹ",
+      "có thể kèm mụn trứng cá nhỏ hoặc lông mọc rậm bất thường",
+      "vị trí thường ở vùng mặt",
+      "cảm giác nóng rát hoặc châm chích, đặc biệt khi ngừng bôi thuốc đột ngột",
+      "sờ da mỏng, dễ rách"
+    ]
+  },
+  {
+    "disease": "Ung thư biểu mô tế bào đáy",
+    "symptom_keywords": [
+      "nốt ngọc trai bóng, trong mờ, có mạch máu nhỏ ngoằn ngoèo nổi rõ trên bề mặt",
+      "trung tâm nốt lõm loét, đóng vảy hoặc rỉ dịch",
+      "bờ tổn thương cuộn tròn, gồ cao như hạt trai",
+      "dễ chảy máu chỉ với va chạm rất nhẹ",
+      "vị trí ở mặt, mũi, vành tai, cổ",
+      "thường không đau, không ngứa ở giai đoạn đầu",
+      "sờ chắc, bờ cuộn tròn rõ"
+    ]
+  },
+  {
+    "disease": "Vảy nến",
+    "symptom_keywords": [
+      "mảng đỏ dày, ranh giới rất rõ, phủ vảy trắng bạc nhiều lớp như sáp nến",
+      "cạo lớp vảy thấy các điểm chảy máu li ti (dấu hiệu Auspitz)",
+      "móng tay có các hố lõm nhỏ hoặc dày móng bất thường",
+      "vị trí đặc trưng ở khuỷu tay, đầu gối, da đầu, vùng xương cùng (vùng tì đè)",
+      "ngứa, đôi khi đau rát nếu da nứt nẻ",
+      "sờ thấy vảy dày, bong tróc"
+    ]
+  },
+  {
+    "disease": "Viêm da cơ địa",
+    "symptom_keywords": [
+      "da khô ráp, bong vảy mịn như phấn",
+      "mảng đỏ, sẩn nhỏ tập trung ở nếp gấp khuỷu tay, khoeo chân, cổ",
+      "da dày, kẻ vân rõ hơn do gãi nhiều (lichen hóa)",
+      "vết trầy xước da do gãi",
+      "da mí mắt sậm màu, có nếp gấp thêm dưới mắt",
+      "ngứa nhiều, đặc biệt tăng về đêm"
+    ]
+  },
+  {
+    "disease": "Viêm da tiếp xúc dị ứng",
+    "symptom_keywords": [
+      "mảng đỏ sưng nề, ranh giới trùng khít hình dạng vật tiếp xúc (dây chuyền, đồng hồ, khuyên tai)",
+      "nổi mụn nước nhỏ li ti trên nền đỏ, có thể chảy dịch trong",
+      "vảy tiết màu vàng đóng trên nền mụn nước vỡ",
+      "vị trí giới hạn rõ đúng bằng vùng da chạm dị nguyên",
+      "ngứa nhiều, có thể rát",
+      "sờ da sưng nhẹ, có thể ẩm nếu chảy dịch"
+    ]
+  },
+  {
+    "disease": "Viêm da tiếp xúc dị ứng do tay cầm chơi game",
+    "symptom_keywords": [
+      "mẩn đỏ, mụn nước nhỏ giới hạn ở lòng bàn tay, đầu ngón tay",
+      "hình dạng tổn thương khớp đúng vị trí tỳ vào tay cầm",
+      "da dày sừng nhẹ ở lòng bàn tay hai bên đối xứng",
+      "ngứa, có thể rát nhẹ",
+      "sờ da hơi dày sừng nhẹ"
+    ]
+  },
+  {
+    "disease": "Viêm da tiếp xúc kích ứng",
+    "symptom_keywords": [
+      "da đỏ, khô, nứt nẻ đúng tại vùng tiếp xúc hóa chất",
+      "ranh giới tổn thương rõ, trùng với vùng da tiếp xúc",
+      "không có mụn nước hoặc rất ít",
+      "hay gặp ở bàn tay, kẽ ngón tay",
+      "cảm giác rát, châm chích nhiều hơn ngứa",
+      "sờ da khô ráp, nứt nẻ"
+    ]
+  },
+  {
+    "disease": "Viêm da tiếp xúc kích ứng do kiến ba khoang",
+    "symptom_keywords": [
+      "vệt đỏ dài, thẳng như bị quẹt hoặc vết cào",
+      "phồng rộp hoặc mụn nước nhỏ dọc theo vệt tổn thương",
+      "tổn thương đối xứng kiểu áp gương ở các nếp gấp da áp vào nhau",
+      "vị trí ở vùng da hở như mặt, cổ, tay",
+      "cảm giác nóng rát như bỏng, đau hơn ngứa",
+      "sờ có thể thấy phồng rộp căng nước"
+    ]
+  },
+  {
+    "disease": "Ấu trùng di chuyển",
+    "symptom_keywords": [
+      "đường tổn thương ngoằn ngoèo, gồ nhẹ, đỏ dưới da",
+      "một đầu đường tổn thương phồng nhẹ, đầu kia mờ dần",
+      "vị trí thường ở bàn chân, bàn tay hoặc mông",
+      "ngứa nhiều, cảm giác như có vật di chuyển dưới da",
+      "sờ thấy đường tổn thương gồ nhẹ dưới da"
+    ]
+  },
+  {
+    "disease": "Zona thần kinh",
+    "symptom_keywords": [
+      "chùm mụn nước nhỏ mọc thành cụm trên nền da đỏ",
+      "phân bố thành dải một bên cơ thể theo đường đi dây thần kinh, không vượt qua đường giữa cơ thể",
+      "mụn nước có thể hóa mủ đục rồi đóng vảy nâu",
+      "đau rát dữ dội, đau nhức dọc theo dây thần kinh, có thể đau trước khi nổi ban",
+      "sờ thấy chùm mụn nước căng, đau khi chạm nhẹ"
+    ]
+  },
+  {
+    "disease": "Herpes môi",
+    "symptom_keywords": [
+      "chùm mụn nước nhỏ trong, tập trung thành đám quanh môi",
+      "mụn nước vỡ để lại vết loét nông, đóng vảy màu vàng nâu",
+      "vị trí quanh viền môi hoặc góc miệng",
+      "ngứa râm ran hoặc châm chích trước khi nổi mụn nước, sau đó đau rát",
+      "sờ thấy mụn nước nhỏ, căng"
+    ]
+  },
+  {
+    "disease": "Herpes sinh dục",
+    "symptom_keywords": [
+      "chùm mụn nước nhỏ trên nền da đỏ ở vùng sinh dục",
+      "mụn nước vỡ thành vết loét nông",
+      "hạch bẹn hai bên sưng, sờ thấy rõ",
+      "đau rát, ngứa, có thể kèm tiểu buốt"
+    ]
+  },
+  {
+    "disease": "Thủy đậu",
+    "symptom_keywords": [
+      "nhiều nốt phỏng nước rải rác toàn thân, các nốt ở nhiều giai đoạn khác nhau cùng lúc (sẩn, mụn nước, vảy)",
+      "mụn nước hình giọt sương trên nền da đỏ",
+      "tổn thương xuất hiện cả ở da đầu và niêm mạc miệng",
+      "ngứa nhiều",
+      "sờ thấy các nốt phỏng nước nông"
+    ]
+  },
+  {
+    "disease": "Tay chân miệng",
+    "symptom_keywords": [
+      "mụn nước nhỏ hình bầu dục ở lòng bàn tay, lòng bàn chân",
+      "vết loét nhỏ trong miệng và trên lưỡi",
+      "mụn nước ít ngứa",
+      "vết loét miệng gây đau khi ăn uống, mụn nước ngoài da ít ngứa"
+    ]
+  },
+  {
+    "disease": "Sởi",
+    "symptom_keywords": [
+      "ban đỏ dạng sẩn, các nốt có xu hướng liên kết thành mảng lớn",
+      "ban khởi đầu ở mặt rồi lan xuống thân mình, tay chân",
+      "các chấm trắng nhỏ trong niêm mạc má (hạt Koplik)",
+      "ngứa nhẹ, thường kèm sốt cao và mệt mỏi",
+      "sờ hơi gồ nhẹ trên da"
+    ]
+  },
+  {
+    "disease": "Chốc lở",
+    "symptom_keywords": [
+      "mụn nước hoặc mụn mủ nông, rất dễ vỡ",
+      "vảy tiết màu vàng mật ong đặc trưng trên nền mụn vỡ",
+      "hay gặp quanh miệng, mũi ở trẻ em",
+      "ngứa nhẹ, ít đau",
+      "sờ thấy vảy tiết dính, mụn dễ vỡ khi chạm"
+    ]
+  },
+  {
+    "disease": "Nhọt",
+    "symptom_keywords": [
+      "khối sưng đỏ quanh một nang lông, có ngòi mủ trắng vàng ở đỉnh",
+      "sờ căng cứng",
+      "vị trí hay gặp ở mặt, cổ, nách, mông",
+      "đau nhức, đau tăng khi sờ hoặc ấn vào"
+    ]
+  },
+  {
+    "disease": "Nhọt cụm (Hậu bối)",
+    "symptom_keywords": [
+      "khối sưng đỏ lớn, có nhiều ngòi mủ trên cùng một vùng",
+      "bề mặt có nhiều lỗ rò chảy mủ",
+      "sờ nóng và căng cứng",
+      "đau nhức nhiều, đau tăng khi cử động vùng tổn thương"
+    ]
+  },
+  {
+    "disease": "Áp xe da",
+    "symptom_keywords": [
+      "khối sưng đỏ, căng phồng, sờ có cảm giác lùng nhùng chứa dịch bên trong",
+      "da vùng tổn thương nóng, đỏ rõ",
+      "có thể vỡ chảy mủ đặc màu vàng hoặc xanh",
+      "đau nhức nhiều, đau tăng khi sờ nắn"
+    ]
+  },
+  {
+    "disease": "Viêm nang lông",
+    "symptom_keywords": [
+      "nhiều sẩn mụn mủ nhỏ, mỗi nốt có một sợi lông ở giữa",
+      "da xung quanh mỗi nốt hơi đỏ",
+      "hay gặp ở vùng cạo râu, đùi, mông",
+      "ngứa nhẹ hoặc hơi đau châm chích",
+      "sờ thấy sẩn nhỏ gồ nhẹ"
+    ]
+  },
+  {
+    "disease": "Viêm mô tế bào",
+    "symptom_keywords": [
+      "mảng da đỏ, sưng nề, ranh giới không rõ, lan tỏa",
+      "da căng bóng",
+      "bờ không có viền gồ cao rõ rệt như viêm quầng",
+      "đau, nóng rát lan tỏa, ấn đau",
+      "sờ ấm nóng, ấn đau, có thể hơi lõm do phù nề"
+    ]
+  },
+  {
+    "disease": "Viêm quầng",
+    "symptom_keywords": [
+      "mảng đỏ tươi, sưng nề, bờ gồ cao rõ rệt, ranh giới rất rõ với da lành",
+      "da căng bóng",
+      "vị trí thường ở mặt hoặc cẳng chân",
+      "đau rát nhiều, thường kèm sốt cao và cảm giác nóng tại chỗ",
+      "sờ ấm nóng, ấn đau"
+    ]
+  },
+  {
+    "disease": "Lang ben",
+    "symptom_keywords": [
+      "nhiều dát nhỏ màu trắng, hồng hoặc nâu nhạt, hình tròn",
+      "bề mặt có vảy mịn như phấn khi cạo nhẹ",
+      "vùng da tổn thương không bắt nắng đều với da xung quanh",
+      "vị trí ở ngực, lưng, vai, cổ",
+      "thường không ngứa hoặc ngứa rất nhẹ khi đổ mồ hôi"
+    ]
+  },
+  {
+    "disease": "Nấm móng",
+    "symptom_keywords": [
+      "móng dày, đổi màu vàng đục hoặc trắng đục",
+      "móng giòn, dễ mủn, bề mặt gồ ghề",
+      "móng tách khỏi nền móng",
+      "thường không đau, không ngứa",
+      "sờ móng giòn, dễ mủn, bề mặt gồ ghề"
+    ]
+  },
+  {
+    "disease": "Nấm kẽ chân",
+    "symptom_keywords": [
+      "da kẽ ngón chân bong tróc trắng, ẩm ướt, nứt nẻ",
+      "da đỏ, có thể nứt rớm dịch ở kẽ ngón chân thứ 4-5",
+      "ngứa nhiều, có thể rát",
+      "sờ da ẩm ướt, bong tróc"
+    ]
+  },
+  {
+    "disease": "Nấm da đầu",
+    "symptom_keywords": [
+      "mảng da đầu tróc vảy kèm rụng tóc thành từng vùng",
+      "tóc gãy sát da đầu để lại các chấm đen li ti",
+      "có thể có mụn mủ nhỏ quanh chân tóc",
+      "ngứa da đầu",
+      "sờ thấy vảy khô bám, tóc gãy cứng"
+    ]
+  },
+  {
+    "disease": "Nấm bẹn",
+    "symptom_keywords": [
+      "mảng đỏ hình cung, viền rõ và hơi gồ, có vảy mịn ở bờ",
+      "trung tâm mảng nhạt màu hơn viền ngoài (central clearing)",
+      "vị trí ở nếp bẹn, có thể lan ra đùi trong",
+      "ngứa nhiều, tăng khi ra mồ hôi",
+      "sờ vảy mịn ở viền tổn thương"
+    ]
+  },
+  {
+    "disease": "Ghẻ",
+    "symptom_keywords": [
+      "đường hầm nhỏ ngoằn ngoèo màu xám dưới da, dài vài milimet",
+      "sẩn nhỏ, mụn nước ở kẽ ngón tay, cổ tay, vùng sinh dục",
+      "vết trầy xước do gãi nhiều",
+      "ngứa dữ dội, tăng nhiều về đêm",
+      "sờ thấy sẩn nhỏ, đường hầm hơi gồ dưới da"
+    ]
+  },
+  {
+    "disease": "Chấy rận",
+    "symptom_keywords": [
+      "nhìn thấy trứng chấy màu trắng bám chặt vào thân tóc",
+      "có thể thấy con chấy di chuyển trên da đầu",
+      "vết trầy xước da đầu do gãi nhiều",
+      "ngứa da đầu, đặc biệt vùng sau gáy và sau tai",
+      "sờ thấy trứng chấy bám chắc vào tóc, khó gỡ"
+    ]
+  },
+  {
+    "disease": "Mề đay",
+    "symptom_keywords": [
+      "sẩn phù màu hồng hoặc đỏ, gồ cao, kích thước và hình dạng thay đổi nhanh",
+      "mỗi sẩn phù biến mất rồi xuất hiện lại ở vị trí khác trong vài giờ",
+      "ấn vào giữa sẩn thấy vùng nhạt màu hơn",
+      "ngứa nhiều"
+    ]
+  },
+  {
+    "disease": "Mày đay do lạnh",
+    "symptom_keywords": [
+      "sẩn phù đỏ xuất hiện đúng tại vùng da vừa tiếp xúc lạnh",
+      "sưng nề rõ ở môi, tay khi cầm vật lạnh hoặc ăn đồ lạnh",
+      "ngứa, châm chích khi tiếp xúc lạnh",
+      "sờ thấy sẩn phù gồ nhẹ tại vùng da tiếp xúc lạnh"
+    ]
+  },
+  {
+    "disease": "Phù mạch",
+    "symptom_keywords": [
+      "sưng nề đột ngột, sâu dưới da, không có ranh giới rõ",
+      "vị trí thường ở môi, mí mắt, lưỡi, bàn tay",
+      "da vùng sưng vẫn giữ màu bình thường hoặc chỉ hơi hồng",
+      "cảm giác căng tức, thường không ngứa",
+      "sờ thấy vùng sưng chắc, ấn không lõm"
+    ]
+  },
+  {
+    "disease": "Trứng cá thông thường",
+    "symptom_keywords": [
+      "nhân mụn đầu trắng hoặc đầu đen ở lỗ chân lông",
+      "sẩn đỏ, mụn mủ nhỏ xen kẽ",
+      "một số nốt sưng to dạng nang hoặc cục",
+      "vị trí ở mặt, trán, lưng, ngực",
+      "một số nốt viêm gây đau nhẹ khi ấn, thường không ngứa",
+      "sờ thấy nhân mụn cứng nhỏ dưới da"
+    ]
+  },
+  {
+    "disease": "Trứng cá đỏ",
+    "symptom_keywords": [
+      "da mặt đỏ ửng ở má, mũi, trán, cằm",
+      "mạch máu nhỏ giãn nổi rõ trên da (telangiectasia)",
+      "sẩn mụn mủ nhỏ nhưng không có nhân mụn đầu đen",
+      "mũi có thể to, sần sùi (mũi sư tử)",
+      "cảm giác nóng rát, châm chích ở vùng da đỏ",
+      "sờ da ấm, có thể hơi sần"
+    ]
+  },
+  {
+    "disease": "Trứng cá do corticoid",
+    "symptom_keywords": [
+      "sẩn mụn mủ đỏ, kích thước đồng đều, mọc rải rác cùng lúc",
+      "không có nhân mụn đầu đen",
+      "tổn thương lan cả ra cánh tay, lưng, ngực",
+      "da vùng tổn thương mỏng, kèm giãn mạch nhỏ",
+      "có thể ngứa nhẹ hoặc châm chích",
+      "sờ da mỏng, dễ thấy mạch máu dưới da"
+    ]
+  },
+  {
+    "disease": "Viêm da tiết bã",
+    "symptom_keywords": [
+      "mảng đỏ phủ vảy nhờn màu vàng nhạt",
+      "da vùng tổn thương bóng nhờn",
+      "vị trí ở da đầu, hai bên cánh mũi, chân mày, rãnh mũi má, sau tai, vành tai",
+      "ngứa nhẹ",
+      "sờ vảy nhờn, dính"
+    ]
+  },
+  {
+    "disease": "Cứt trâu ở trẻ sơ sinh",
+    "symptom_keywords": [
+      "mảng vảy dày, màu vàng nâu, bám chắc trên da đầu trẻ sơ sinh",
+      "da dưới lớp vảy hơi đỏ",
+      "vị trí ở đỉnh đầu, vùng thóp",
+      "thường không ngứa, không gây khó chịu cho trẻ",
+      "sờ vảy dày, bám chắc"
+    ]
+  },
+  {
+    "disease": "Liken phẳng",
+    "symptom_keywords": [
+      "sẩn đa giác, đỉnh phẳng, màu tím hoa cà",
+      "bề mặt sẩn có các đường vân trắng mờ như mạng lưới (Wickham's striae)",
+      "có tổn thương dạng vân trắng ren ở niêm mạc miệng",
+      "vị trí ở cổ tay, cẳng tay, mắt cá chân",
+      "ngứa nhiều",
+      "sờ sẩn chắc, bề mặt phẳng bóng"
+    ]
+  },
+  {
+    "disease": "U mềm lây",
+    "symptom_keywords": [
+      "sẩn nhỏ, tròn, bóng, có lõm ở giữa như rốn (umbilicated)",
+      "màu da hoặc trắng ngọc trai",
+      "ấn vào có chất trắng như bã đậu chảy ra",
+      "mọc thành nhiều nốt rải rác hoặc tập trung",
+      "thường không đau, không ngứa"
+    ]
+  },
+  {
+    "disease": "Sùi mào gà",
+    "symptom_keywords": [
+      "sẩn sùi hình như súp lơ hoặc mào gà, bề mặt gồ ghề",
+      "màu da hoặc hồng nhạt, mềm",
+      "vị trí ở bộ phận sinh dục, hậu môn",
+      "thường không đau, có thể ngứa nhẹ hoặc cộm khi cọ xát",
+      "sờ mềm, bề mặt gồ ghề như súp lơ"
+    ]
+  },
+  {
+    "disease": "Giang mai giai đoạn 2",
+    "symptom_keywords": [
+      "ban đỏ hoặc hồng, phẳng, lan tỏa toàn thân kể cả lòng bàn tay, lòng bàn chân",
+      "bề mặt ban phẳng, không gồ",
+      "sẩn phì đại, ẩm ướt ở vùng sinh dục, hậu môn",
+      "hạch nhiều nơi sưng nhưng ấn không đau",
+      "thường không ngứa, không đau"
+    ]
+  },
+  {
+    "disease": "Nốt ruồi thường",
+    "symptom_keywords": [
+      "dát hoặc sẩn nhỏ, màu nâu hoặc đen đồng đều",
+      "hình tròn hoặc bầu dục, bờ đều, ranh giới rõ",
+      "bề mặt phẳng hoặc gồ nhẹ, đôi khi có lông mọc",
+      "không đau, không ngứa",
+      "sờ mịn hoặc hơi gồ nhẹ tùy loại"
+    ]
+  },
+  {
+    "disease": "U máu",
+    "symptom_keywords": [
+      "khối u màu đỏ tươi hoặc đỏ tím, mềm",
+      "ấn vào khối u xẹp bớt rồi phồng trở lại",
+      "bề mặt phẳng hoặc gồ cao như quả dâu",
+      "thường không đau, không ngứa, trừ khi bị va chạm hoặc loét"
+    ]
+  },
+  {
+    "disease": "U xơ da",
+    "symptom_keywords": [
+      "nốt cứng chắc, tròn nhỏ, nằm sâu dưới da",
+      "bóp hai bên nốt thấy lõm xuống ở giữa (dấu hiệu lúm đồng tiền - dimple sign)",
+      "màu nâu hoặc hồng nhạt",
+      "hay gặp ở cẳng chân",
+      "thường không đau, đôi khi ngứa nhẹ hoặc nhạy cảm khi chạm"
+    ]
+  },
+  {
+    "disease": "U mỡ",
+    "symptom_keywords": [
+      "khối mềm, di động dễ dàng dưới da khi sờ đẩy",
+      "ranh giới rõ, không dính vào da phía trên",
+      "da phía trên khối u bình thường, không đổi màu",
+      "thường không đau khi sờ, không ngứa"
+    ]
+  },
+  {
+    "disease": "Nang bã",
+    "symptom_keywords": [
+      "khối tròn, chắc, di động nhẹ dưới da",
+      "có một lỗ nhỏ ở đỉnh khối",
+      "ấn vào chảy ra chất bã đậu màu trắng",
+      "thường không đau trừ khi viêm nhiễm gây sưng đau"
+    ]
+  },
+  {
+    "disease": "U nang lông",
+    "symptom_keywords": [
+      "khối tròn, chắc, nằm dưới da đầu, di động cùng da",
+      "bề mặt da phía trên nhẵn, không có lỗ trung tâm",
+      "vị trí đặc trưng ở da đầu",
+      "thường không đau, không ngứa"
+    ]
+  },
+  {
+    "disease": "Sẹo lồi",
+    "symptom_keywords": [
+      "khối sẹo gồ cao, vượt ra ngoài ranh giới vết thương ban đầu",
+      "bề mặt bóng, màu hồng hoặc tím sậm",
+      "sờ chắc",
+      "vị trí hay gặp ở dái tai, ngực, vai",
+      "có thể ngứa hoặc đau châm chích, nhạy cảm khi chạm"
+    ]
+  },
+  {
+    "disease": "Rụng tóc từng mảng",
+    "symptom_keywords": [
+      "mảng rụng tóc tròn, ranh giới rõ, da đầu vùng rụng nhẵn không sẹo",
+      "tóc quanh vùng rụng dạng chấm than, dễ nhổ",
+      "có thể có nhiều mảng cùng lúc",
+      "thường không ngứa, không đau",
+      "sờ da đầu vùng rụng nhẵn, mềm mại bình thường"
+    ]
+  },
+  {
+    "disease": "Rụng tóc androgen",
+    "symptom_keywords": [
+      "tóc thưa dần ở đỉnh đầu hoặc hai bên trán, không thành mảng tròn rõ",
+      "sợi tóc mảnh và ngắn hơn tóc bình thường",
+      "da đầu vùng thưa tóc bình thường, không đỏ không vảy",
+      "không đau, không ngứa",
+      "sờ da đầu bình thường, không đổi kết cấu"
+    ]
+  },
+  {
+    "disease": "Hồng ban nút",
+    "symptom_keywords": [
+      "cục u đỏ, sưng, nằm sâu dưới da, sờ chắc",
+      "màu sắc chuyển dần như vết bầm (đỏ, tím, vàng xanh)",
+      "vị trí đặc trưng ở mặt trước cẳng chân hai bên",
+      "đau nhiều khi sờ hoặc ấn vào, có thể kèm sốt và đau khớp"
+    ]
+  },
+  {
+    "disease": "Hồng ban đa dạng",
+    "symptom_keywords": [
+      "tổn thương hình bia bắn với các vòng màu đồng tâm (target lesion)",
+      "trung tâm sẫm màu hơn hoặc có mụn nước nhỏ",
+      "phân bố đối xứng ở lòng bàn tay, lòng bàn chân, mặt duỗi tay chân",
+      "có thể ngứa hoặc rát nhẹ, đôi khi kèm sốt",
+      "sờ trung tâm tổn thương có thể hơi gồ hoặc có mụn nước nhỏ"
+    ]
+  },
+  {
+    "disease": "Hội chứng Stevens-Johnson",
+    "symptom_keywords": [
+      "ban đỏ lan rộng kèm nhiều bọng nước lớn dễ vỡ",
+      "da bong thành mảng lớn để lộ nền da đỏ ẩm ướt",
+      "loét ở niêm mạc miệng, mắt, sinh dục",
+      "đau rát dữ dội toàn thân, thường kèm sốt cao và mệt mỏi nặng",
+      "sờ da đau rát, dấu hiệu Nikolsky dương tính (da tuột khi miết nhẹ)"
+    ]
+  },
+  {
+    "disease": "Viêm da do côn trùng đốt",
+    "symptom_keywords": [
+      "sẩn đỏ, gồ cao, có một chấm nhỏ ở giữa là vết đốt",
+      "sưng nề khu trú quanh vết đốt",
+      "có thể nổi mụn nước nhỏ",
+      "tổn thương rải rác ở vùng da hở",
+      "ngứa, đau nhói tại vị trí bị đốt",
+      "sờ thấy sẩn gồ nhẹ, ấm tại chỗ"
+    ]
+  },
+  {
+    "disease": "Viêm da quanh miệng",
+    "symptom_keywords": [
+      "nhiều sẩn đỏ nhỏ, đôi khi có mụn mủ li ti quanh miệng",
+      "có một viền da lành sát ngay viền môi, không có tổn thương",
+      "da xung quanh khô, hơi bong vảy mịn",
+      "có thể ngứa nhẹ hoặc cảm giác căng rát",
+      "sờ da hơi khô ráp"
+    ]
+  },
+  {
+    "disease": "Nám da",
+    "symptom_keywords": [
+      "dát màu nâu hoặc nâu xám, ranh giới không đều nhưng khá rõ",
+      "phân bố đối xứng hai bên má, trán, mũi, môi trên",
+      "bề mặt da phẳng, không gồ, không vảy",
+      "không ngứa, không đau",
+      "sờ mịn, không thay đổi kết cấu da"
+    ]
+  },
+  {
+    "disease": "Tàn nhang",
+    "symptom_keywords": [
+      "nhiều đốm nhỏ màu nâu nhạt, kích thước dưới 5mm",
+      "phân bố rải rác ở mặt, mũi, vai, cánh tay",
+      "bề mặt phẳng, không sờ thấy gồ",
+      "không ngứa, không đau"
+    ]
+  },
+  {
+    "disease": "Đồi mồi",
+    "symptom_keywords": [
+      "dát phẳng màu nâu đậm, ranh giới rõ, kích thước lớn hơn tàn nhang",
+      "bề mặt phẳng, mịn, không vảy",
+      "vị trí ở mu bàn tay, mặt, vùng da hở",
+      "không ngứa, không đau",
+      "sờ mịn, không gồ"
+    ]
+  },
+  {
+    "disease": "Dày sừng tiết bã",
+    "symptom_keywords": [
+      "tổn thương gồ cao, bề mặt sần sùi như dán lên da, có thể bóc được",
+      "màu nâu đến đen, ranh giới rất rõ",
+      "sờ có cảm giác thô ráp, dạng sáp",
+      "thường không đau, đôi khi ngứa nhẹ"
+    ]
+  },
+  {
+    "disease": "Dày sừng ánh sáng",
+    "symptom_keywords": [
+      "mảng nhỏ thô ráp, sờ như giấy nhám",
+      "màu hồng hoặc nâu nhạt, có vảy khô bám",
+      "vị trí ở vùng da hở như mặt, da đầu hói, mu tay",
+      "có thể cảm giác châm chích hoặc hơi rát khi chạm"
+    ]
+  },
+  {
+    "disease": "Ung thư tế bào gai",
+    "symptom_keywords": [
+      "nốt hoặc mảng sần sùi, dày sừng, có thể loét ở trung tâm",
+      "bờ tổn thương gồ cao, không đều, cứng khi sờ",
+      "dễ chảy máu, đóng vảy",
+      "vị trí ở môi dưới, tai, mu tay, vùng da hở",
+      "có thể đau khi tổn thương loét hoặc phát triển nhanh"
+    ]
+  },
+  {
+    "disease": "U xơ thần kinh",
+    "symptom_keywords": [
+      "nhiều khối u mềm, gồ nhẹ trên da, ấn vào có cảm giác lùng nhùng như thoát vị nhỏ",
+      "kèm nhiều dát màu cà phê sữa rải rác trên cơ thể",
+      "số lượng khối u nhiều",
+      "thường không đau, không ngứa"
+    ]
+  },
+  {
+    "disease": "Bớt sắc tố bẩm sinh",
+    "symptom_keywords": [
+      "mảng da màu nâu đến đen, có ngay khi sinh",
+      "bề mặt có thể có lông mọc dày hơn da xung quanh",
+      "kích thước lớn, ranh giới rõ",
+      "không đau, không ngứa"
+    ]
+  },
+  {
+    "disease": "Bớt Mongoloid",
+    "symptom_keywords": [
+      "mảng da màu xanh xám hoặc xanh đen, ranh giới không rõ",
+      "vị trí đặc trưng ở vùng lưng dưới, mông trẻ sơ sinh",
+      "bề mặt phẳng, không sờ thấy khác biệt với da lành",
+      "không đau, không ngứa"
+    ]
+  },
+  {
+    "disease": "Bớt rượu vang",
+    "symptom_keywords": [
+      "mảng màu đỏ tím hoặc đỏ rượu vang, phẳng, ranh giới rõ",
+      "chỉ nhạt màu tạm thời khi ấn giữ rồi thả",
+      "bề mặt không gồ lên",
+      "không đau, không ngứa"
+    ]
+  },
+  {
+    "disease": "Bớt cà phê sữa",
+    "symptom_keywords": [
+      "dát màu nâu nhạt đồng nhất như màu cà phê pha sữa",
+      "ranh giới rõ, hình bầu dục",
+      "bề mặt phẳng, không sờ thấy gồ",
+      "không đau, không ngứa"
+    ]
+  },
+  {
+    "disease": "U hạt sinh mủ",
+    "symptom_keywords": [
+      "khối u nhỏ, đỏ tươi, bề mặt bóng ẩm",
+      "nhô hẳn lên khỏi mặt da, có cuống nhỏ",
+      "chảy máu chỉ với va chạm rất nhẹ",
+      "dễ chảy máu khi va chạm nhẹ, có thể hơi đau"
+    ]
+  },
+  {
+    "disease": "Chai chân tay",
+    "symptom_keywords": [
+      "mảng da dày, cứng, màu vàng nhạt, bề mặt nhẵn",
+      "ranh giới không rõ, lan tỏa dần vào da lành xung quanh",
+      "vị trí ở lòng bàn tay, gót chân nơi tì đè cọ xát",
+      "thường không đau, có thể giảm cảm giác nhẹ ở vùng da dày"
+    ]
+  },
+  {
+    "disease": "Mắt cá chân (cục chai)",
+    "symptom_keywords": [
+      "nhân sừng cứng, tròn nhỏ, ấn sâu vào giữa vùng da dày",
+      "ranh giới rõ hơn chai chân thông thường",
+      "vị trí ở kẽ ngón chân hoặc mu ngón chân",
+      "đau khi tì đè hoặc đi giày, đau nhói khi ấn vào nhân sừng"
+    ]
+  },
+  {
+    "disease": "Nứt gót chân",
+    "symptom_keywords": [
+      "da gót chân dày, khô, nứt thành các đường rãnh sâu",
+      "vết nứt sâu có thể rớm máu",
+      "bề mặt da xung quanh vết nứt sần sùi, bong tróc",
+      "đau khi đi lại, đau nhói nếu vết nứt sâu",
+      "sờ da dày cứng, ráp quanh vết nứt"
+    ]
+  },
+  {
+    "disease": "Viêm kẽ da",
+    "symptom_keywords": [
+      "da đỏ, ẩm ướt ở các nếp gấp da áp sát nhau",
+      "da nứt nẻ ở đáy nếp gấp",
+      "vị trí ở nếp bẹn, nách, dưới vú, bụng",
+      "cảm giác rát, ngứa hoặc khó chịu ở vùng nếp gấp",
+      "sờ da ẩm, có thể hơi trợt"
+    ]
+  },
+  {
+    "disease": "Hăm tã",
+    "symptom_keywords": [
+      "da đỏ, sáng bóng ở vùng mông, bẹn tiếp xúc tã",
+      "có sẩn nhỏ hoặc trợt da nhẹ",
+      "ranh giới tổn thương trùng với vùng da tiếp xúc tã",
+      "trẻ khó chịu, quấy khóc do rát khi tiếp xúc nước tiểu",
+      "sờ da ẩm, hơi sần nhẹ"
+    ]
+  },
+  {
+    "disease": "Rôm sảy",
+    "symptom_keywords": [
+      "nhiều mụn nước nhỏ li ti, trong, nằm nông trên da",
+      "mụn dễ vỡ khi cọ xát nhẹ",
+      "vị trí ở trán, cổ, lưng, ngực",
+      "ngứa châm chích, đặc biệt khi ra mồ hôi",
+      "sờ mụn nước nhỏ, mịn, nông"
+    ]
+  },
+  {
+    "disease": "Nấm Candida kẽ da",
+    "symptom_keywords": [
+      "mảng đỏ tươi, ẩm ướt ở nếp gấp da, ranh giới rõ",
+      "có các sẩn mụn mủ nhỏ vệ tinh rải rác quanh mảng chính (satellite lesions)",
+      "vị trí ở kẽ bẹn, nách, dưới vú, kẽ ngón tay",
+      "ngứa, rát nhiều",
+      "sờ da ẩm ướt, hơi trợt"
+    ]
+  },
+  {
+    "disease": "Nấm Candida miệng",
+    "symptom_keywords": [
+      "mảng trắng như phô mai bám trên lưỡi, niêm mạc má",
+      "cạo mảng trắng để lộ nền niêm mạc đỏ, dễ rớm máu",
+      "có thể kèm nứt khóe miệng hai bên",
+      "cảm giác rát trong miệng, có thể đau khi ăn uống",
+      "sờ mảng trắng dễ bong khi cạo"
+    ]
+  },
+  {
+    "disease": "Chàm đồng tiền",
+    "symptom_keywords": [
+      "mảng tổn thương hình tròn như đồng xu, ranh giới rõ",
+      "bề mặt có mụn nước nhỏ li ti, rỉ dịch hoặc đóng vảy tiết",
+      "vị trí ở mặt duỗi cẳng chân, cẳng tay, mu bàn tay",
+      "ngứa nhiều",
+      "sờ có thể ẩm ướt hoặc đóng vảy cứng tùy giai đoạn"
+    ]
+  },
+  {
+    "disease": "Chàm tổ đỉa",
+    "symptom_keywords": [
+      "nhiều mụn nước nhỏ, sâu, chắc, như hạt sago nằm dưới da",
+      "vị trí ở lòng bàn tay, lòng bàn chân, rìa ngón tay",
+      "mụn nước khó vỡ, sau khô để lại da bong tróc",
+      "ngứa sâu bên trong, đôi khi rát",
+      "sờ chắc, mụn nước nằm sâu khó vỡ"
+    ]
+  },
+  {
+    "disease": "Viêm da ứ đọng",
+    "symptom_keywords": [
+      "da vùng cẳng chân dưới đổi màu nâu sậm, đỏ hoặc tím",
+      "da dày, sần, có thể rỉ dịch hoặc đóng vảy",
+      "phù nề quanh mắt cá chân",
+      "tĩnh mạch nổi rõ ngoằn ngoèo dưới da",
+      "ngứa, cảm giác nặng và căng tức ở chân",
+      "sờ da dày, ấn có thể hơi lõm do phù nề"
+    ]
+  },
+  {
+    "disease": "Loét tĩnh mạch",
+    "symptom_keywords": [
+      "vết loét nông, bờ không đều, đáy có mô hạt đỏ hoặc phủ lớp dịch vàng",
+      "da xung quanh vết loét sậm màu nâu, phù nề",
+      "vị trí đặc trưng ở phía trong mắt cá chân",
+      "đau âm ỉ, cảm giác nặng chân, đau tăng khi đứng lâu",
+      "sờ đáy vết loét ẩm ướt, bờ mềm"
+    ]
+  },
+  {
+    "disease": "Loét tì đè",
+    "symptom_keywords": [
+      "da đỏ không mất màu khi ấn tại vùng xương nhô ra tì đè",
+      "vết loét sâu, đáy có thể lộ mô hoại tử đen hoặc vàng",
+      "bờ vết loét rõ, hình tròn hoặc bầu dục",
+      "vị trí ở xương cùng, gót chân, mắt cá chân",
+      "đau tại vùng loét (hoặc giảm/mất cảm giác nếu có tổn thương thần kinh kèm theo)"
+    ]
+  },
+  {
+    "disease": "Loét bàn chân đái tháo đường",
+    "symptom_keywords": [
+      "vết loét sâu, bờ dày chai cứng xung quanh",
+      "đáy vết loét có mô hoại tử hoặc mủ",
+      "vị trí ở lòng bàn chân, đầu ngón chân, gót chân",
+      "da bàn chân khô, có thể kèm biến dạng ngón chân",
+      "thường giảm hoặc mất cảm giác đau do biến chứng thần kinh ngoại biên, kèm tê bì bàn chân"
+    ]
+  },
+  {
+    "disease": "Ban xuất huyết giảm tiểu cầu",
+    "symptom_keywords": [
+      "nhiều chấm đỏ tím nhỏ li ti, không mất màu khi ấn kính lên da (non-blanchable)",
+      "vết bầm tím lớn xuất hiện dù chỉ va chạm nhẹ",
+      "không ngứa, không đau"
+    ]
+  },
+  {
+    "disease": "Viêm mạch dị ứng Henoch-Schönlein",
+    "symptom_keywords": [
+      "nhiều nốt xuất huyết gồ nhẹ, sờ thấy rõ, không mất màu khi ấn kính (palpable purpura)",
+      "phân bố đối xứng ở cẳng chân, mông",
+      "tổn thương da thường không đau, có thể kèm đau khớp và đau bụng"
+    ]
+  },
+  {
+    "disease": "Vảy phấn hồng",
+    "symptom_keywords": [
+      "một mảng lớn hình bầu dục xuất hiện đầu tiên, có viền vảy mỏng bám vào trong (herald patch)",
+      "nhiều mảng nhỏ hơn mọc dọc theo các đường nếp gấp da thân mình, tạo hình như cây thông",
+      "vảy mỏng như giấy lụa bám ở rìa trong mỗi mảng",
+      "ngứa nhẹ đến vừa",
+      "sờ vảy mỏng, mịn ở viền mảng"
+    ]
+  },
+  {
+    "disease": "Vảy phấn trắng",
+    "symptom_keywords": [
+      "mảng da nhạt màu hơn da xung quanh, ranh giới mờ không rõ",
+      "bề mặt có vảy mịn rất nhẹ, khô",
+      "vị trí ở má, cánh tay, thường gặp ở trẻ em",
+      "thường không ngứa, đôi khi ngứa rất nhẹ",
+      "sờ mịn, hơi khô nhẹ"
+    ]
+  },
+  {
+    "disease": "Da cá",
+    "symptom_keywords": [
+      "da khô, bong vảy nhỏ như vảy cá, màu trắng đến xám",
+      "vảy bám chặt, tập trung ở mặt duỗi cẳng chân, cẳng tay",
+      "lòng bàn tay, bàn chân có các đường vân sâu hơn bình thường",
+      "cảm giác da khô căng, đôi khi ngứa nhẹ",
+      "sờ da khô ráp, vảy bám chặt"
+    ]
+  },
+  {
+    "disease": "Bệnh Darier",
+    "symptom_keywords": [
+      "nhiều sẩn nhỏ màu nâu vàng, sờ cứng và nhám như giấy nhám",
+      "sẩn tập trung thành mảng ở vùng da tiết bã như ngực, lưng, sau tai",
+      "móng tay có vệt trắng đỏ dọc kèm khấc hình chữ V ở đầu móng",
+      "ngứa, có thể kèm mùi hôi đặc trưng do tổn thương ẩm"
+    ]
+  },
+  {
+    "disease": "Rubella",
+    "symptom_keywords": [
+      "ban đỏ hồng, mịn, các nốt nhỏ rời rạc không liên kết thành mảng lớn",
+      "ban khởi đầu ở mặt rồi lan xuống thân mình nhanh",
+      "hạch sau tai, hạch chẩm sưng, sờ thấy rõ",
+      "ngứa nhẹ, thường kèm sốt nhẹ và mệt mỏi"
+    ]
+  },
+  {
+    "disease": "Nốt ruồi loạn sản",
+    "symptom_keywords": [
+      "nốt ruồi kích thước lớn hơn nốt ruồi thường, trên 5mm",
+      "màu sắc không đều, có vùng nhạt vùng đậm xen kẽ",
+      "bờ viền mờ, không rõ rệt, hình dạng hơi bất đối xứng",
+      "bề mặt hơi gồ ở trung tâm, phẳng dần ra rìa ngoài",
+      "thường không đau, không ngứa",
+      "sờ có thể hơi gồ ở trung tâm, phẳng dần ra rìa"
+    ]
+  },
+  {
+    "disease": "Bệnh phong thể u",
+    "symptom_keywords": [
+      "nhiều nốt và mảng thâm nhiễm đối xứng hai bên cơ thể, ranh giới không rõ",
+      "da vùng tổn thương dày, bóng, mất các nếp nhăn tự nhiên",
+      "lông mày rụng thưa ở hai bên ngoài",
+      "sờ thấy dây thần kinh to ở nhiều vị trí",
+      "giảm hoặc mất cảm giác đau, nóng, lạnh tại vùng tổn thương"
+    ]
+  },
+  {
+    "disease": "U hạt vòng",
+    "symptom_keywords": [
+      "sẩn hoặc mảng gờ hình vòng hoặc hình cung, trung tâm da lành",
+      "màu hồng nhạt hoặc màu da, bề mặt nhẵn không vảy",
+      "sờ chắc, không đau",
+      "vị trí đặc trưng ở mu bàn tay, khớp ngón tay, cổ chân",
+      "thường không đau, không ngứa"
+    ]
+  },
+  {
+    "disease": "Sarcoidosis da",
+    "symptom_keywords": [
+      "sẩn hoặc mảng màu đỏ nâu đến tím, bề mặt nhẵn hoặc sần nhẹ",
+      "sờ chắc, không đau",
+      "hay gặp ở mặt, quanh mắt, mũi, sẹo cũ",
+      "có thể có tổn thương ở niêm mạc",
+      "thường không đau, không ngứa"
+    ]
+  },
+  {
+    "disease": "Lupus ban đỏ dạng đĩa",
+    "symptom_keywords": [
+      "mảng đỏ, ranh giới rõ, bề mặt có vảy bám chặt vào lỗ chân lông",
+      "teo da và mất sắc tố ở trung tâm mảng tổn thương cũ",
+      "phân bố ở vùng da hở: mặt, tai, da đầu",
+      "sẹo teo da khi lành",
+      "có thể ngứa hoặc rát nhẹ, nhạy cảm với ánh nắng",
+      "sờ thấy vảy bám chắc, khi lột vảy để lại các gai nhỏ ở mặt dưới (dấu hiệu đinh gai)"
+    ]
+  }
+]

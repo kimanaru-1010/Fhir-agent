@@ -1,4 +1,4 @@
-"""Conversation summarization for short-term memory compaction."""
+﻿"""Conversation summarization for short-term memory compaction."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from typing import Protocol
 
 from openai import AsyncOpenAI
 
-from app.config import settings
+from app.core.config import settings
 from app.services.token_counter import ApproximateTokenCounter, ConversationMessage, TokenCounter
 
 

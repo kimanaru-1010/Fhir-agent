@@ -1,4 +1,4 @@
-"""Shared SSE streaming for persisted chat exchanges."""
+﻿"""Shared SSE streaming for persisted chat exchanges."""
 
 from __future__ import annotations
 
@@ -12,8 +12,8 @@ from uuid import UUID
 
 from sqlalchemy import select
 
-from app.context_graph_client import get_collector
-from app.database import AsyncSessionFactory
+from app.graph.client import get_collector
+from app.db.session import AsyncSessionFactory
 from app.db.models import Conversation, Message
 from app.schemas.conversation import ConversationResponse
 from app.schemas.message import MessageResponse

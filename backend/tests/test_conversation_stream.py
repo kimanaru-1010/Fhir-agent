@@ -1,4 +1,4 @@
-"""Tests for conversation-aware SSE creation."""
+﻿"""Tests for conversation-aware SSE creation."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import IntegrityError
 
-from app import database as _db_module
+from app.db import session as _db_module
 from app.db.models import Conversation, User
 from app.dependencies import auth as _auth_dep
 from tests.test_messages import (
@@ -72,7 +72,7 @@ def _created_conversation(session: MagicMock) -> Conversation:
 
 
 def test_create_conversation_stream_success_starts_conversation_and_persists_exchange():
-    from app.context_graph_client import get_collector
+    from app.graph.client import get_collector
 
     user = _make_user()
     app, user_session, _ = _make_test_app(current_user=user)

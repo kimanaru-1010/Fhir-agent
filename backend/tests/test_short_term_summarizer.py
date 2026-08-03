@@ -1,4 +1,4 @@
-"""Tests for the short-term LLM summarizer wrapper."""
+﻿"""Tests for the short-term LLM summarizer wrapper."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from uuid import uuid4
 import anyio
 import pytest
 
-from app.config import settings
+from app.core.config import settings
 from app.services.short_term_summarizer import LLMConversationSummarizer
 from app.services.token_counter import ConversationMessage
 

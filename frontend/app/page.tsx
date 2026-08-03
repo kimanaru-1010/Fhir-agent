@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Box, Flex, Heading, HStack, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, Heading, HStack, Text } from "@chakra-ui/react";
 import { ChatInterface } from "@/components/ChatInterface";
+import { SkinDiagnosticPanel } from "@/components/SkinDiagnosticPanel";
 import { API_BASE, DOMAIN } from "@/lib/config";
 
 export default function Home() {
   const [backendStatus, setBackendStatus] = useState<"ok" | "degraded" | "offline">("offline");
+  const [mode, setMode] = useState<"chat" | "skin">("chat");
 
   useEffect(() => {
     async function checkHealth(retries = 3, delay = 1000) {
@@ -42,6 +44,24 @@ export default function Home() {
           </Text>
         </Box>
         <HStack gap={2}>
+          <HStack gap={1} bg="gray.800" p={1} borderRadius="md">
+            <Button
+              size="xs"
+              variant={mode === "chat" ? "solid" : "ghost"}
+              colorPalette={mode === "chat" ? "blue" : "gray"}
+              onClick={() => setMode("chat")}
+            >
+              Chat
+            </Button>
+            <Button
+              size="xs"
+              variant={mode === "skin" ? "solid" : "ghost"}
+              colorPalette={mode === "skin" ? "blue" : "gray"}
+              onClick={() => setMode("skin")}
+            >
+              Skin
+            </Button>
+          </HStack>
           <Box
             w={3}
             h={3}
@@ -72,7 +92,7 @@ export default function Home() {
       </Flex>
 
       <Box as="main" flex={1} minH={0} overflow="hidden">
-        <ChatInterface />
+        {mode === "chat" ? <ChatInterface /> : <SkinDiagnosticPanel />}
       </Box>
     </Flex>
   );

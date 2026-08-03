@@ -1,4 +1,4 @@
-"""Generate sample data for Healthcare context graph."""
+﻿"""Generate sample data for Healthcare context graph."""
 
 from __future__ import annotations
 
@@ -6,8 +6,8 @@ import asyncio
 import json
 from pathlib import Path
 
-from app.config import settings
-from app.context_graph_client import connect_neo4j, close_neo4j, execute_cypher
+from app.core.config import settings
+from app.graph.client import connect_neo4j, close_neo4j, execute_cypher
 
 
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
@@ -199,8 +199,8 @@ async def main():
     data = json.loads(fixture_path.read_text())
 
     if settings.memory_backend == "nams":
-        # NAMS path — connect memory client, delegate to memory_adapter.
-        from app.memory import close_memory, connect_memory
+        # NAMS path â€” connect memory client, delegate to memory_adapter.
+        from app.services.long_term_memory import close_memory, connect_memory
         from app.memory_adapter import ingest_fixtures_nams
 
         print("  Backend: NAMS (relationships and entity properties not yet supported)")
@@ -212,7 +212,7 @@ async def main():
         print("\nDone! Your context graph is ready.")
         return
 
-    # Bolt path — connect Neo4j, apply schema, load data.
+    # Bolt path â€” connect Neo4j, apply schema, load data.
     await connect_neo4j()
 
     print("\n[1/4] Applying schema...")

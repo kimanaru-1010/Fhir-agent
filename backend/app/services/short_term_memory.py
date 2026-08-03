@@ -1,4 +1,4 @@
-"""Short-term conversation memory built from PostgreSQL messages."""
+﻿"""Short-term conversation memory built from PostgreSQL messages."""
 
 from __future__ import annotations
 
@@ -11,8 +11,8 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.config import settings
-from app.database import AsyncSessionFactory
+from app.core.config import settings
+from app.db.session import AsyncSessionFactory
 from app.db.models import Conversation, Message
 from app.services.short_term_summarizer import (
     ConversationSummarizer,

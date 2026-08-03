@@ -1,12 +1,12 @@
-"""Shared chat service for conversation and message APIs."""
+﻿"""Shared chat service for conversation and message APIs."""
 
 from __future__ import annotations
 
 from typing import Any
 from uuid import UUID
 
-from app.agent import generate_agent_response
-from app.memory import save_conversation_memory
+from app.agents.fhir import generate_agent_response
+from app.services.long_term_memory import save_conversation_memory
 from app.services.short_term_memory import (
     ShortTermMemoryService,
     build_conversation_context,

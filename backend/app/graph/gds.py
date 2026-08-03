@@ -1,9 +1,9 @@
-"""Graph Data Science client."""
+﻿"""Graph Data Science client."""
 
 from __future__ import annotations
 
-from app.constants import COMMUNITY_GRAPH, PAGERANK_GRAPH, SIMILARITY_GRAPH, FASTRP_EMBEDDING_DIMENSIONS
-from app.context_graph_client import execute_cypher
+from app.core.constants import COMMUNITY_GRAPH, PAGERANK_GRAPH, SIMILARITY_GRAPH, FASTRP_EMBEDDING_DIMENSIONS
+from app.graph.client import execute_cypher
 
 ENTITY_LABELS = ["Person", "Organization", "Location", "Event", "Object", "Patient", "Provider", "Diagnosis", "Treatment", "Encounter", "Facility", "Medication"]
 

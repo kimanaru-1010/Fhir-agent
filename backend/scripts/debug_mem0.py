@@ -1,9 +1,9 @@
-"""Debug save_conversation_memory with print statements."""
+﻿"""Debug save_conversation_memory with print statements."""
 
 import asyncio
 import sys
 
-from app.memory import init_memory, get_memory, save_conversation_memory, _memory, _sanitize, _strip_reasoning
+from app.services.long_term_memory import init_memory, get_memory, save_conversation_memory, _memory, _sanitize, _strip_reasoning
 
 
 async def main():

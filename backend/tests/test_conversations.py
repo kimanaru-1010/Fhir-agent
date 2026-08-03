@@ -1,4 +1,4 @@
-"""Tests for conversation management API."""
+﻿"""Tests for conversation management API."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from unittest.mock import ANY, AsyncMock, MagicMock, patch
 from app.db.models import Conversation, Message, User
 
 # Pre-imports for override
-from app import database as _db_module
+from app.db import session as _db_module
 from app.dependencies import auth as _auth_dep
 
 
@@ -593,7 +593,7 @@ def test_get_conversation_other_user():
     user_a = _make_user(id=uuid4(), username="alice")
     conv = _make_conversation(id=uuid4(), user_id=user_a.id)
 
-    # DB would find the conv, but query also filters by user_b.id → None
+    # DB would find the conv, but query also filters by user_b.id â†’ None
     mock_result.scalar_one_or_none.return_value = None
 
     resp = client.get(f"/api/conversations/{conv.id}")
@@ -689,7 +689,7 @@ def test_security_no_user_id_in_request():
 
 
 def test_security_user_a_cannot_see_user_b_conversation():
-    """User A queries with user B's conversation ID → 404."""
+    """User A queries with user B's conversation ID â†’ 404."""
     user_a = _make_user(id=uuid4(), username="alice")
     app, mock_session, mock_result = _make_test_app(current_user=user_a)
     client = TestClient(app)

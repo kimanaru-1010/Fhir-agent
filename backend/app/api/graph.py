@@ -1,4 +1,4 @@
-"""API routes for Healthcare Context Graph."""
+﻿"""API routes for Healthcare Context Graph."""
 
 from __future__ import annotations
 
@@ -10,9 +10,9 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from starlette.responses import StreamingResponse
 
-from app.agent import handle_message
-from app.config import settings
-from app.context_graph_client import (
+from app.agents.fhir import handle_message
+from app.core.config import settings
+from app.graph.client import (
     execute_cypher,
     expand_node,
     get_collector,
@@ -22,12 +22,12 @@ from app.context_graph_client import (
     is_connected,
     search_entities,
 )
-from app.gds_client import check_gds_available, run_community_detection, run_pagerank
+from app.graph.gds import check_gds_available, run_community_detection, run_pagerank
 
 
 # Try to import streaming handler
 try:
-    from app.agent import handle_message_stream  # type: ignore[attr-defined]
+    from app.agents.fhir import handle_message_stream  # type: ignore[attr-defined]
 except ImportError:
     handle_message_stream = None
 
@@ -218,7 +218,7 @@ async def list_entity_schemas():
     """Return JSON Schema for each entity model."""
     from pydantic import BaseModel
 
-    from app import models as entity_models
+    from app.graph import models as entity_models
 
     schemas: dict[str, dict] = {}
     for attr_name in dir(entity_models):

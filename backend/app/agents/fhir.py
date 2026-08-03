@@ -1,4 +1,4 @@
-"""Healthcare AI Agent — bounded, targeted FHIR graph exploration."""
+﻿"""Healthcare AI Agent â€” bounded, targeted FHIR graph exploration."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ import uuid
 from dataclasses import dataclass
 from typing import Annotated, Any
 
-from app.config import settings
+from app.core.config import settings
 from openai import AsyncOpenAI
 from pydantic import Field
 from pydantic_ai import Agent, ModelSettings, RunContext
@@ -22,8 +22,8 @@ from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.usage import UsageLimits
 
-from app.context_graph_client import execute_cypher, get_schema
-from app.memory import save_conversation_memory, search_memories
+from app.graph.client import execute_cypher, get_schema
+from app.services.long_term_memory import save_conversation_memory, search_memories
 
 
 # SYSTEM_PROMPT = """
@@ -538,6 +538,17 @@ FINAL RESPONSE
 ==================================================
 
 Answer in the user's language.
+
+Write the final answer as a clinical/business narrative, not a raw FHIR
+resource inventory. Convert retrieved resources into the most meaningful
+human-readable facts available in the evidence. Prefer clinical or business
+meaning over technical identifiers.
+
+Do not present internal resource IDs as the main content and do not summarize
+groups of records as lists of IDs. If a record has no usable human-readable
+content in the retrieved evidence, say that the record exists but its details
+were not available. Include technical identifiers only when the user asks for
+them or when they are necessary to disambiguate records.
 
 Provide:
 
@@ -2197,7 +2208,7 @@ async def handle_message_stream(
     user_id: str = "anonymous",
 ) -> dict[str, Any]:
     """Run the full agent loop and then emit the final response."""
-    from app.context_graph_client import get_collector
+    from app.graph.client import get_collector
     run_id = _generate_run_id()
     run_token = _CURRENT_RUN_ID.set(run_id)
     handler_token = _CURRENT_HANDLER.set("handle_message_stream")

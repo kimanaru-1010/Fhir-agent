@@ -1,4 +1,4 @@
-"""Tests for agent response generation and memory persistence boundaries."""
+﻿"""Tests for agent response generation and memory persistence boundaries."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import anyio
 
-from app.agent import (
+from app.agents.fhir import (
     SYSTEM_PROMPT,
     _BATCH_RESOURCE_LIMIT,
     _TOOL_RESULT_LIMIT,
@@ -20,15 +20,17 @@ from app.agent import (
 
 
 def test_system_prompt_is_concise_and_preserves_core_rules():
-    assert len(SYSTEM_PROMPT) < 4_000
-    assert "Always answer the CURRENT USER REQUEST" in SYSTEM_PROMPT
-    assert "Follow tool parameters exactly" in SYSTEM_PROMPT
-    assert "Use batch tools when processing multiple resources" in SYSTEM_PROMPT
-    assert "repeat identical tool calls" in SYSTEM_PROMPT
-    assert "Use count_resources when the user asks for an exact total" in SYSTEM_PROMPT
-    assert f"at most {_TOOL_RESULT_LIMIT} rows" in SYSTEM_PROMPT
-    assert f"at most {_BATCH_RESOURCE_LIMIT} resource ids" in SYSTEM_PROMPT
+    assert len(SYSTEM_PROMPT) < 7_000
+    assert "The current user request is the only task to solve" in SYSTEM_PROMPT
+    assert "follow tool schemas exactly" in SYSTEM_PROMPT
+    assert "prefer batch operations" in SYSTEM_PROMPT
+    assert "repeat a tool call with the same or equivalent arguments" in SYSTEM_PROMPT
+    assert "Never interpret unknown codes" in SYSTEM_PROMPT
     assert "Answer in the user's language" in SYSTEM_PROMPT
+    assert "Prefer clinical or business" in SYSTEM_PROMPT
+    assert "meaning over technical identifiers" in SYSTEM_PROMPT
+    assert "do not summarize" in SYSTEM_PROMPT
+    assert "lists of IDs" in SYSTEM_PROMPT
 
 
 def test_system_prompt_forbids_duplicate_tool_calls():
@@ -91,11 +93,11 @@ def test_generate_agent_response_does_not_save_memory():
 
         with (
             patch(
-                "app.agent._prepare_run",
+                "app.agents.fhir._prepare_run",
                 AsyncMock(return_value=("conversation-1", [], "No memories")),
             ),
-            patch("app.agent.agent.run", AsyncMock(return_value=model_result)),
-            patch("app.agent.save_conversation_memory", AsyncMock()) as save_memory,
+            patch("app.agents.fhir.agent.run", AsyncMock(return_value=model_result)),
+            patch("app.agents.fhir.save_conversation_memory", AsyncMock()) as save_memory,
         ):
             result = await generate_agent_response(
                 "Hello",
@@ -120,10 +122,10 @@ def test_generate_agent_response_includes_short_term_context_without_message_his
 
         with (
             patch(
-                "app.agent._prepare_run",
+                "app.agents.fhir._prepare_run",
                 AsyncMock(return_value=("conversation-1", [], "No memories")),
             ),
-            patch("app.agent.agent.run", runner),
+            patch("app.agents.fhir.agent.run", runner),
         ):
             await generate_agent_response(
                 "Nguoi nay co thuoc active nao?",
@@ -159,8 +161,8 @@ def test_handle_message_wraps_generation_and_saves_memory():
         }
 
         with (
-            patch("app.agent.generate_agent_response", AsyncMock(return_value=generated)) as generate,
-            patch("app.agent.save_conversation_memory", AsyncMock()) as save_memory,
+            patch("app.agents.fhir.generate_agent_response", AsyncMock(return_value=generated)) as generate,
+            patch("app.agents.fhir.save_conversation_memory", AsyncMock()) as save_memory,
         ):
             result = await handle_message(
                 "Hello",

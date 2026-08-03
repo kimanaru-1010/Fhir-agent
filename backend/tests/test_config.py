@@ -1,4 +1,4 @@
-"""Unit tests for application configuration (backend/app/config.py)."""
+﻿"""Unit tests for application configuration (backend/app/config.py)."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import os
 
 import pytest
 
-from app.config import Settings
+from app.core.config import Settings
 
 
 @pytest.fixture()

@@ -33,3 +33,8 @@ data/documents/*.txt
 backend/.mem0/
 .mem0/
 backend/logs/
+backend/app/logs/
+
+# Skin diagnostic runtime data
+backend/app/skin_diagnostic/data/sessions/
+backend/app/skin_diagnostic/data/uploads/

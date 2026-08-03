@@ -1,4 +1,4 @@
-"""Conversation CRUD API — protected by JWT authentication."""
+﻿"""Conversation CRUD API â€” protected by JWT authentication."""
 
 import logging
 from datetime import datetime, timezone
@@ -9,7 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import StreamingResponse
 
-from app.database import get_db
+from app.db.session import get_db
 from app.db.models import Conversation, Message, User
 from app.dependencies.auth import get_current_user
 from app.schemas.conversation import (

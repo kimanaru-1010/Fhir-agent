@@ -1,4 +1,4 @@
-"""Token counting abstractions for short-term conversation memory."""
+﻿"""Token counting abstractions for short-term conversation memory."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Protocol
 from uuid import UUID
 
-from app.config import settings
+from app.core.config import settings
 
 
 @dataclass(frozen=True)

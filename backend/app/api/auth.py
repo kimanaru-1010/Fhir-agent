@@ -1,12 +1,12 @@
-"""Authentication routes — register, login, and /users/me."""
+﻿"""Authentication routes â€” register, login, and /users/me."""
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings
-from app.database import get_db
+from app.core.config import settings
+from app.db.session import get_db
 from app.db.models import User
 from app.dependencies.auth import get_current_user
 from app.schemas.auth import (

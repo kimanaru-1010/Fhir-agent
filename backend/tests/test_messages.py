@@ -1,4 +1,4 @@
-"""Tests for conversation message API."""
+﻿"""Tests for conversation message API."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import IntegrityError
 
-from app import database as _db_module
+from app.db import session as _db_module
 from app.dependencies import auth as _auth_dep
 from app.db.models import Conversation, Message, User
 
@@ -508,7 +508,7 @@ def test_create_message_memory_error_after_commit_still_returns_201():
 
 
 def test_stream_message_success_forwards_tool_events_and_persists_messages():
-    from app.context_graph_client import get_collector
+    from app.graph.client import get_collector
 
     user = _make_user()
     conv = _make_conversation(user_id=user.id)
@@ -598,7 +598,7 @@ def test_stream_message_success_forwards_tool_events_and_persists_messages():
 
 
 def test_stream_message_ignores_collector_text_delta_and_done_duplicates():
-    from app.context_graph_client import get_collector
+    from app.graph.client import get_collector
 
     user = _make_user()
     conv = _make_conversation(user_id=user.id)
@@ -790,7 +790,7 @@ def test_stream_message_memory_error_still_emits_done():
 
 
 def test_collector_event_queue_is_context_local_for_concurrent_streams():
-    from app.context_graph_client import get_collector
+    from app.graph.client import get_collector
 
     async def run_test():
         collector = get_collector()

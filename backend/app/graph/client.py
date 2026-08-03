@@ -1,4 +1,4 @@
-"""Neo4j context graph client."""
+﻿"""Neo4j context graph client."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ _connected: bool = False
 
 
 # ---------------------------------------------------------------------------
-# Result collector — captures Cypher results from agent tool calls so the
+# Result collector â€” captures Cypher results from agent tool calls so the
 # chat endpoint can attach them as graph_data without modifying agent templates.
 # ---------------------------------------------------------------------------
 
@@ -91,7 +91,7 @@ class CypherResultCollector:
                     return
             state.event_queue.put_nowait(payload)
         except RuntimeError:
-            pass  # loop closed or queue full — best effort
+            pass  # loop closed or queue full â€” best effort
 
     # -- tool call events ------------------------------------------------------
 
@@ -192,7 +192,7 @@ def is_connected() -> bool:
 async def connect_neo4j() -> None:
     """Connect to Neo4j and initialize the memory integration."""
     global _driver, _connected
-    from app.config import settings
+    from app.core.config import settings
     _driver = AsyncGraphDatabase.driver(
         settings.neo4j_uri,
         auth=(settings.neo4j_username, settings.neo4j_password),
@@ -245,7 +245,7 @@ async def execute_cypher(
 
 async def search_entities(query: str, label: str | None = None, limit: int = 20) -> list[dict]:
     """Full-text search across entities."""
-    from app.config import settings
+    from app.core.config import settings
     cypher = """
     MATCH (n)
     WHERE ($label IS NULL OR $label IN labels(n))
@@ -263,7 +263,7 @@ async def search_entities(query: str, label: str | None = None, limit: int = 20)
 
 async def get_entity_graph(entity_name: str, depth: int = 2) -> dict:
     """Get the subgraph around an entity."""
-    from app.config import settings
+    from app.core.config import settings
     cypher = """
     MATCH (n)
     WHERE toLower(n.name) = toLower($name)
@@ -280,7 +280,7 @@ async def get_entity_graph(entity_name: str, depth: int = 2) -> dict:
 
 async def get_schema() -> dict:
     """Get the graph database schema, scoped to the current domain."""
-    from app.config import settings
+    from app.core.config import settings
     # Get labels that actually exist in domain data
     labels_result = await execute_cypher(
         """
@@ -313,7 +313,7 @@ async def get_schema_visualization() -> dict:
     Uses db.schema.visualization() filtered to only labels that exist
     in the current domain's data.
     """
-    from app.config import settings
+    from app.core.config import settings
     try:
         results = await execute_cypher(
             "CALL db.schema.visualization() YIELD nodes, relationships RETURN nodes, relationships",
@@ -376,7 +376,7 @@ async def get_schema_visualization() -> dict:
 
 async def expand_node(element_id: str) -> dict:
     """Get immediate neighbors of a node for graph expansion."""
-    from app.config import settings
+    from app.core.config import settings
     cypher = """
     MATCH (n) WHERE elementId(n) = $elementId
     OPTIONAL MATCH (n)-[r]-(m)

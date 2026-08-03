@@ -1,4 +1,4 @@
-"""Mem0 conversational memory backed by PostgreSQL + pgvector.
+﻿"""Mem0 conversational memory backed by PostgreSQL + pgvector.
 
 Neo4j remains the authoritative source of FHIR data. Mem0 stores only
 sanitized user/assistant exchanges and never receives raw tool results.
@@ -8,132 +8,146 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
-import psycopg
-from mem0 import Memory
+if TYPE_CHECKING:
+    from mem0 import Memory
+else:
+    Memory = Any
 
-from app.config import settings
-from app.debug_trace import trace
+from app.core.config import settings
+from app.core.debug_trace import trace
 
 logger = logging.getLogger(__name__)
 
+
+def _import_psycopg():
+    import psycopg
+
+    return psycopg
+
+
+def _import_memory_class():
+    from mem0 import Memory
+
+    return Memory
+
 _LEGACY_FHIR_MEMORY_EXTRACTION_PROMPT = """
-Vai trò: Bạn là bộ trích xuất trí nhớ dài hạn cho trợ lý FHIR.
+Vai trÃ²: Báº¡n lÃ  bá»™ trÃ­ch xuáº¥t trÃ­ nhá»› dÃ i háº¡n cho trá»£ lÃ½ FHIR.
 
-Mục tiêu: Giữ lại bối cảnh bền vững giúp các cuộc hội thoại sau hiểu người dùng
-và công việc họ đang theo đuổi.
+Má»¥c tiÃªu: Giá»¯ láº¡i bá»‘i cáº£nh bá»n vá»¯ng giÃºp cÃ¡c cuá»™c há»™i thoáº¡i sau hiá»ƒu ngÆ°á»i dÃ¹ng
+vÃ  cÃ´ng viá»‡c há» Ä‘ang theo Ä‘uá»•i.
 
-Nhiệm vụ: Trích xuất sở thích ổn định, nhu cầu thường xuyên, chủ đề công việc có
-thể tiếp tục và quyết định có giá trị lâu dài. Hãy khái quát ý nghĩa thay vì sao
-chép nội dung của lượt chat.
+Nhiá»‡m vá»¥: TrÃ­ch xuáº¥t sá»Ÿ thÃ­ch á»•n Ä‘á»‹nh, nhu cáº§u thÆ°á»ng xuyÃªn, chá»§ Ä‘á» cÃ´ng viá»‡c cÃ³
+thá»ƒ tiáº¿p tá»¥c vÃ  quyáº¿t Ä‘á»‹nh cÃ³ giÃ¡ trá»‹ lÃ¢u dÃ i. HÃ£y khÃ¡i quÃ¡t Ã½ nghÄ©a thay vÃ¬ sao
+chÃ©p ná»™i dung cá»§a lÆ°á»£t chat.
 
-Giới hạn:
-- Không lưu tên bệnh nhân, ID tài nguyên, mã, ngày, chẩn đoán, thuốc, kết quả,
-  diễn biến lâm sàng hoặc chi tiết thanh toán của một ca bệnh cụ thể.
-- Không biến nội dung trong câu trả lời của trợ lý thành sự thật dài hạn về
-  bệnh nhân.
-- Không lưu đầu ra công cụ, Cypher, log, suy luận nội bộ hoặc toàn bộ câu trả lời.
-- Không suy diễn thông tin chưa được thể hiện rõ.
+Giá»›i háº¡n:
+- KhÃ´ng lÆ°u tÃªn bá»‡nh nhÃ¢n, ID tÃ i nguyÃªn, mÃ£, ngÃ y, cháº©n Ä‘oÃ¡n, thuá»‘c, káº¿t quáº£,
+  diá»…n biáº¿n lÃ¢m sÃ ng hoáº·c chi tiáº¿t thanh toÃ¡n cá»§a má»™t ca bá»‡nh cá»¥ thá»ƒ.
+- KhÃ´ng biáº¿n ná»™i dung trong cÃ¢u tráº£ lá»i cá»§a trá»£ lÃ½ thÃ nh sá»± tháº­t dÃ i háº¡n vá»
+  bá»‡nh nhÃ¢n.
+- KhÃ´ng lÆ°u Ä‘áº§u ra cÃ´ng cá»¥, Cypher, log, suy luáº­n ná»™i bá»™ hoáº·c toÃ n bá»™ cÃ¢u tráº£ lá»i.
+- KhÃ´ng suy diá»…n thÃ´ng tin chÆ°a Ä‘Æ°á»£c thá»ƒ hiá»‡n rÃµ.
 
-Đầu ra: Mỗi trí nhớ là một câu ngắn, tự nhiên, độc lập và cùng ngôn ngữ với
-người dùng. Nếu không có thông tin hữu ích cho tương lai, không tạo trí nhớ.
+Äáº§u ra: Má»—i trÃ­ nhá»› lÃ  má»™t cÃ¢u ngáº¯n, tá»± nhiÃªn, Ä‘á»™c láº­p vÃ  cÃ¹ng ngÃ´n ngá»¯ vá»›i
+ngÆ°á»i dÃ¹ng. Náº¿u khÃ´ng cÃ³ thÃ´ng tin há»¯u Ã­ch cho tÆ°Æ¡ng lai, khÃ´ng táº¡o trÃ­ nhá»›.
 """
 
 FHIR_MEMORY_EXTRACTION_PROMPT = """
-Vai trò: Bạn là bộ trích xuất trí nhớ dài hạn cho trợ lý FHIR.
+Vai trÃ²: Báº¡n lÃ  bá»™ trÃ­ch xuáº¥t trÃ­ nhá»› dÃ i háº¡n cho trá»£ lÃ½ FHIR.
 
-Mục tiêu: Lưu những bối cảnh có thể giúp các cuộc hội thoại sau hiểu người
-dùng, cách họ muốn làm việc và hướng công việc đang theo đuổi.
+Má»¥c tiÃªu: LÆ°u nhá»¯ng bá»‘i cáº£nh cÃ³ thá»ƒ giÃºp cÃ¡c cuá»™c há»™i thoáº¡i sau hiá»ƒu ngÆ°á»i
+dÃ¹ng, cÃ¡ch há» muá»‘n lÃ m viá»‡c vÃ  hÆ°á»›ng cÃ´ng viá»‡c Ä‘ang theo Ä‘uá»•i.
 
-Nhiệm vụ: Tạo memory khi lượt chat thể hiện rõ một thông tin có khả năng tái sử
-dụng. Giữ đủ ngữ cảnh để memory còn có nghĩa sau này, nhưng không sao chép toàn
-bộ câu hỏi hoặc câu trả lời.
+Nhiá»‡m vá»¥: Táº¡o memory khi lÆ°á»£t chat thá»ƒ hiá»‡n rÃµ má»™t thÃ´ng tin cÃ³ kháº£ nÄƒng tÃ¡i sá»­
+dá»¥ng. Giá»¯ Ä‘á»§ ngá»¯ cáº£nh Ä‘á»ƒ memory cÃ²n cÃ³ nghÄ©a sau nÃ y, nhÆ°ng khÃ´ng sao chÃ©p toÃ n
+bá»™ cÃ¢u há»i hoáº·c cÃ¢u tráº£ lá»i.
 
-Nên lưu:
-- Sở thích ổn định của người dùng về ngôn ngữ, độ dài, định dạng, mức chi tiết
-  hoặc cách trình bày.
-- Mục tiêu công việc đang theo đuổi ở mức khái quát vừa đủ.
-- Phạm vi phân tích, tiêu chí lọc, loại dữ liệu hoặc loại tài nguyên FHIR mà
-  người dùng thường quan tâm.
-- Quyết định hoặc quy ước có thể ảnh hưởng đến các lượt hỏi sau.
-- Việc còn dang dở hoặc ngữ cảnh cần nhớ để tiếp tục công việc.
+NÃªn lÆ°u:
+- Sá»Ÿ thÃ­ch á»•n Ä‘á»‹nh cá»§a ngÆ°á»i dÃ¹ng vá» ngÃ´n ngá»¯, Ä‘á»™ dÃ i, Ä‘á»‹nh dáº¡ng, má»©c chi tiáº¿t
+  hoáº·c cÃ¡ch trÃ¬nh bÃ y.
+- Má»¥c tiÃªu cÃ´ng viá»‡c Ä‘ang theo Ä‘uá»•i á»Ÿ má»©c khÃ¡i quÃ¡t vá»«a Ä‘á»§.
+- Pháº¡m vi phÃ¢n tÃ­ch, tiÃªu chÃ­ lá»c, loáº¡i dá»¯ liá»‡u hoáº·c loáº¡i tÃ i nguyÃªn FHIR mÃ 
+  ngÆ°á»i dÃ¹ng thÆ°á»ng quan tÃ¢m.
+- Quyáº¿t Ä‘á»‹nh hoáº·c quy Æ°á»›c cÃ³ thá»ƒ áº£nh hÆ°á»Ÿng Ä‘áº¿n cÃ¡c lÆ°á»£t há»i sau.
+- Viá»‡c cÃ²n dang dá»Ÿ hoáº·c ngá»¯ cáº£nh cáº§n nhá»› Ä‘á»ƒ tiáº¿p tá»¥c cÃ´ng viá»‡c.
 
-Mức độ cụ thể:
-- Có thể giữ các khái niệm miền như bệnh nhân, lượt khám, chẩn đoán, chỉ định,
-  kết quả, thuốc, thanh toán, claim, payment hoặc timeline nếu chúng mô tả loại
-  công việc người dùng muốn làm.
-- Không lưu giá trị ca bệnh cụ thể như tên bệnh nhân, FHIR id, mã bệnh, ngày,
-  thuốc, kết quả lâm sàng, số tiền hoặc kết luận thanh toán như một sự thật dài
-  hạn.
-- Khi cần nhắc đến một ca bệnh, hãy mô tả ở mức "một bệnh nhân/ca bệnh/lượt
-  khám đang được phân tích" thay vì định danh cụ thể.
+Má»©c Ä‘á»™ cá»¥ thá»ƒ:
+- CÃ³ thá»ƒ giá»¯ cÃ¡c khÃ¡i niá»‡m miá»n nhÆ° bá»‡nh nhÃ¢n, lÆ°á»£t khÃ¡m, cháº©n Ä‘oÃ¡n, chá»‰ Ä‘á»‹nh,
+  káº¿t quáº£, thuá»‘c, thanh toÃ¡n, claim, payment hoáº·c timeline náº¿u chÃºng mÃ´ táº£ loáº¡i
+  cÃ´ng viá»‡c ngÆ°á»i dÃ¹ng muá»‘n lÃ m.
+- KhÃ´ng lÆ°u giÃ¡ trá»‹ ca bá»‡nh cá»¥ thá»ƒ nhÆ° tÃªn bá»‡nh nhÃ¢n, FHIR id, mÃ£ bá»‡nh, ngÃ y,
+  thuá»‘c, káº¿t quáº£ lÃ¢m sÃ ng, sá»‘ tiá»n hoáº·c káº¿t luáº­n thanh toÃ¡n nhÆ° má»™t sá»± tháº­t dÃ i
+  háº¡n.
+- Khi cáº§n nháº¯c Ä‘áº¿n má»™t ca bá»‡nh, hÃ£y mÃ´ táº£ á»Ÿ má»©c "má»™t bá»‡nh nhÃ¢n/ca bá»‡nh/lÆ°á»£t
+  khÃ¡m Ä‘ang Ä‘Æ°á»£c phÃ¢n tÃ­ch" thay vÃ¬ Ä‘á»‹nh danh cá»¥ thá»ƒ.
 
-Không lưu:
-- Lời chào, cảm ơn, xác nhận ngắn, câu hỏi một lần không tạo bối cảnh mới.
-- Nội dung tool output, Cypher, log, lỗi kỹ thuật, suy luận nội bộ hoặc toàn bộ
-  câu trả lời của trợ lý.
-- Thông tin do trợ lý nêu ra nếu người dùng không xác nhận hoặc nó chỉ là dữ
-  liệu lâm sàng/financial của một ca cụ thể.
+KhÃ´ng lÆ°u:
+- Lá»i chÃ o, cáº£m Æ¡n, xÃ¡c nháº­n ngáº¯n, cÃ¢u há»i má»™t láº§n khÃ´ng táº¡o bá»‘i cáº£nh má»›i.
+- Ná»™i dung tool output, Cypher, log, lá»—i ká»¹ thuáº­t, suy luáº­n ná»™i bá»™ hoáº·c toÃ n bá»™
+  cÃ¢u tráº£ lá»i cá»§a trá»£ lÃ½.
+- ThÃ´ng tin do trá»£ lÃ½ nÃªu ra náº¿u ngÆ°á»i dÃ¹ng khÃ´ng xÃ¡c nháº­n hoáº·c nÃ³ chá»‰ lÃ  dá»¯
+  liá»‡u lÃ¢m sÃ ng/financial cá»§a má»™t ca cá»¥ thá»ƒ.
 
-Nguyên tắc suy luận:
-- Chỉ lưu điều được thể hiện rõ trong user message hoặc được user xác nhận.
-- Không thêm vai trò, tác nhân, ý định, quan hệ, đối tượng hoặc khái niệm mà
-  người dùng không nói rõ.
-- Nếu một câu có thể chỉ là hỏi lại ngữ cảnh hiện tại, chỉ lưu khi nó bộc lộ
-  nhu cầu tái sử dụng rõ ràng.
-- Nếu không chắc memory có hữu ích lâu dài hay không, không tạo memory.
+NguyÃªn táº¯c suy luáº­n:
+- Chá»‰ lÆ°u Ä‘iá»u Ä‘Æ°á»£c thá»ƒ hiá»‡n rÃµ trong user message hoáº·c Ä‘Æ°á»£c user xÃ¡c nháº­n.
+- KhÃ´ng thÃªm vai trÃ², tÃ¡c nhÃ¢n, Ã½ Ä‘á»‹nh, quan há»‡, Ä‘á»‘i tÆ°á»£ng hoáº·c khÃ¡i niá»‡m mÃ 
+  ngÆ°á»i dÃ¹ng khÃ´ng nÃ³i rÃµ.
+- Náº¿u má»™t cÃ¢u cÃ³ thá»ƒ chá»‰ lÃ  há»i láº¡i ngá»¯ cáº£nh hiá»‡n táº¡i, chá»‰ lÆ°u khi nÃ³ bá»™c lá»™
+  nhu cáº§u tÃ¡i sá»­ dá»¥ng rÃµ rÃ ng.
+- Náº¿u khÃ´ng cháº¯c memory cÃ³ há»¯u Ã­ch lÃ¢u dÃ i hay khÃ´ng, khÃ´ng táº¡o memory.
 
-Đầu ra: Mỗi memory là một câu ngắn, tự nhiên, độc lập và cùng ngôn ngữ với
-người dùng. Ưu tiên 1-3 memory thật sự hữu ích. Nếu không có thông tin dài hạn
-mới, không tạo memory.
+Äáº§u ra: Má»—i memory lÃ  má»™t cÃ¢u ngáº¯n, tá»± nhiÃªn, Ä‘á»™c láº­p vÃ  cÃ¹ng ngÃ´n ngá»¯ vá»›i
+ngÆ°á»i dÃ¹ng. Æ¯u tiÃªn 1-3 memory tháº­t sá»± há»¯u Ã­ch. Náº¿u khÃ´ng cÃ³ thÃ´ng tin dÃ i háº¡n
+má»›i, khÃ´ng táº¡o memory.
 """
 _LEGACY_FHIR_MEMORY_EXTRACTION_PROMPT_V2 = FHIR_MEMORY_EXTRACTION_PROMPT
 
 FHIR_MEMORY_EXTRACTION_PROMPT = """
-Vai trò: Bạn là bộ trích xuất trí nhớ dài hạn cho trợ lý FHIR.
+Vai trÃ²: Báº¡n lÃ  bá»™ trÃ­ch xuáº¥t trÃ­ nhá»› dÃ i háº¡n cho trá»£ lÃ½ FHIR.
 
-Mục tiêu: Lưu bối cảnh có thể tái sử dụng về người dùng và công việc đang làm,
-đủ cụ thể để nhận ra hoạt động lịch sử nhưng không biến dữ liệu ca bệnh thành
-sự thật dài hạn.
+Má»¥c tiÃªu: LÆ°u bá»‘i cáº£nh cÃ³ thá»ƒ tÃ¡i sá»­ dá»¥ng vá» ngÆ°á»i dÃ¹ng vÃ  cÃ´ng viá»‡c Ä‘ang lÃ m,
+Ä‘á»§ cá»¥ thá»ƒ Ä‘á»ƒ nháº­n ra hoáº¡t Ä‘á»™ng lá»‹ch sá»­ nhÆ°ng khÃ´ng biáº¿n dá»¯ liá»‡u ca bá»‡nh thÃ nh
+sá»± tháº­t dÃ i háº¡n.
 
-Nên lưu khi thông tin rõ ràng:
-- Sở thích ổn định về ngôn ngữ, độ dài, định dạng, mức chi tiết hoặc cách trình bày.
-- Hoạt động đang diễn ra, ví dụ đang phân tích một hành trình chăm sóc, danh sách
-  chẩn đoán, chỉ định, kết quả, thuốc, claim/payment hoặc nhóm tài nguyên FHIR.
-- Phạm vi, tiêu chí lọc, quy ước hoặc quyết định mà user muốn áp dụng về sau.
-- Một mốc neo nhẹ do user tự nêu để nhận diện hoạt động lịch sử, như tên người,
-  tên bệnh nhân, tên case hoặc nhãn chủ đề, chỉ khi mốc đó giúp trả lời "đang làm
-  gì/với ai".
+NÃªn lÆ°u khi thÃ´ng tin rÃµ rÃ ng:
+- Sá»Ÿ thÃ­ch á»•n Ä‘á»‹nh vá» ngÃ´n ngá»¯, Ä‘á»™ dÃ i, Ä‘á»‹nh dáº¡ng, má»©c chi tiáº¿t hoáº·c cÃ¡ch trÃ¬nh bÃ y.
+- Hoáº¡t Ä‘á»™ng Ä‘ang diá»…n ra, vÃ­ dá»¥ Ä‘ang phÃ¢n tÃ­ch má»™t hÃ nh trÃ¬nh chÄƒm sÃ³c, danh sÃ¡ch
+  cháº©n Ä‘oÃ¡n, chá»‰ Ä‘á»‹nh, káº¿t quáº£, thuá»‘c, claim/payment hoáº·c nhÃ³m tÃ i nguyÃªn FHIR.
+- Pháº¡m vi, tiÃªu chÃ­ lá»c, quy Æ°á»›c hoáº·c quyáº¿t Ä‘á»‹nh mÃ  user muá»‘n Ã¡p dá»¥ng vá» sau.
+- Má»™t má»‘c neo nháº¹ do user tá»± nÃªu Ä‘á»ƒ nháº­n diá»‡n hoáº¡t Ä‘á»™ng lá»‹ch sá»­, nhÆ° tÃªn ngÆ°á»i,
+  tÃªn bá»‡nh nhÃ¢n, tÃªn case hoáº·c nhÃ£n chá»§ Ä‘á», chá»‰ khi má»‘c Ä‘Ã³ giÃºp tráº£ lá»i "Ä‘ang lÃ m
+  gÃ¬/vá»›i ai".
 
-Mức cụ thể cho phép:
-- Có thể giữ một tên hoặc nhãn định danh do user nói rõ, ví dụ "đang phân tích
-  hành trình chăm sóc của bệnh nhân được nêu tên".
-- Không lưu FHIR id, MRN, mã bệnh, ngày, thuốc, kết quả lâm sàng, số tiền,
-  kết luận thanh toán hoặc chuỗi định danh nhạy cảm.
-- Không ghép mốc neo với dữ kiện lâm sàng/financial cụ thể thành memory bệnh án.
+Má»©c cá»¥ thá»ƒ cho phÃ©p:
+- CÃ³ thá»ƒ giá»¯ má»™t tÃªn hoáº·c nhÃ£n Ä‘á»‹nh danh do user nÃ³i rÃµ, vÃ­ dá»¥ "Ä‘ang phÃ¢n tÃ­ch
+  hÃ nh trÃ¬nh chÄƒm sÃ³c cá»§a bá»‡nh nhÃ¢n Ä‘Æ°á»£c nÃªu tÃªn".
+- KhÃ´ng lÆ°u FHIR id, MRN, mÃ£ bá»‡nh, ngÃ y, thuá»‘c, káº¿t quáº£ lÃ¢m sÃ ng, sá»‘ tiá»n,
+  káº¿t luáº­n thanh toÃ¡n hoáº·c chuá»—i Ä‘á»‹nh danh nháº¡y cáº£m.
+- KhÃ´ng ghÃ©p má»‘c neo vá»›i dá»¯ kiá»‡n lÃ¢m sÃ ng/financial cá»¥ thá»ƒ thÃ nh memory bá»‡nh Ã¡n.
 
-Phân biệt:
-- Chỉ viết "user muốn/ưa thích" khi user nêu preference rõ hoặc lặp lại cùng
-  định dạng/cách làm.
-- Với một nhiệm vụ đơn lẻ nhưng có thể tiếp tục, viết trung tính như "user đang
-  phân tích..." hoặc "user đang truy vết...".
-- Câu trả lời của assistant chỉ là bằng chứng về ngữ cảnh đang làm, không phải
-  preference hay fact dài hạn trừ khi user xác nhận.
+PhÃ¢n biá»‡t:
+- Chá»‰ viáº¿t "user muá»‘n/Æ°a thÃ­ch" khi user nÃªu preference rÃµ hoáº·c láº·p láº¡i cÃ¹ng
+  Ä‘á»‹nh dáº¡ng/cÃ¡ch lÃ m.
+- Vá»›i má»™t nhiá»‡m vá»¥ Ä‘Æ¡n láº» nhÆ°ng cÃ³ thá»ƒ tiáº¿p tá»¥c, viáº¿t trung tÃ­nh nhÆ° "user Ä‘ang
+  phÃ¢n tÃ­ch..." hoáº·c "user Ä‘ang truy váº¿t...".
+- CÃ¢u tráº£ lá»i cá»§a assistant chá»‰ lÃ  báº±ng chá»©ng vá» ngá»¯ cáº£nh Ä‘ang lÃ m, khÃ´ng pháº£i
+  preference hay fact dÃ i háº¡n trá»« khi user xÃ¡c nháº­n.
 
-Tránh suy diễn:
-- Không thêm actor, vai trò, đối tác, quan hệ, nguyên nhân, mục đích hoặc phạm vi
-  nếu user không nói rõ.
-- Không suy từ một câu hỏi kiểm tra lịch sử thành nhu cầu sản phẩm lâu dài.
-- Không sao chép toàn bộ câu hỏi, câu trả lời, tool output, Cypher, log, lỗi kỹ
-  thuật hoặc reasoning nội bộ.
-- Nếu chỉ là lời chào, cảm ơn, xác nhận ngắn hoặc câu hỏi nhất thời không thêm
-  bối cảnh mới, không tạo memory.
-- Nếu không chắc memory có hữu ích về sau hay không, không tạo memory.
+TrÃ¡nh suy diá»…n:
+- KhÃ´ng thÃªm actor, vai trÃ², Ä‘á»‘i tÃ¡c, quan há»‡, nguyÃªn nhÃ¢n, má»¥c Ä‘Ã­ch hoáº·c pháº¡m vi
+  náº¿u user khÃ´ng nÃ³i rÃµ.
+- KhÃ´ng suy tá»« má»™t cÃ¢u há»i kiá»ƒm tra lá»‹ch sá»­ thÃ nh nhu cáº§u sáº£n pháº©m lÃ¢u dÃ i.
+- KhÃ´ng sao chÃ©p toÃ n bá»™ cÃ¢u há»i, cÃ¢u tráº£ lá»i, tool output, Cypher, log, lá»—i ká»¹
+  thuáº­t hoáº·c reasoning ná»™i bá»™.
+- Náº¿u chá»‰ lÃ  lá»i chÃ o, cáº£m Æ¡n, xÃ¡c nháº­n ngáº¯n hoáº·c cÃ¢u há»i nháº¥t thá»i khÃ´ng thÃªm
+  bá»‘i cáº£nh má»›i, khÃ´ng táº¡o memory.
+- Náº¿u khÃ´ng cháº¯c memory cÃ³ há»¯u Ã­ch vá» sau hay khÃ´ng, khÃ´ng táº¡o memory.
 
-Đầu ra: Tạo tối đa 1-3 memory ngắn, tự nhiên, độc lập và cùng ngôn ngữ với user.
-Ưu tiên memory khái quát vừa đủ, có mốc neo nhẹ khi cần. Nếu không có thông tin
-dài hạn mới, không tạo memory.
+Äáº§u ra: Táº¡o tá»‘i Ä‘a 1-3 memory ngáº¯n, tá»± nhiÃªn, Ä‘á»™c láº­p vÃ  cÃ¹ng ngÃ´n ngá»¯ vá»›i user.
+Æ¯u tiÃªn memory khÃ¡i quÃ¡t vá»«a Ä‘á»§, cÃ³ má»‘c neo nháº¹ khi cáº§n. Náº¿u khÃ´ng cÃ³ thÃ´ng tin
+dÃ i háº¡n má»›i, khÃ´ng táº¡o memory.
 """
 _memory: Memory | None = None
 _MEMORY_SEARCH_MAX_RESULTS = 5
@@ -151,6 +165,7 @@ def _collection_name() -> str:
 def check_pgvector_connection() -> tuple[bool, bool]:
     """Return (postgres_available, pgvector_extension_enabled)."""
     try:
+        psycopg = _import_psycopg()
         conn = psycopg.connect(
             host=settings.postgres_host,
             port=settings.postgres_port,
@@ -362,7 +377,8 @@ async def init_memory() -> bool:
 
     try:
         config = _build_mem0_config()
-        _memory = await asyncio.to_thread(Memory.from_config, config)
+        memory_class = _import_memory_class()
+        _memory = await asyncio.to_thread(memory_class.from_config, config)
 
         logger.info(
             "Mem0 initialized: llm_model=%s embedding_model=%s "

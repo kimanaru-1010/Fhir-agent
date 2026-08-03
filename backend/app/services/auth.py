@@ -1,4 +1,4 @@
-"""Authentication service — password hashing and JWT."""
+﻿"""Authentication service â€” password hashing and JWT."""
 
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
@@ -6,7 +6,7 @@ from uuid import UUID
 import jwt
 from pwdlib import PasswordHash
 
-from app.config import settings
+from app.core.config import settings
 
 password_hasher = PasswordHash.recommended()
 

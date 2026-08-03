@@ -1,4 +1,4 @@
-"""Async SQLAlchemy database configuration."""
+﻿"""Async SQLAlchemy database configuration."""
 
 from collections.abc import AsyncGenerator
 
@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from app.config import settings
+from app.core.config import settings
 
 
 engine = create_async_engine(

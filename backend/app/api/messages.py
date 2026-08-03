@@ -1,4 +1,4 @@
-"""Message API for authenticated conversations."""
+﻿"""Message API for authenticated conversations."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import StreamingResponse
 
-from app.database import get_db
+from app.db.session import get_db
 from app.db.models import Conversation, Message, User
 from app.dependencies.auth import get_current_user
 from app.schemas.message import (
