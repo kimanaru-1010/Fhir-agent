@@ -78,7 +78,7 @@ async def stream_persisted_exchange(
     content: str,
     start_event: str,
     start_payload: dict[str, Any],
-    overall_timeout: float = 500.0,
+    overall_timeout: float = 900.0,
 ) -> AsyncIterator[str]:
     event_queue: asyncio.Queue = asyncio.Queue()
     collector = get_collector()

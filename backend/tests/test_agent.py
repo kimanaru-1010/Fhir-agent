@@ -2,30 +2,58 @@
 
 from __future__ import annotations
 
+import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import anyio
 
 from app.agent import (
     SYSTEM_PROMPT,
+    _BATCH_RESOURCE_LIMIT,
+    _TOOL_RESULT_LIMIT,
+    _batch_size_error,
     _format_memory_context,
-    _LEGACY_SYSTEM_PROMPT,
-    _LEGACY_SYSTEM_PROMPT_V2,
+    _normalize_optional_exact_filter,
     generate_agent_response,
     handle_message,
 )
 
 
-def test_system_prompt_is_bounded_and_preserves_legacy_prompt():
-    assert "TARGETED GRAPH EXPLORATION" in _LEGACY_SYSTEM_PROMPT
-    assert "BOUNDED TOOL USE" in _LEGACY_SYSTEM_PROMPT_V2
-    assert len(SYSTEM_PROMPT) < len(_LEGACY_SYSTEM_PROMPT_V2)
-    assert len(SYSTEM_PROMPT) < len(_LEGACY_SYSTEM_PROMPT)
-    assert "provide every required argument" in SYSTEM_PROMPT
-    assert "Do not repeat the same call" in SYSTEM_PROMPT
-    assert "Use read-only Cypher only" in SYSTEM_PROMPT
-    assert "complete matching set" in SYSTEM_PROMPT
-    assert "Answer directly in the user's language" in SYSTEM_PROMPT
+def test_system_prompt_is_concise_and_preserves_core_rules():
+    assert len(SYSTEM_PROMPT) < 4_000
+    assert "Always answer the CURRENT USER REQUEST" in SYSTEM_PROMPT
+    assert "Follow tool parameters exactly" in SYSTEM_PROMPT
+    assert "Use batch tools when processing multiple resources" in SYSTEM_PROMPT
+    assert "repeat identical tool calls" in SYSTEM_PROMPT
+    assert "Use count_resources when the user asks for an exact total" in SYSTEM_PROMPT
+    assert f"at most {_TOOL_RESULT_LIMIT} rows" in SYSTEM_PROMPT
+    assert f"at most {_BATCH_RESOURCE_LIMIT} resource ids" in SYSTEM_PROMPT
+    assert "Answer in the user's language" in SYSTEM_PROMPT
+
+
+def test_system_prompt_forbids_duplicate_tool_calls():
+    assert "repeat a tool call with the same or equivalent arguments" in SYSTEM_PROMPT
+    assert "reuse the existing result" in SYSTEM_PROMPT
+
+
+def test_batch_size_error_requires_smaller_batches():
+    assert _batch_size_error(["1"] * _BATCH_RESOURCE_LIMIT) is None
+
+    payload = json.loads(
+        _batch_size_error(
+            [str(index) for index in range(_BATCH_RESOURCE_LIMIT + 1)]
+        )
+    )
+
+    assert payload["status"] == "error"
+    assert "split the ids into smaller batches" in payload["message"]
+
+
+def test_optional_exact_filter_normalizes_wildcard_to_no_filter():
+    assert _normalize_optional_exact_filter("*") == ""
+    assert _normalize_optional_exact_filter(" * ") == ""
+    assert _normalize_optional_exact_filter("") == ""
+    assert _normalize_optional_exact_filter("Condition") == "Condition"
 
 
 def test_format_memory_context_includes_timestamps_and_conflict_rule():

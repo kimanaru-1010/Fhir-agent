@@ -76,17 +76,12 @@ test.describe("Healthcare Context Graph", () => {
     await expect(dot).toBeVisible({ timeout: 10_000 });
   });
 
-  // --------------------------------------------------------------------------
-  // Schema visualization
-  // --------------------------------------------------------------------------
-
-  test("graph loads schema view on startup", async ({ page }) => {
-    // The graph panel shows "Schema view" text
-    await expect(page.getByText(/schema view/i)).toBeVisible({ timeout: 15_000 });
-
-    // Legend badges should be visible
-    const legend = page.locator("[class*='badge']").filter({ hasText: /^[A-Z]/ });
-    await expect(legend.first()).toBeVisible({ timeout: 10_000 });
+  test("knowledge graph and trace panels are not rendered", async ({ page }) => {
+    await expect(page.getByPlaceholder(/ask about/i)).toBeVisible();
+    await expect(page.getByText(/knowledge graph/i)).toHaveCount(0);
+    await expect(page.getByText(/decision traces/i)).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /graph panel/i })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /details panel/i })).toHaveCount(0);
   });
 
   // --------------------------------------------------------------------------
@@ -220,26 +215,6 @@ test.describe("Healthcare Context Graph", () => {
   });
 
   // --------------------------------------------------------------------------
-  // Graph updates from chat
-  // --------------------------------------------------------------------------
-
-  test("graph visualization updates after agent query", async ({ page }) => {
-    test.setTimeout(CHAT_TIMEOUT);
-
-    // The graph starts in schema view
-    await expect(page.getByText(/schema view/i)).toBeVisible({ timeout: 15_000 });
-
-    // Send a query that should return graph data
-    const input = page.getByPlaceholder(/ask about/i);
-    await input.fill("Show me all patients with a chronic diagnosis");
-    await page.getByRole("button", { name: /send/i }).click();
-
-    // Wait for the graph to switch from schema to data view
-    // (the text changes from "Schema view" to entity relationships)
-    await expect(page.getByText(/entity relationships/i)).toBeVisible({ timeout: CHAT_TIMEOUT });
-  });
-
-  // --------------------------------------------------------------------------
   // New conversation
   // --------------------------------------------------------------------------
 
@@ -265,84 +240,14 @@ test.describe("Healthcare Context Graph", () => {
   // Mobile navigation (viewport 375px)
   // --------------------------------------------------------------------------
 
-  test("mobile: bottom tab bar switches panels", async ({ page }) => {
+  test("mobile: chat remains the only main panel", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto(BASE_URL);
 
-    // Chat should be visible by default
     await expect(page.getByPlaceholder(/ask about/i)).toBeVisible();
-
-    // Bottom tab bar should be visible
-    const graphTab = page.getByRole("button", { name: /graph panel/i });
-    await expect(graphTab).toBeVisible();
-
-    // Click graph tab
-    await graphTab.click();
-
-    // Graph content should now be visible
-    await expect(page.getByText(/schema view|knowledge graph/i).first()).toBeVisible({ timeout: 10_000 });
-
-    // Click details tab
-    const detailsTab = page.getByRole("button", { name: /details panel/i });
-    await detailsTab.click();
-
-    // Traces/Documents tabs should be visible
-    await expect(page.getByText(/traces/i).first()).toBeVisible();
-  });
-
-  // --------------------------------------------------------------------------
-  // Decision trace panel (right side, "Traces" tab)
-  // --------------------------------------------------------------------------
-
-  test("decision traces panel loads and shows demo traces", async ({ page }) => {
-    // The /traces endpoint should return at least one trace from the demo
-    // fixture. The panel may be behind a tab on smaller viewports.
-    const tracesTab = page.getByRole("tab", { name: /traces/i }).first();
-    if (await tracesTab.count() > 0) {
-      await tracesTab.click().catch(() => { /* may already be active */ });
-    }
-
-    // Wait for the panel header — it identifies the panel even when empty.
-    await expect(page.getByText(/decision traces/i).first()).toBeVisible({ timeout: 10_000 });
-
-    // Either the empty-state message appears, or at least one trace card.
-    const emptyState = page.getByText(/no decision traces yet/i);
-    const traceCards = page.locator("[role='button']").filter({ hasText: /step/i });
-    const emptyVisible = await emptyState.isVisible().catch(() => false);
-    if (!emptyVisible) {
-      const count = await traceCards.count();
-      expect(count).toBeGreaterThan(0);
-
-      // Click the first trace card and verify the step detail panel opens.
-      await traceCards.first().click();
-      // Detail panel should render thought/action labels.
-      await expect(page.getByText(/outcome/i).first()).toBeVisible({ timeout: 5_000 });
-    }
-  });
-
-  // --------------------------------------------------------------------------
-  // Document browser (right side, "Documents" tab)
-  // --------------------------------------------------------------------------
-
-  test("document browser loads and renders a document detail view", async ({ page }) => {
-    const docsTab = page.getByRole("tab", { name: /documents/i }).first();
-    if (await docsTab.count() > 0) {
-      await docsTab.click();
-    }
-
-    await expect(page.getByText(/^documents$/i).first()).toBeVisible({ timeout: 10_000 });
-
-    // Either empty state or a populated list — demo data should populate it.
-    const emptyState = page.getByText(/no documents/i);
-    const emptyVisible = await emptyState.isVisible().catch(() => false);
-    if (!emptyVisible) {
-      // Click the first document card.
-      const firstDoc = page.locator("[role='button']").filter({ hasText: /\w+/ }).first();
-      await firstDoc.click({ trial: false });
-      // ReactMarkdown rendering produces semantic markdown — at least one
-      // paragraph or heading should be visible.
-      await expect(page.locator("p, h1, h2, h3").first()).toBeVisible({ timeout: 5_000 });
-    }
+    await expect(page.getByRole("button", { name: /graph panel/i })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /details panel/i })).toHaveCount(0);
+    await expect(page.getByText(/traces/i)).toHaveCount(0);
   });
 
   // --------------------------------------------------------------------------
@@ -381,43 +286,6 @@ test.describe("Healthcare Context Graph", () => {
       await page.waitForTimeout(3000);
     }
     expect(keyWarnings).toEqual([]);
-  });
-
-  test("decision trace panel step list renders without runtime errors", async ({ page }) => {
-    const pageErrors: string[] = [];
-    page.on("pageerror", (err) => pageErrors.push(err.message));
-
-    const tracesTab = page.getByRole("tab", { name: /traces/i }).first();
-    if (await tracesTab.count() > 0) {
-      await tracesTab.click().catch(() => { /* may already be active */ });
-    }
-
-    const traceCards = page.locator("[role='button']").filter({ hasText: /step/i });
-    if (await traceCards.count() === 0) {
-      test.skip(true, "no demo traces — fixture may be empty");
-    }
-
-    await traceCards.first().click();
-    await page.waitForTimeout(500);
-    // No uncaught exceptions from rendering the step list.
-    expect(pageErrors).toEqual([]);
-  });
-
-  test("document browser entity badges render without runtime errors", async ({ page }) => {
-    const pageErrors: string[] = [];
-    page.on("pageerror", (err) => pageErrors.push(err.message));
-
-    const docsTab = page.getByRole("tab", { name: /documents/i }).first();
-    if (await docsTab.count() > 0) await docsTab.click();
-
-    const firstDoc = page.locator("[role='button']").filter({ hasText: /\w+/ }).first();
-    if (await firstDoc.count() === 0) {
-      test.skip(true, "no demo documents — fixture may be empty");
-    }
-
-    await firstDoc.click({ trial: false });
-    await page.waitForTimeout(500);
-    expect(pageErrors).toEqual([]);
   });
 
   // --------------------------------------------------------------------------
@@ -521,29 +389,6 @@ test.describe("Healthcare Context Graph", () => {
 
     const res = await request.post(`${API_URL}/api/chat`, {
       data: { message: "What treatments have been most effective for patients with heart failure?" },
-    });
-    expect(res.ok()).toBeTruthy();
-
-    const body = await res.json();
-
-    // Should have a response string
-    expect(body.response).toBeTruthy();
-    expect(typeof body.response).toBe("string");
-    expect(body.response.length).toBeGreaterThan(50);
-
-    // Should have a session_id
-    expect(body.session_id).toBeTruthy();
-
-    // Response should not be a generic error
-    expect(body.response.toLowerCase()).not.toContain("i apologize");
-    expect(body.response.toLowerCase()).not.toContain("i don't have access");
-  });
-
-  test("API: Clinical Decision Support prompt 3 returns quality response", async ({ request }) => {
-    test.setTimeout(CHAT_TIMEOUT);
-
-    const res = await request.post(`${API_URL}/api/chat`, {
-      data: { message: "Show me the most recent decision traces for treatment plans" },
     });
     expect(res.ok()).toBeTruthy();
 

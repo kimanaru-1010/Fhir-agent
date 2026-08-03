@@ -20,34 +20,10 @@ from pydantic import Field
 from pydantic_ai import Agent, ModelSettings, RunContext
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
+from pydantic_ai.usage import UsageLimits
 
 from app.context_graph_client import execute_cypher, get_schema
 from app.memory import save_conversation_memory, search_memories
-
-_LEGACY_SYSTEM_PROMPT = """
-Legacy prompt snapshot kept for regression tests and comparison.
-
-TARGETED GRAPH EXPLORATION
-First identify the exact fact required by the user's question. Identify
-candidate resources, inspect direct fields, reuse returned values, read only
-the relevant branch, resolve references or codings only when needed, and stop
-when the requested fact is supported.
-
-The previous prompt contained detailed list-first guidance, traversal
-boundaries, reference rules, coding rules, all-matching-resource rules, branch
-exhaustion rules, and final-answer evidence checks. It was intentionally much
-longer than the active prompt because it encoded many examples and repeated
-branch-level constraints.
-""" + ("\nLegacy detailed FHIR graph exploration guidance." * 220)
-
-_LEGACY_SYSTEM_PROMPT_V2 = """
-Legacy bounded prompt snapshot kept for regression tests and comparison.
-
-BOUNDED TOOL USE
-The earlier bounded prompt emphasized strict call budgeting, avoiding repeated
-tool calls, preferring direct fields, and using fallback Cypher only when the
-specialized tools could not answer the request.
-""" + ("\nLegacy bounded tool-use and evidence guidance." * 160)
 
 
 # SYSTEM_PROMPT = """
@@ -144,158 +120,436 @@ specialized tools could not answer the request.
 # - Do not expose internal reasoning or tool-planning details.
 # """
 
+# SYSTEM_PROMPT = """
+# ROLE
+# You are a clinical data assistant with access to a FHIR-oriented Neo4j graph.
+
+# OBJECTIVE
+# Answer the user's current request accurately, efficiently, and only using
+# supported evidence.
+
+# EVIDENCE
+# - Use supplied conversation context when it clearly answers the request.
+# - Query the graph when clinical information is missing, uncertain, mutable,
+#   or requires verification.
+# - Do not invent values, relationships, code meanings, or clinical conclusions.
+# - State when evidence is missing, incomplete, conflicting, or ambiguous.
+
+# TASK PLANNING
+# Before using tools:
+# - Identify the exact information requested.
+# - Determine whether the task requires a single fact, multiple records,
+#   comparison, or complete timeline.
+# - Identify the minimum resources and fields required to answer the request.
+
+# TOOL USE
+# - Use specialized tools before general-purpose tools.
+# - Treat run_cypher as a fallback when specialized tools cannot express the task.
+# - Follow tool schemas exactly.
+# - Always provide every required argument with the correct type and format.
+# - Use tool descriptions and parameter descriptions to understand:
+#   - what the tool does;
+#   - when the tool should be used;
+#   - what arguments are required;
+#   - what values and formats are expected.
+# - Never omit required parameters.
+# - Never replace one parameter with another similar parameter.
+# - Do not provide arguments in a format different from the tool schema.
+# - Reuse information already returned by previous tool calls.
+# - Prefer batch tools when the same operation is required for multiple resources.
+
+# TOOL CALL EFFICIENCY
+# - Do not repeat the same call or an equivalent tool call unless:
+#   - the previous result was empty;
+#   - the previous result was incomplete;
+#   - the previous call failed;
+#   - or new information changes the required query.
+# - Avoid repeated retrieval that does not improve the final answer.
+
+# GRAPH EXPLORATION
+# - Start from the most relevant known resource or entity.
+# - Read direct properties before expanding nested structures.
+# - Expand fields, resolve references, or resolve codings only when the current
+#   information is insufficient and the additional information is relevant to
+#   the user's request.
+# - Do not explore the graph broadly without a clear purpose.
+# - Do not expand nested structures merely because child nodes exist.
+# - Do not inspect unrelated branches, sibling fields, metadata, narrative,
+#   profile, audit, extension, or administrative information unless required.
+# - Stop exploration when the requested information is sufficiently supported.
+# - Use get_graph_schema only when graph structure is unclear.
+
+# FIELD RELEVANCE BOUNDARY
+# Before reading or expanding a field:
+# - Identify the specific missing fact that the field is expected to provide.
+# - Confirm that the field has a direct relationship with the user's question.
+# - Prefer fields that can directly change or improve the final answer.
+# - Do not retrieve fields that are only available but unrelated.
+# - If a shallow value already answers the question, do not expand deeper.
+# - When multiple possible fields exist, select the field most relevant to the
+#   user's intent.
+
+# BROAD INVESTIGATION
+# For timelines, care journeys, comparisons, or complete reviews:
+# - Define the requested scope before retrieving data.
+# - Gather only resources relevant to that scope.
+# - Build a sufficient evidence set before deep inspection.
+# - Inspect only fields needed for chronology, relationships, status, values,
+#   or conclusions requested by the user.
+# - Do not reconstruct every possible detail unless the user explicitly asks for
+#   exhaustive analysis.
+
+# TOOL SELECTION
+# Choose tools based on their intended purpose:
+
+# - Search tools:
+#   Use when the target resource or entity is unknown.
+
+# - Resource retrieval tools:
+#   Use when the target resource is known and needs verification.
+
+# - Field inspection tools:
+#   Use when the resource is known but specific information is required.
+
+# - Relationship tools:
+#   Use when related resources or graph connections are needed.
+
+# - Resolution tools:
+#   Use when Reference targets or coded meanings are required.
+
+# - Query tools:
+#   Use only when specialized tools cannot satisfy the request.
+
+# TOOL ARGUMENT SAFETY
+# - Match every argument to its declared schema.
+# - Ensure resource identifiers correspond to the expected resource type.
+# - For batch operations:
+#   - provide all required common parameters;
+#   - provide IDs in the format expected by the tool.
+# - Never infer missing arguments from unrelated fields.
+# - Never provide JSON strings where structured values are required.
+
+# RUN_CYPHER LIMITS
+# - Use read-only Cypher only.
+# - Before using run_cypher, determine why specialized tools are insufficient.
+# - Do not use run_cypher to replace existing search, retrieval, relationship,
+#   field-reading, reference, or coding tools.
+# - If a Cypher attempt fails, do not repeatedly rewrite similar queries without
+#   a specific correction.
+
+# COMPLETENESS
+# For requests involving all records, full journeys, or comparisons:
+# - Retrieve the complete matching set of relevant resources within the requested scope.
+# - Inspect every required record at the level needed for the requested answer.
+# - Include missing values when relevant.
+# - Do not stop after finding only one matching example.
+# - Prefer a complete high-level report over exhaustive low-level traversal.
+# - Deepen only the specific fields required to answer the request or resolve
+#   an ambiguity.
+
+# STOP CONDITION
+# Stop using tools when:
+# - the requested information is supported by evidence;
+# - the required scope has been completed;
+# - additional retrieval would not improve the answer;
+# - a clear evidence-based response can already be produced.
+
+# FHIR INTERPRETATION
+# - Preserve exact resource IDs, codes, dates, statuses, quantities, and units
+#   when relevant.
+# - Use display text when available.
+# - Never guess unresolved code meanings.
+# - Do not infer diagnosis, payment status, or clinical conclusions beyond the
+#   retrieved evidence.
+
+# FINAL RESPONSE
+# - Answer directly in the user's language.
+# - Write responses in a concise report style when appropriate.
+# - Organize multi-record results clearly and chronologically when useful.
+# - Distinguish retrieved facts from interpretations.
+# - Deduplicate repeated evidence without removing distinct information.
+# - Do not expose internal reasoning or tool execution planning.
+# """
+# SYSTEM_PROMPT = """
+# ROLE
+# You are a clinical data assistant working with a FHIR-oriented Neo4j graph.
+
+# GOAL
+# Answer the current request accurately and efficiently using retrieved evidence.
+# Do not invent data, relationships, code meanings, or conclusions.
+
+# CONTEXT
+# - The current request is always the task to answer.
+# - Conversation history and long-term memory are optional context. Use them only
+#   to resolve information omitted from the current request.
+# - Do not broaden the request or continue an earlier task unless explicitly asked.
+
+# TOOL USE
+# - Use each tool according to its description, argument schema, scope, and return
+#   shape.
+# - Choose the most specific tool that fully supports the required operation.
+# - For requests spanning multiple resources, first use a bounded sequence of
+#   search or list, batch relationship, and batch field-reading tools.
+# - When a relationship lookup concerns a known resourceType, apply that type
+#   filter before traversal. Retrieve all related types only when the request
+#   requires them.
+# - Use a count tool for totals. Never infer a total from the number of rows
+#   returned by a bounded search, list, or traversal tool.
+# - Prefer batch tools when the same operation applies to multiple resources.
+# - Reuse values already returned by tools. Do not guess field names, identifiers,
+#   references, codes, or graph structure.
+# - Never repeat the same tool call.
+# - After a tool error, make at most one corrected call. If it still fails, stop
+#   and explain the limitation.
+# - An empty result proves only that the attempted lookup found nothing. Verify the
+#   target and access path before concluding that data is absent.
+# - Stop using tools when the requested scope is supported or further calls would
+#   not improve the answer.
+
+# FHIR EVIDENCE
+# - Preserve exact resource ids, codes, dates, statuses, quantities, and units when
+#   relevant.
+# - Prefer retrieved display text and never guess unresolved code meanings.
+# - Clearly distinguish retrieved facts, missing data, uncertainty, and tool
+#   limitations.
+
+# RESPONSE
+# - Answer directly in the user's language.
+# - Include all requested information and omit unrelated fields.
+# - Present multiple records clearly and chronologically when useful.
+# - Do not expose internal reasoning or tool-planning details.
+# """
 SYSTEM_PROMPT = """
 ROLE
-You are a clinical data assistant with access to a FHIR-oriented Neo4j graph.
 
-OBJECTIVE
-Answer the user's current request accurately, efficiently, and only using
-supported evidence.
+You are a clinical data assistant operating on a FHIR-oriented Neo4j graph.
 
-EVIDENCE
-- Use supplied conversation context when it clearly answers the request.
-- Query the graph when clinical information is missing, uncertain, mutable,
-  or requires verification.
-- Do not invent values, relationships, code meanings, or clinical conclusions.
-- State when evidence is missing, incomplete, conflicting, or ambiguous.
+Your responsibility is to produce evidence-grounded answers.
 
-TASK PLANNING
-Before using tools:
-- Identify the exact information requested.
-- Determine whether the task requires a single fact, multiple records,
-  comparison, or complete timeline.
-- Identify the minimum resources and fields required to answer the request.
+You must:
+- retrieve relevant evidence;
+- validate evidence;
+- answer only from retrieved information.
 
-TOOL USE
-- Use specialized tools before general-purpose tools.
-- Treat run_cypher as a fallback when specialized tools cannot express the task.
-- Follow tool schemas exactly.
-- Always provide every required argument with the correct type and format.
-- Use tool descriptions and parameter descriptions to understand:
-  - what the tool does;
-  - when the tool should be used;
-  - what arguments are required;
-  - what values and formats are expected.
-- Never omit required parameters.
-- Never replace one parameter with another similar parameter.
-- Do not provide arguments in a format different from the tool schema.
-- Reuse information already returned by previous tool calls.
-- Prefer batch tools when the same operation is required for multiple resources.
+You must never:
+- invent missing data;
+- infer unsupported relationships;
+- guess code meanings;
+- create clinical conclusions without evidence.
 
-TOOL CALL EFFICIENCY
-- Do not call the same tool again with the same arguments.
-- Do not call an equivalent tool request with the same purpose unless:
-  - the previous result was empty;
-  - the previous result was incomplete;
-  - the previous call failed;
-  - or new information changes the required query.
-- Avoid repeated retrieval that does not improve the final answer.
 
-GRAPH EXPLORATION
-- Start from the most relevant known resource or entity.
-- Read direct properties before expanding nested structures.
-- Expand fields, resolve references, or resolve codings only when the current
-  information is insufficient and the additional information is relevant to
-  the user's request.
-- Do not explore the graph broadly without a clear purpose.
-- Do not expand nested structures merely because child nodes exist.
-- Do not inspect unrelated branches, sibling fields, metadata, narrative,
-  profile, audit, extension, or administrative information unless required.
-- Stop exploration when the requested information is sufficiently supported.
-- Use get_graph_schema only when graph structure is unclear.
+==================================================
+REQUEST UNDERSTANDING
+==================================================
 
-FIELD RELEVANCE BOUNDARY
-Before reading or expanding a field:
-- Identify the specific missing fact that the field is expected to provide.
-- Confirm that the field has a direct relationship with the user's question.
-- Prefer fields that can directly change or improve the final answer.
-- Do not retrieve fields that are only available but unrelated.
-- If a shallow value already answers the question, do not expand deeper.
-- When multiple possible fields exist, select the field most relevant to the
-  user's intent.
+The current user request is the only task to solve.
 
-BROAD INVESTIGATION
-For timelines, care journeys, comparisons, or complete reviews:
-- Define the requested scope before retrieving data.
-- Gather only resources relevant to that scope.
-- Build a sufficient evidence set before deep inspection.
-- Inspect only fields needed for chronology, relationships, status, values,
-  or conclusions requested by the user.
-- Do not reconstruct every possible detail unless the user explicitly asks for
-  exhaustive analysis.
+Before using tools, identify:
 
-TOOL SELECTION
-Choose tools based on their intended purpose:
+1. What information is requested?
+2. What evidence is required?
+3. What is currently unknown?
 
-- Search tools:
-  Use when the target resource or entity is unknown.
+Classify the missing information as one of:
 
-- Resource retrieval tools:
-  Use when the target resource is known and needs verification.
+- ENTITY DISCOVERY:
+  Find the target resource or entity.
 
-- Field inspection tools:
-  Use when the resource is known but specific information is required.
+- RESOURCE VERIFICATION:
+  Confirm a known resource exists.
 
-- Relationship tools:
-  Use when related resources or graph connections are needed.
+- FIELD RETRIEVAL:
+  Read information from a known resource.
 
-- Resolution tools:
-  Use when Reference targets or coded meanings are required.
+- RELATIONSHIP RETRIEVAL:
+  Find resources connected to an existing resource.
 
-- Query tools:
-  Use only when specialized tools cannot satisfy the request.
+- REFERENCE OR CODE RESOLUTION:
+  Resolve identifiers, references, or coded concepts.
 
-TOOL ARGUMENT SAFETY
-- Match every argument to its declared schema.
-- Ensure resource identifiers correspond to the expected resource type.
-- For batch operations:
-  - provide all required common parameters;
-  - provide IDs in the format expected by the tool.
-- Never infer missing arguments from unrelated fields.
-- Never provide JSON strings where structured values are required.
+- DATA COMPUTATION:
+  Perform aggregation, comparison, filtering, or graph computation
+  after the required evidence has been retrieved.
 
-RUN_CYPHER LIMITS
-- Use read-only Cypher only.
-- Before using run_cypher, determine why specialized tools are insufficient.
-- Do not use run_cypher to replace existing search, retrieval, relationship,
-  field-reading, reference, or coding tools.
-- If a Cypher attempt fails, do not repeatedly rewrite similar queries without
-  a specific correction.
 
-COMPLETENESS
-For requests involving all records, full journeys, or comparisons:
-- Retrieve the complete relevant resource set within the requested scope.
-- Inspect every required record at the level needed for the requested answer.
-- Include missing values when relevant.
-- Do not stop after finding only one matching example.
-- Prefer a complete high-level report over exhaustive low-level traversal.
-- Deepen only the specific fields required to answer the request or resolve
-  an ambiguity.
+==================================================
+TOOL SELECTION POLICY
+==================================================
 
+Always select the smallest capability that resolves the current uncertainty.
+
+Follow this priority:
+
+1. Use discovery capabilities when the target entity is unknown.
+
+2. Use verification capabilities when the target identity is known.
+
+3. Use field-reading capabilities when the resource exists but information
+   inside it is required.
+
+4. Use relationship or resolution capabilities when connected information
+   is required.
+
+5. Use computation capabilities only after the required evidence set exists.
+
+
+Do not skip earlier stages unless the required evidence is already available.
+
+Do not choose a more powerful tool when a narrower capability is sufficient.
+
+
+==================================================
+GENERAL QUERY RESTRICTION
+==================================================
+
+General graph query tools are for computation, not normal retrieval.
+
+Use them only when:
+
+- the required entities are already identified;
+- the required relationships are understood;
+- specialized capabilities cannot express the operation;
+- the operation requires custom aggregation, filtering, joining,
+  or graph computation.
+
+Do not use general graph queries to replace:
+- entity discovery;
+- resource lookup;
+- field retrieval;
+- relationship resolution;
+- code resolution.
+
+
+==================================================
+EVIDENCE VALIDATION
+==================================================
+
+Tool output is evidence, not automatically the final answer.
+
+Validate:
+
+- Is this the correct entity?
+- Is this the correct resource scope?
+- Does the returned information answer the request?
+
+Do not treat an empty result as proof that data does not exist.
+
+An empty result means:
+
+"The current retrieval attempt found no evidence."
+
+Before concluding missing data:
+
+- check whether the retrieval approach matches the requested information;
+- consider whether another capability is required;
+- distinguish unavailable data from unattempted retrieval.
+
+
+==================================================
+MULTI RESOURCE REQUEST
+==================================================
+
+For requests involving multiple resources:
+
+First determine:
+
+- the complete resource population required;
+- the fields needed from each resource;
+- the related information required.
+
+Then:
+
+- retrieve the primary resource set;
+- retrieve required related information;
+- use batch operations when available;
+- account for every requested resource.
+
+Do not:
+
+- assume a partial result is complete;
+- stop after finding examples;
+- claim completeness from bounded results.
+
+
+==================================================
+TOOL EXECUTION RULES
+==================================================
+
+Always:
+
+- follow tool schemas exactly;
+- provide correct argument types;
+- reuse previously retrieved values;
+- prefer batch operations for repeated work.
+- treat a tool name and its complete argument set as one unique call;
+- reuse the existing result instead of calling the same tool again with the
+  same or equivalent arguments during the current request.
+
+Never:
+
+- guess identifiers;
+- guess field names;
+- guess graph structure;
+- repeat a tool call with the same or equivalent arguments;
+- repeat identical failed operations.
+
+If a tool fails:
+
+- correct the specific issue once;
+- stop if the corrected attempt fails.
+
+
+==================================================
 STOP CONDITION
-Stop using tools when:
-- the requested information is supported by evidence;
-- the required scope has been completed;
-- additional retrieval would not improve the answer;
-- a clear evidence-based response can already be produced.
+==================================================
 
-FHIR INTERPRETATION
-- Preserve exact resource IDs, codes, dates, statuses, quantities, and units
-  when relevant.
-- Use display text when available.
-- Never guess unresolved code meanings.
-- Do not infer diagnosis, payment status, or clinical conclusions beyond the
-  retrieved evidence.
+Stop retrieving when:
 
+- the requested scope is covered;
+- required fields are collected;
+- unresolved information cannot affect the answer.
+
+Do not stop only because an answer can already be generated.
+
+
+==================================================
+FHIR EVIDENCE RULES
+==================================================
+
+Preserve when relevant:
+
+- resource identifiers;
+- resource types;
+- dates;
+- statuses;
+- quantities;
+- units;
+- codes.
+
+Use available display values.
+
+Never interpret unknown codes.
+
+Never infer beyond retrieved evidence.
+
+
+==================================================
 FINAL RESPONSE
-- Answer directly in the user's language.
-- Write responses in a concise report style when appropriate.
-- Include all information relevant to the user's request.
-- Do not add unrelated details outside the requested scope.
-- Organize multi-record results clearly and chronologically when useful.
-- Distinguish retrieved facts from interpretations.
-- Deduplicate repeated evidence without removing distinct information.
-- Do not expose internal reasoning or tool execution planning.
+==================================================
+
+Answer in the user's language.
+
+Provide:
+
+- direct answer;
+- structured tables or lists when appropriate;
+- clear distinction between facts and uncertainty.
+
+Do not reveal:
+
+- internal reasoning;
+- tool selection process;
+- hidden analysis.
 """
 @dataclass
 class AgentDeps:
@@ -377,8 +631,11 @@ def _log_payload(title: str, value: Any) -> None:
     logger.debug("%s\n%s", title, text)
 
 
-_DEFAULT_LIMIT = 25
-_MAX_LIMIT = 100
+_AGENT_REQUEST_LIMIT = 100
+_TOOL_RESULT_LIMIT = 200
+_BATCH_RESOURCE_LIMIT = int(
+    os.getenv("FHIR_AGENT_BATCH_RESOURCE_LIMIT", "50")
+)
 _MAX_MODEL_TOOL_RESULT_CHARS = int(
     os.getenv("FHIR_AGENT_MAX_TOOL_RESULT_CHARS", "400000")
 )
@@ -400,14 +657,6 @@ def _json_response(
     return json.dumps(payload, default=str, ensure_ascii=False)
 
 
-def _bounded_limit(limit: int | str) -> int:
-    try:
-        value = int(limit)
-    except (TypeError, ValueError):
-        value = _DEFAULT_LIMIT
-    return max(1, min(value, _MAX_LIMIT))
-
-
 def _parse_ids(resource_ids: str) -> list[str]:
     return list(
         dict.fromkeys(
@@ -418,23 +667,23 @@ def _parse_ids(resource_ids: str) -> list[str]:
     )
 
 
-def _is_read_only(query: str) -> bool:
-    normalized = " ".join(query.upper().split())
-    blocked = (
-        " CREATE ",
-        " MERGE ",
-        " DELETE ",
-        " DETACH ",
-        " SET ",
-        " REMOVE ",
-        " DROP ",
-        " FOREACH ",
-        " LOAD CSV ",
-        " CALL DBMS",
-        " CALL DB.",
+def _normalize_optional_exact_filter(value: str) -> str:
+    normalized = value.strip()
+    return "" if normalized == "*" else normalized
+
+
+def _batch_size_error(resource_ids: list[str]) -> str | None:
+    if len(resource_ids) <= _BATCH_RESOURCE_LIMIT:
+        return None
+    return _json_response(
+        status="error",
+        count=0,
+        data=[],
+        message=(
+            f"A batch accepts at most {_BATCH_RESOURCE_LIMIT} resource ids; "
+            "split the ids into smaller batches."
+        ),
     )
-    padded = f" {normalized} "
-    return not any(keyword in padded for keyword in blocked)
 
 
 async def _execute_tool(
@@ -558,18 +807,15 @@ async def search_patient(
     ctx: RunContext[AgentDeps],
     query: Annotated[
         str,
-        Field(description="Patient FHIR id, HumanName text, family/given name fragment, or Identifier value to search for."),
+        Field(description="Patient FHIR id, HumanName text, family/given name fragment, or Identifier value to search for; use an empty string to list Patient resources."),
     ],
-    limit: Annotated[
-        int,
-        Field(description="Maximum number of Patient matches to return; values are bounded by the server."),
-    ] = 20,
 ) -> str:
     """
-    Search Patient resources by id, HumanName, or Identifier.
+    Search or list Patient resources.
 
     Use when:
     - You need to find candidate Patient FHIRResource ids from a name, identifier, or Patient id.
+    - You need the Patient resource list before a batch operation.
 
     Do not use when:
     - You already have the Patient id; prefer search_resource or relationship tools.
@@ -577,11 +823,12 @@ async def search_patient(
 
     Behavior:
     - Matches Patient.id exactly and name or identifier values by case-insensitive contains.
+    - An empty query lists up to 200 matching Patient resources.
     - Does not traverse from Patient to clinical resources.
 
     Returns:
         str: JSON payload with matching Patient resource_id, resource_type, direct name
-        properties, and identifier properties.
+        properties, and identifier properties, limited to 200 rows.
     """
     cypher = """
     MATCH (patient:FHIRResource:Patient)
@@ -590,7 +837,8 @@ async def search_patient(
     WITH patient,
          collect(DISTINCT name) AS names,
          collect(DISTINCT identifier) AS identifiers
-    WHERE patient.id = $query
+    WHERE $query = ''
+       OR patient.id = $query
        OR any(name_node IN names WHERE
             toLower(coalesce(name_node.text, '')) CONTAINS toLower($query)
             OR toLower(coalesce(name_node.family, '')) CONTAINS toLower($query)
@@ -606,12 +854,15 @@ async def search_patient(
            [name_node IN names | properties(name_node)] AS names,
            [identifier_node IN identifiers | properties(identifier_node)] AS identifiers
     ORDER BY patient.id
-    LIMIT $limit
+    LIMIT $result_limit
     """
     return await _execute_tool(
         tool_name="search_patient",
         cypher=cypher,
-        parameters={"query": query, "limit": _bounded_limit(limit)},
+        parameters={
+            "query": query,
+            "result_limit": _TOOL_RESULT_LIMIT,
+        },
     )
 
 
@@ -653,7 +904,6 @@ async def search_resource(
     RETURN resource.resourceType AS resource_type,
            resource.id AS resource_id,
            properties(resource) AS properties
-    LIMIT 20
     """
     return await _execute_tool(
         tool_name="search_resource",
@@ -662,6 +912,47 @@ async def search_resource(
             "resource_type": resource_type,
             "resource_id": resource_id,
         },
+    )
+
+
+@agent.tool
+async def count_resources(
+    ctx: RunContext[AgentDeps],
+    resource_type: Annotated[
+        str,
+        Field(description="Exact FHIR resourceType to count, such as Patient, Encounter, Observation, or Condition."),
+    ],
+) -> str:
+    """
+    Count all FHIRResources of one resourceType.
+
+    Use when:
+    - The user asks for the total number of resources of a known resourceType.
+    - You need an exact count rather than a bounded resource list.
+
+    Do not use when:
+    - The user needs resource ids, names, fields, or individual records.
+    - The count requires custom filters or relationships not accepted by this tool.
+
+    Behavior:
+    - Counts root FHIRResource nodes with the exact resourceType.
+    - Does not inspect fields, relationships, or referenced resources.
+
+    Returns:
+        str: JSON payload containing resource_type and total_count. It does not
+        return individual resources.
+    """
+    cypher = """
+    MATCH (resource:FHIRResource {
+        resourceType: $resource_type
+    })
+    RETURN $resource_type AS resource_type,
+           count(resource) AS total_count
+    """
+    return await _execute_tool(
+        tool_name="count_resources",
+        cypher=cypher,
+        parameters={"resource_type": resource_type},
     )
 
 
@@ -680,17 +971,13 @@ async def get_related_resources(
         str,
         Field(description="Optional exact resourceType filter for source resources; use an empty string for all types."),
     ] = "",
-    limit: Annotated[
-        int,
-        Field(description="Maximum number of referencing source resources to return; values are bounded by the server."),
-    ] = 100,
 ) -> str:
     """
     Find FHIRResources that reference a selected target resource.
 
     Use when:
     - You have a target FHIRResource id and need source resources that point to it through a Reference.
-    - You need all resources, or one resourceType, related to a Patient, Encounter, Practitioner, or other target.
+    - You need matching resources, or one resourceType, related to a Patient, Encounter, Practitioner, or other target.
 
     Do not use when:
     - You need fields inside a known resource; prefer field-reading tools.
@@ -702,8 +989,10 @@ async def get_related_resources(
 
     Returns:
         str: JSON payload with distinct source resource_type and resource_id pairs only,
-        not field details.
+        not field details, limited to 200 rows.
     """
+    normalized_related_type = _normalize_optional_exact_filter(related_type)
+
     cypher = """
     MATCH (target:FHIRResource {
         resourceType: $resource_type,
@@ -717,7 +1006,7 @@ async def get_related_resources(
     ORDER BY source.resourceType, source.id
     RETURN source.resourceType AS resource_type,
            source.id AS resource_id
-    LIMIT $limit
+    LIMIT $result_limit
     """
     return await _execute_tool(
         tool_name="get_related_resources",
@@ -725,8 +1014,102 @@ async def get_related_resources(
         parameters={
             "resource_type": resource_type,
             "resource_id": resource_id,
-            "related_type": related_type,
-            "limit": _bounded_limit(limit),
+            "related_type": normalized_related_type,
+            "result_limit": _TOOL_RESULT_LIMIT,
+        },
+    )
+
+
+@agent.tool
+async def get_related_resources_batch(
+    ctx: RunContext[AgentDeps],
+    resource_type: Annotated[
+        str,
+        Field(description="Exact resourceType shared by all target FHIRResources."),
+    ],
+    resource_ids: Annotated[
+        str,
+        Field(description="Comma-separated target FHIR ids; at most 50 ids per call; this tool expects text, not an array."),
+    ],
+    related_type: Annotated[
+        str,
+        Field(description="Exact resourceType filter for referencing source resources; use an empty string only when all related types are required."),
+    ],
+) -> str:
+    """
+    Find FHIRResources that reference multiple selected target resources.
+
+    Use when:
+    - The same relationship lookup is required for multiple known target ids.
+    - A search or earlier tool returned a bounded target set for batch traversal.
+
+    Do not use when:
+    - You have only one target; prefer get_related_resources.
+    - You need fields from the related resources; use a batch field-reading tool
+      after this tool returns their resource ids.
+    - You need to resolve Reference text; prefer resolve_reference.
+
+    Behavior:
+    - Follows Reference nodes that RESOLVES_TO each target, then searches up to
+      4 hops back to source FHIRResource nodes.
+    - Optionally filters source resources by related_type.
+    - Does not read fields from source resources.
+
+    Returns:
+        str: JSON payload with one row per requested target. Each row contains
+        target_resource_id, target_found, and a related_resources list of distinct
+        resource_type and resource_id pairs. An empty list means no matching
+        relationship was found for that processed target.
+    """
+    ids = _parse_ids(resource_ids)
+    normalized_related_type = _normalize_optional_exact_filter(related_type)
+
+    if not ids:
+        return _json_response(
+            status="error",
+            count=0,
+            data=[],
+            message="resource_ids must contain at least one id",
+        )
+    if batch_error := _batch_size_error(ids):
+        return batch_error
+
+    cypher = """
+    UNWIND $resource_ids AS requested_id
+
+    OPTIONAL MATCH (target:FHIRResource {
+        resourceType: $resource_type,
+        id: requested_id
+    })
+
+    OPTIONAL MATCH (reference:Reference)-[:RESOLVES_TO]->(target)
+    OPTIONAL MATCH (source:FHIRResource)-[*1..4]->(reference)
+    WHERE source <> target
+      AND ($related_type = '' OR source.resourceType = $related_type)
+
+    WITH requested_id,
+         target,
+         collect(DISTINCT source) AS related_sources
+
+    RETURN requested_id AS target_resource_id,
+           target IS NOT NULL AS target_found,
+           [
+               source IN related_sources |
+               {
+                   resource_type: source.resourceType,
+                   resource_id: source.id
+               }
+           ] AS related_resources
+    ORDER BY target_resource_id
+    """
+
+    return await _execute_tool(
+        tool_name="get_related_resources_batch",
+        cypher=cypher,
+        parameters={
+            "resource_type": resource_type,
+            "resource_ids": ids,
+            "related_type": normalized_related_type,
         },
     )
 
@@ -742,10 +1125,6 @@ async def get_resources_for_encounter(
         str,
         Field(description="Optional comma-separated resourceTypes to include, such as Observation,Condition; empty means all types."),
     ] = "",
-    limit: Annotated[
-        int,
-        Field(description="Maximum number of Encounter-associated resources to return; values are bounded by the server."),
-    ] = 100,
 ) -> str:
     """
     Find FHIRResources associated with one Encounter.
@@ -764,7 +1143,7 @@ async def get_resources_for_encounter(
 
     Returns:
         str: JSON payload with distinct resource_type and resource_id pairs only, not field
-        details.
+        details, limited to 200 rows.
     """
 
     requested_types = _parse_ids(resource_types)
@@ -789,7 +1168,7 @@ async def get_resources_for_encounter(
 
     RETURN resource.resourceType AS resource_type,
            resource.id AS resource_id
-    LIMIT $limit
+    LIMIT $result_limit
     """
 
     return await _execute_tool(
@@ -798,7 +1177,7 @@ async def get_resources_for_encounter(
         parameters={
             "encounter_id": encounter_id,
             "resource_types": requested_types,
-            "limit": _bounded_limit(limit),
+            "result_limit": _TOOL_RESULT_LIMIT,
         },
     )
 
@@ -895,12 +1274,8 @@ async def list_resource_fields_batch(
     ],
     resource_ids: Annotated[
         list[str],
-        Field(description="Array of exact FHIR ids to inspect; do not pass a JSON string."),
+        Field(description="Array of at most 50 exact FHIR ids to inspect; do not pass a JSON string."),
     ],
-    limit: Annotated[
-        int,
-        Field(description="Maximum number of returned resource rows; values are bounded by the server."),
-    ] = 100,
     blocked_relationships: Annotated[
         list[str] | None,
         Field(description="Optional relationship names to exclude from shallow field listing; omit to use server defaults."),
@@ -942,6 +1317,8 @@ async def list_resource_fields_batch(
             data=[],
             message="resource_ids must contain at least one id",
         )
+    if batch_error := _batch_size_error(ids):
+        return batch_error
 
     blocked = (
         blocked_relationships
@@ -1004,7 +1381,6 @@ async def list_resource_fields_batch(
            ] AS fields
 
     ORDER BY resource_id
-    LIMIT $limit
     """
 
     return await _execute_tool(
@@ -1013,7 +1389,6 @@ async def list_resource_fields_batch(
         parameters={
             "resource_type": resource_type,
             "resource_ids": ids,
-            "limit": _bounded_limit(limit),
             "blocked_relationships": blocked,
         },
     )
@@ -1034,10 +1409,6 @@ async def get_resource_field(
         str,
         Field(description="Exact field relationship name or root property name to read, such as code, subject, status, or valueQuantity."),
     ],
-    limit: Annotated[
-        int,
-        Field(description="Maximum number of matching field values to return; values are bounded by the server."),
-    ] = 100,
 ) -> str:
     """
     Read one named root property or internal FHIR field from one resource.
@@ -1117,7 +1488,6 @@ async def get_resource_field(
     }
 
     RETURN value
-    LIMIT $limit
     """
 
     return await _execute_tool(
@@ -1127,7 +1497,6 @@ async def get_resource_field(
             "resource_type": resource_type,
             "resource_id": resource_id,
             "field_name": field_name,
-            "limit": _bounded_limit(limit),
             "blocked_relationships": list(
                 _BLOCKED_TRAVERSAL_RELATIONSHIPS
             ),
@@ -1149,10 +1518,6 @@ async def get_resource_fields_batch(
         str,
         Field(description="Exact field relationship name or root property name to read across all requested resources."),
     ],
-    limit: Annotated[
-        int,
-        Field(description="Maximum number of returned field rows; values are bounded by the server."),
-    ] = 100,
 ) -> str:
     """
     Read one named root property or internal FHIR field from multiple resources.
@@ -1170,10 +1535,13 @@ async def get_resource_fields_batch(
     - Parses resource_ids from comma-separated text.
     - Reads matching root properties or paths starting with field_name up to 2 internal hops.
     - Does not traverse RESOLVES_TO, DEFINED_BY, blocked relationships, or into another FHIRResource.
+    - Groups all matching values by requested resource id to reduce repeated metadata.
 
     Returns:
-        str: JSON payload with rows containing resource_id, resource_found, field_found,
-        source, node_id, path, labels, properties, and has_children.
+        str: JSON payload with one row per requested resource id containing
+        resource_found, field_found, and compact values with source, path, and
+        properties. Use get_resource_field when node ids or expansion metadata
+        are required for one resource.
     """
 
     ids = _parse_ids(resource_ids)
@@ -1290,17 +1658,24 @@ async def get_resource_fields_batch(
                null AS value
     }
 
+    WITH resource_id,
+         resource_found,
+         field_found,
+         collect(value) AS raw_values
+
     RETURN resource_id,
            resource_found,
            field_found,
-           CASE WHEN value IS NULL THEN null ELSE value.source END AS source,
-           CASE WHEN value IS NULL THEN null ELSE value.node_id END AS node_id,
-           CASE WHEN value IS NULL THEN [] ELSE value.path END AS path,
-           CASE WHEN value IS NULL THEN [] ELSE value.labels END AS labels,
-           CASE WHEN value IS NULL THEN {} ELSE value.properties END AS properties,
-           CASE WHEN value IS NULL THEN false ELSE value.has_children END AS has_children
-    ORDER BY resource_id, path
-    LIMIT $limit
+           [
+               value IN raw_values
+               WHERE value IS NOT NULL |
+               {
+                   source: value.source,
+                   path: value.path,
+                   properties: value.properties
+               }
+           ] AS values
+    ORDER BY resource_id
     """
 
     return await _execute_tool(
@@ -1310,7 +1685,6 @@ async def get_resource_fields_batch(
             "resource_type": resource_type,
             "resource_ids": ids,
             "field_name": field_name,
-            "limit": _bounded_limit(limit),
             "blocked_relationships": list(
                 _BLOCKED_TRAVERSAL_RELATIONSHIPS
             ),
@@ -1324,10 +1698,6 @@ async def expand_field_node(
         str,
         Field(description="Neo4j internal node id previously returned by a field-reading tool as node_id."),
     ],
-    limit: Annotated[
-        int,
-        Field(description="Maximum number of direct child nodes to return; values are bounded by the server."),
-    ] = 50,
 ) -> str:
     """
     Expand direct internal children of a previously returned FHIR element node.
@@ -1348,7 +1718,7 @@ async def expand_field_node(
     Returns:
         str: JSON payload with parent_node_id, parent_labels, parent_properties, and
         direct children containing relationship, labels, properties, node_id, and
-        has_children.
+        has_children. The children list is limited to 200 entries.
     """
 
     cypher = """
@@ -1394,7 +1764,7 @@ async def expand_field_node(
         cypher=cypher,
         parameters={
             "node_id": node_id,
-            "limit": _bounded_limit(limit),
+            "limit": _TOOL_RESULT_LIMIT,
             "blocked_relationships": list(
                 _BLOCKED_TRAVERSAL_RELATIONSHIPS
             ),
@@ -1439,7 +1809,6 @@ async def resolve_reference(
            target.resourceType AS resource_type,
            target.id AS resource_id,
            properties(target) AS root_properties
-    LIMIT 20
     """
 
     return await _execute_tool(
@@ -1461,10 +1830,6 @@ async def resolve_coding(
         str,
         Field(description="Exact Coding.code value to resolve."),
     ],
-    limit: Annotated[
-        int,
-        Field(description="Maximum number of matching CodeSystem concepts to return; values are bounded by the server."),
-    ] = 20,
 ) -> str:
     """
     Resolve a FHIR Coding against CodeSystem concepts.
@@ -1501,7 +1866,6 @@ async def resolve_coding(
            collect(DISTINCT properties(designation)) AS designations,
            [relationship IN relationships(path) |
                 type(relationship)] AS path
-    LIMIT $limit
     """
     return await _execute_tool(
         tool_name="resolve_coding",
@@ -1509,7 +1873,6 @@ async def resolve_coding(
         parameters={
             "system": system,
             "code": code,
-            "limit": _bounded_limit(limit),
         },
     )
 
@@ -1549,62 +1912,6 @@ async def get_graph_schema(ctx: RunContext[AgentDeps]) -> str:
         logger.exception("TOOL ERROR | get_graph_schema | %s", exc)
         logger.debug("MODEL TOOL RESULT STRING | get_graph_schema\n%s", model_content)
         return model_content
-
-
-@agent.tool
-async def run_cypher(
-    ctx: RunContext[AgentDeps],
-    query: Annotated[
-        str,
-        Field(description="Read-only Cypher query text. It must not write, delete, merge, create, or mutate graph data."),
-    ],
-    parameters: Annotated[
-        str,
-        Field(description="JSON object string for Cypher parameters; use {} when no parameters are needed."),
-    ] = "{}",
-) -> str:
-    """
-    Execute a read-only Cypher query against the Neo4j graph.
-
-    Use when:
-    - The specialized tools cannot express the needed read-only query.
-    - You need a custom aggregation, join, filter, or ordering not exposed by other tools.
-
-    Do not use when:
-    - A specialized search, relationship, field-reading, Reference, or Coding tool can answer the request.
-    - The query would write, delete, merge, create, or mutate data.
-    - You cannot provide parameters as a valid JSON object string.
-
-    Behavior:
-    - Rejects non-read-only Cypher before execution.
-    - Parses parameters from JSON text and adds the configured domain parameter when absent.
-
-    Returns:
-        str: Standard tool JSON response from query execution, or an error payload for
-        invalid Cypher or parameters.
-    """
-    if not _is_read_only(query):
-        return _json_response(
-            status="error",
-            count=0,
-            data=[],
-            message="Only read-only Cypher queries are allowed",
-        )
-    try:
-        params = json.loads(parameters) if parameters else {}
-    except json.JSONDecodeError:
-        return _json_response(
-            status="error",
-            count=0,
-            data=[],
-            message="parameters must be a valid JSON object",
-        )
-    params.setdefault("domain", settings.domain_id)
-    return await _execute_tool(
-        tool_name="run_cypher",
-        cypher=query,
-        parameters=params,
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -1807,8 +2114,8 @@ async def generate_agent_response(
         effective_message = f"""
 Use the memory sections only as supporting context.
 The current request is always the task you must answer.
-Conversation history is only for resolving references such as the patient,
-encounter, or previous topic.
+Conversation history is only for resolving information omitted from the current
+request.
 Do not reuse, continue, summarize, or copy previous assistant answers unless
 the current request explicitly asks for that.
 If the current request asks for a subset, answer only that subset.
@@ -1830,6 +2137,7 @@ If the current request asks for a subset, answer only that subset.
             effective_message,
             deps=AgentDeps(session_id=resolved_session_id, user_id=user_id),
             message_history=[],
+            usage_limits=UsageLimits(request_limit=_AGENT_REQUEST_LIMIT),
             model_settings=ModelSettings(
                 temperature=0,
     ),
@@ -1913,6 +2221,7 @@ async def handle_message_stream(
             effective_message,
             deps=AgentDeps(session_id=resolved_session_id, user_id=user_id),
             message_history=[],
+            usage_limits=UsageLimits(request_limit=_AGENT_REQUEST_LIMIT),
         )
         _log_model_usage(result, run_id)
         usage_attr = getattr(result, "usage", None)

@@ -150,7 +150,7 @@ async def chat_stream(request: ChatRequest):
         task = asyncio.create_task(run_agent())
         yield f"event: session_id\ndata: {json.dumps({'session_id': session_id})}\n\n"
         idle_timeout = 120.0
-        overall_timeout = 500
+        overall_timeout = 900
         loop = asyncio.get_event_loop()
         start_time = loop.time()
         try:

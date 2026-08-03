@@ -149,8 +149,34 @@ def test_search_memories_uses_correct_filters(mock_mem0, mocker: MockerFixture):
             "user_id": "doctor-1",
             "agent_id": "fhir-clinical-agent",
         },
-        top_k=8,
+        top_k=5,
     )
+
+
+def test_search_memories_filters_low_scores(
+    mock_mem0,
+    mocker: MockerFixture,
+):
+    mock_mem0.search.return_value = {
+        "results": [
+            {"id": "strong", "memory": "Relevant", "score": 0.7},
+            {"id": "weak", "memory": "Noise", "score": 0.49},
+            {"id": "unscored", "memory": "Compatible"},
+        ]
+    }
+    mocker.patch("app.memory.get_memory", return_value=mock_mem0)
+
+    import asyncio
+
+    result = asyncio.run(
+        search_memories(
+            query="Patient/123",
+            user_id="doctor-1",
+            session_id="chat-1",
+        )
+    )
+
+    assert [item["id"] for item in result] == ["strong", "unscored"]
 
 
 def test_search_memories_empty_when_no_memory():

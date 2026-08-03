@@ -27,9 +27,12 @@ import {
   openMessageStream,
   register,
 } from "@/lib/api";
+
 import type { ChatMessage, Conversation, UserProfile } from "@/lib/api";
 import { parseSseStream } from "@/lib/sse";
 import type { ParsedSseEvent } from "@/lib/sse";
+
+const CHAT_STREAM_TIMEOUT_MS = 900_000;
 
 interface ToolCall {
   name: string;
@@ -405,10 +408,16 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
-    let timeout = setTimeout(() => controller.abort(), 120000);
+    let timeout = setTimeout(
+      () => controller.abort(),
+      CHAT_STREAM_TIMEOUT_MS,
+    );
     const resetTimeout = () => {
       clearTimeout(timeout);
-      timeout = setTimeout(() => controller.abort(), 120000);
+      timeout = setTimeout(
+        () => controller.abort(),
+        CHAT_STREAM_TIMEOUT_MS,
+      );
     };
 
     let fullText = "";

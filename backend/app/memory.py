@@ -136,6 +136,8 @@ Tránh suy diễn:
 dài hạn mới, không tạo memory.
 """
 _memory: Memory | None = None
+_MEMORY_SEARCH_MAX_RESULTS = 5
+_MEMORY_SEARCH_MIN_SCORE = 0.5
 
 
 def _collection_name() -> str:
@@ -251,6 +253,27 @@ def _normalize_mem0_results(result: Any) -> list[dict[str, Any]]:
     if isinstance(result, list):
         return result
     return []
+
+
+def _filter_relevant_memories(
+    memories: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Keep strong matches while tolerating Mem0 versions without scores."""
+    relevant: list[dict[str, Any]] = []
+
+    for memory in memories:
+        score = memory.get("score")
+        if score is None:
+            relevant.append(memory)
+            continue
+
+        try:
+            if float(score) >= _MEMORY_SEARCH_MIN_SCORE:
+                relevant.append(memory)
+        except (TypeError, ValueError):
+            relevant.append(memory)
+
+    return relevant[:_MEMORY_SEARCH_MAX_RESULTS]
 
 
 def _get_all_memories_sync(
@@ -382,7 +405,7 @@ async def search_memories(
     query: str,
     user_id: str,
     session_id: str,
-    limit: int = 8,
+    limit: int = _MEMORY_SEARCH_MAX_RESULTS,
 ) -> list[dict[str, Any]]:
     """Search relevant memories and log the full retrieval result."""
     mem = get_memory()
@@ -404,12 +427,18 @@ async def search_memories(
     }
 
     try:
+        top_k = max(
+            1,
+            min(limit, _MEMORY_SEARCH_MAX_RESULTS),
+        )
+
         trace(
             "memory",
             "search_start",
             query=clean_query,
             filters=filters,
-            top_k=max(1, min(limit, 20)),
+            top_k=top_k,
+            min_score=_MEMORY_SEARCH_MIN_SCORE,
         )
 
         # Mem0 exposes a synchronous API. Run it in a worker thread so the
@@ -418,7 +447,7 @@ async def search_memories(
             mem.search,
             query=clean_query,
             filters=filters,
-            top_k=max(1, min(limit, 20)),
+            top_k=top_k,
         )
 
         # This is the exact object returned by mem.search().
@@ -430,7 +459,8 @@ async def search_memories(
             raw_result=result,
         )
 
-        normalized = _normalize_mem0_results(result)
+        candidates = _normalize_mem0_results(result)
+        normalized = _filter_relevant_memories(candidates)
 
         trace(
             "memory",
@@ -438,6 +468,9 @@ async def search_memories(
             query=clean_query,
             filters=filters,
             result_count=len(normalized),
+            candidate_count=len(candidates),
+            dropped_count=len(candidates) - len(normalized),
+            min_score=_MEMORY_SEARCH_MIN_SCORE,
             results=normalized,
         )
 
