@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import uuid
 import base64
+import logging
+import time
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
@@ -34,6 +36,7 @@ from app.skin_images.vision import analyze_skin_image
 
 
 router = APIRouter(prefix="/skin-images", tags=["skin images"])
+logger = logging.getLogger(__name__)
 
 
 def _normalize_patient_id(patient_id: str) -> str:
@@ -52,8 +55,16 @@ async def analyze_image(
     image: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
 ):
+    request_started = time.perf_counter()
     patient_id = _normalize_patient_id(patient_id)
-    if not await patient_exists(patient_id):
+    step_started = time.perf_counter()
+    patient_found = await patient_exists(patient_id)
+    logger.info(
+        "skin_image.patient_lookup duration=%.3fs patient_id=%s",
+        time.perf_counter() - step_started,
+        patient_id,
+    )
+    if not patient_found:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Patient was not found in Neo4j",
@@ -62,17 +73,35 @@ async def analyze_image(
     created_at = utc_now_fhir()
     created_dt = datetime.now(timezone.utc)
     image_uuid = str(uuid.uuid4())
+    step_started = time.perf_counter()
     processed_image = await normalize_uploaded_skin_image(image)
+    logger.info(
+        "skin_image.image_processing duration=%.3fs size=%d content_type=%s",
+        time.perf_counter() - step_started,
+        processed_image.size,
+        processed_image.content_type,
+    )
     image_url = f"/api/skin-images/files/{image_uuid}"
 
+    step_started = time.perf_counter()
     modality, modality_display = await classify_skin_modality(processed_image)
+    logger.info(
+        "skin_image.modality duration=%.3fs modality=%s",
+        time.perf_counter() - step_started,
+        modality,
+    )
     if modality != "XC":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Uploaded image is classified as {modality}, not dermatology (XC)",
         )
 
+    step_started = time.perf_counter()
     analysis_text = await analyze_skin_image(processed_image)
+    logger.info(
+        "skin_image.vision duration=%.3fs",
+        time.perf_counter() - step_started,
+    )
     if not analysis_text:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
@@ -83,6 +112,7 @@ async def analyze_image(
     media_id = f"media-{image_uuid}"
     report_id = f"report-{image_uuid}"
 
+    step_started = time.perf_counter()
     resources = [
         build_binary_resource(
             binary_id=binary_id,
@@ -109,8 +139,41 @@ async def analyze_image(
             created_at=created_at,
         ),
     ]
+    logger.info(
+        "skin_image.resource_building duration=%.3fs report_id=%s",
+        time.perf_counter() - step_started,
+        report_id,
+    )
 
-    ids = await save_skin_analysis(resources, patient_id=patient_id)
+    step_started = time.perf_counter()
+    try:
+        ids = await save_skin_analysis(
+            resources,
+            patient_id=patient_id,
+            patient_already_validated=True,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    except Exception as exc:
+        logger.exception("Failed to persist skin image analysis")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Failed to save skin image analysis to Neo4j",
+        ) from exc
+    logger.info(
+        "skin_image.persistence duration=%.3fs report_id=%s",
+        time.perf_counter() - step_started,
+        ids["diagnostic_report_id"],
+    )
+    logger.info(
+        "skin_image.total duration=%.3fs patient_id=%s report_id=%s",
+        time.perf_counter() - request_started,
+        patient_id,
+        ids["diagnostic_report_id"],
+    )
     return SkinImageAnalyzeResponse(
         binary_id=ids["binary_id"],
         media_id=ids["media_id"],

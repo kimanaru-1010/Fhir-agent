@@ -10,6 +10,8 @@ from fastapi.testclient import TestClient
 
 from app.db.models import User
 from app.dependencies import auth as auth_dep
+from app.skin_diagnostic.llm_client import strip_hidden_reasoning
+from app.skin_images.fhir_builders import build_skin_analysis_bundle
 from app.skin_images.image_processing import ProcessedImage
 from app.skin_images import neo4j_repository
 from app.skin_images.router import router
@@ -42,6 +44,7 @@ def test_analyze_requires_linked_patient_in_neo4j(mocker):
     client = TestClient(app)
 
     mocker.patch("app.skin_images.router.patient_exists", new=AsyncMock(return_value=False))
+    process_mock = mocker.patch("app.skin_images.router.normalize_uploaded_skin_image", new=AsyncMock())
     save_mock = mocker.patch("app.skin_images.router.save_skin_analysis", new=AsyncMock())
 
     response = client.post(
@@ -52,6 +55,7 @@ def test_analyze_requires_linked_patient_in_neo4j(mocker):
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Patient was not found in Neo4j"
+    process_mock.assert_not_awaited()
     save_mock.assert_not_awaited()
 
 
@@ -59,7 +63,7 @@ def test_analyze_saves_skin_resources_for_selected_patient(mocker):
     app = _make_app(_make_user())
     client = TestClient(app)
 
-    mocker.patch("app.skin_images.router.patient_exists", new=AsyncMock(return_value=True))
+    patient_mock = mocker.patch("app.skin_images.router.patient_exists", new=AsyncMock(return_value=True))
     mocker.patch(
         "app.skin_images.router.normalize_uploaded_skin_image",
         new=AsyncMock(
@@ -105,6 +109,8 @@ def test_analyze_saves_skin_resources_for_selected_patient(mocker):
     save_mock.assert_awaited_once()
     _, kwargs = save_mock.await_args
     assert kwargs["patient_id"] == "10796"
+    assert kwargs["patient_already_validated"] is True
+    patient_mock.assert_awaited_once_with("10796")
     resources = save_mock.await_args.args[0]
     binary = next(resource for resource in resources if resource["resourceType"] == "Binary")
     assert binary["contentType"] == "image/jpeg"
@@ -177,17 +183,42 @@ def test_get_image_file_returns_binary_data_from_neo4j(mocker):
     assert response.content == b"normalized-image"
 
 
+def test_build_skin_analysis_bundle_preserves_resource_order():
+    binary = {"resourceType": "Binary", "id": "binary-1"}
+    media = {"resourceType": "Media", "id": "media-1"}
+    report = {"resourceType": "DiagnosticReport", "id": "report-1"}
+
+    bundle = build_skin_analysis_bundle([binary, media, report])
+
+    assert bundle["resourceType"] == "Bundle"
+    assert bundle["type"] == "collection"
+    assert len(bundle["entry"]) == 3
+    assert bundle["entry"][0]["resource"] is binary
+    assert bundle["entry"][1]["resource"] is media
+    assert bundle["entry"][2]["resource"] is report
+
+
+def test_strip_hidden_reasoning_removes_think_blocks():
+    text = "<think>internal analysis</think>\n1. Lesion description\n2. Differential diagnosis"
+
+    assert strip_hidden_reasoning(text) == "1. Lesion description\n2. Differential diagnosis"
+
+
 @pytest.mark.anyio
-async def test_repository_saves_resources_through_cyfhir(mocker):
+async def test_repository_saves_resources_through_cyfhir_bundle(mocker):
     execute_mock = mocker.patch(
         "app.skin_images.neo4j_repository.execute_cypher",
         new=AsyncMock(
-            side_effect=[
-                [{"id": "10796"}],
-                [{"value": {"resourceKey": "Binary/binary-1"}}],
-                [{"value": {"resourceKey": "Media/media-1"}}],
-                [{"value": {"resourceKey": "DiagnosticReport/report-1"}}],
-                [{"value": {"referencesResolved": 3}}],
+            return_value=[
+                {
+                    "value": {
+                        "loadedResources": 3,
+                        "skippedEntries": 0,
+                        "referencesResolved": 3,
+                        "referencesPending": 0,
+                        "referencesAmbiguous": 0,
+                    }
+                }
             ]
         ),
     )
@@ -199,6 +230,7 @@ async def test_repository_saves_resources_through_cyfhir(mocker):
             {"resourceType": "DiagnosticReport", "id": "report-1"},
         ],
         patient_id="10796",
+        patient_already_validated=True,
     )
 
     assert result == {
@@ -206,8 +238,16 @@ async def test_repository_saves_resources_through_cyfhir(mocker):
         "media_id": "media-1",
         "diagnostic_report_id": "report-1",
     }
-    queries = [call.args[0] for call in execute_mock.await_args_list]
-    assert "MATCH (patient:FHIRResource:Patient" in queries[0]
-    assert all("CALL cyfhir.resource.load" in query for query in queries[1:4])
-    assert "CALL cyfhir.resource.resolve" in queries[4]
-    assert not any("MERGE (binary" in query or "CREATE (subject" in query for query in queries)
+    execute_mock.assert_awaited_once()
+    query = execute_mock.await_args.args[0]
+    params = execute_mock.await_args.args[1]
+    assert "CALL cyfhir.bundle.load" in query
+    assert "cyfhir.resource.load" not in query
+    assert "cyfhir.resource.resolve" not in query
+    bundle_json = params["json"]
+    assert '"resourceType": "Bundle"' in bundle_json
+    assert '"resourceType": "Binary"' in bundle_json
+    assert '"resourceType": "Media"' in bundle_json
+    assert '"resourceType": "DiagnosticReport"' in bundle_json
+    assert "MERGE (binary" not in query
+    assert "CREATE (subject" not in query

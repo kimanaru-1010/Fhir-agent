@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from typing import Any
 
 from app.graph.client import execute_cypher
+from app.skin_images.fhir_builders import build_skin_analysis_bundle
 
 
 FHIR_LABEL_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
 SUPPORTED_RESOURCE_TYPES = {"Binary", "Media", "DiagnosticReport"}
 CYFHIR_CONFIG = {"validation": False, "version": "R4"}
+logger = logging.getLogger(__name__)
 
 
 def _resource_type(resource: dict) -> str:
@@ -37,24 +40,24 @@ async def patient_exists(patient_id: str) -> bool:
     return bool(rows)
 
 
-async def save_skin_analysis(resources: list[dict], *, patient_id: str) -> dict[str, str]:
+async def save_skin_analysis(
+    resources: list[dict],
+    *,
+    patient_id: str,
+    patient_already_validated: bool = False,
+) -> dict[str, str]:
     """Persist skin-analysis FHIR JSON through the CyFHIR Neo4j plugin.
 
     This intentionally does not create graph nodes by hand. It builds valid
     FHIR-like JSON in the caller, then delegates JSON-to-graph conversion and
     reference resolution to CyFHIR's jar procedures.
     """
-    if not await patient_exists(patient_id):
+    if not patient_already_validated and not await patient_exists(patient_id):
         raise ValueError("Linked Patient was not found in Neo4j")
 
-    ids: dict[str, str] = {}
-    for resource in resources:
-        resource_type = _resource_type(resource)
-        resource_id = str(resource["id"])
-        ids[resource_type] = resource_id
-        await _load_resource_with_cyfhir(resource)
-
-    await _resolve_references_with_cyfhir()
+    ids = _collect_resource_ids(resources)
+    stats = await _load_bundle_with_cyfhir(resources)
+    _validate_bundle_load_result(stats, expected_count=len(resources))
     return {
         "binary_id": ids.get("Binary", ""),
         "media_id": ids.get("Media", ""),
@@ -62,30 +65,66 @@ async def save_skin_analysis(resources: list[dict], *, patient_id: str) -> dict[
     }
 
 
-async def _load_resource_with_cyfhir(resource: dict) -> None:
-    await execute_cypher(
+def _collect_resource_ids(resources: list[dict]) -> dict[str, str]:
+    ids: dict[str, str] = {}
+    for resource in resources:
+        resource_type = _resource_type(resource)
+        ids[resource_type] = str(resource["id"])
+    return ids
+
+
+async def _load_bundle_with_cyfhir(resources: list[dict]) -> dict[str, Any]:
+    rows = await execute_cypher(
         """
-        CALL cyfhir.resource.load($json, $config) YIELD value
+        CALL cyfhir.bundle.load($json, $config) YIELD value
         RETURN value
         """,
         {
-            "json": json.dumps(resource, ensure_ascii=False),
+            "json": json.dumps(build_skin_analysis_bundle(resources), ensure_ascii=False),
             "config": CYFHIR_CONFIG,
         },
         collect=False,
         timeout=120.0,
     )
+    if not rows:
+        raise RuntimeError("CyFHIR bundle load returned no result")
+    value = rows[0].get("value") or {}
+    if not isinstance(value, dict):
+        raise RuntimeError("CyFHIR bundle load returned invalid result")
+    return value
 
 
-async def _resolve_references_with_cyfhir() -> None:
-    await execute_cypher(
-        """
-        CALL cyfhir.resource.resolve() YIELD value
-        RETURN value
-        """,
-        collect=False,
-        timeout=120.0,
+def _stat_int(stats: dict[str, Any], key: str) -> int:
+    value = stats.get(key, 0)
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _validate_bundle_load_result(stats: dict[str, Any], *, expected_count: int) -> None:
+    loaded_resources = _stat_int(stats, "loadedResources")
+    skipped_entries = _stat_int(stats, "skippedEntries")
+    ambiguous = _stat_int(stats, "referencesAmbiguous")
+    pending = _stat_int(stats, "referencesPending")
+
+    logger.info(
+        "skin_image.cyfhir loaded=%s resolved=%s pending=%s ambiguous=%s attachments=%s",
+        stats.get("loadedResources"),
+        stats.get("referencesResolved"),
+        stats.get("referencesPending"),
+        stats.get("referencesAmbiguous"),
+        stats.get("attachmentRelationships"),
     )
+
+    if loaded_resources != expected_count:
+        raise RuntimeError(f"CyFHIR loaded {loaded_resources}/{expected_count} resources")
+    if skipped_entries:
+        raise RuntimeError(f"CyFHIR skipped {skipped_entries} bundle entries")
+    if ambiguous:
+        raise RuntimeError(f"CyFHIR found {ambiguous} ambiguous references")
+    if pending:
+        logger.warning("CyFHIR bundle load left %d pending references", pending)
 
 
 async def list_skin_images(patient_id: str | None = None) -> list[dict[str, Any]]:

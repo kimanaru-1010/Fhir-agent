@@ -14,6 +14,10 @@ from app.core.config import settings
 
 _model_cache: dict[tuple[str, str], str] = {}
 _NON_LLM_KEYWORDS = ("bge", "embed", "rerank", "e5", "nomic", "minilm", "all-mpnet")
+_NO_THINKING_EXTRA_BODY = {
+    "chat_template_kwargs": {"enable_thinking": False},
+    "enable_thinking": False,
+}
 
 
 def _normalize_openai_base_url(base_url: str) -> str:
@@ -70,6 +74,15 @@ def image_to_data_uri(image_path: str) -> str:
     return f"data:{mime};base64,{encoded}"
 
 
+def strip_hidden_reasoning(text: str) -> str:
+    text = text or ""
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.IGNORECASE | re.DOTALL)
+    text = re.sub(r"<thinking>.*?</thinking>", "", text, flags=re.IGNORECASE | re.DOTALL)
+    if "</think>" in text.lower():
+        text = re.split(r"</think>", text, maxsplit=1, flags=re.IGNORECASE)[-1]
+    return text.strip()
+
+
 async def call_llm(
     *,
     prompt: str,
@@ -100,13 +113,32 @@ async def call_llm(
     messages.append({"role": "user", "content": content})
 
     resolved_model = _resolve_chat_model(base_url, model)
-    response = await client.chat.completions.create(
-        model=resolved_model,
-        messages=messages,
-        temperature=temperature,
-        max_tokens=max_tokens,
+    create_kwargs = {
+        "model": resolved_model,
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+    }
+    try:
+        response = await client.chat.completions.create(
+            **create_kwargs,
+            extra_body=_NO_THINKING_EXTRA_BODY,
+        )
+    except Exception as exc:
+        if not _is_no_thinking_param_error(exc):
+            raise
+        response = await client.chat.completions.create(**create_kwargs)
+    return strip_hidden_reasoning(response.choices[0].message.content or "")
+
+
+def _is_no_thinking_param_error(exc: Exception) -> bool:
+    message = str(exc).lower()
+    return (
+        "enable_thinking" in message
+        or "chat_template_kwargs" in message
+        or "extra_body" in message
+        or "extra inputs are not permitted" in message
     )
-    return response.choices[0].message.content or ""
 
 
 async def embed_text(texts: list[str]) -> list[list[float]]:

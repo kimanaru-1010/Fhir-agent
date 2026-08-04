@@ -79,3 +79,11 @@ def build_diagnostic_report_resource(
         "media": [{"link": {"reference": f"Media/{media_id}"}}],
         "conclusion": analysis_text,
     }
+
+
+def build_skin_analysis_bundle(resources: list[dict]) -> dict:
+    return {
+        "resourceType": "Bundle",
+        "type": "collection",
+        "entry": [{"resource": resource} for resource in resources],
+    }
