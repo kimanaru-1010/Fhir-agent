@@ -18,6 +18,7 @@ from app.api.auth import auth_router, users_router
 from app.api.conversations import router as conversations_router
 from app.api.messages import router as messages_router
 from app.skin_diagnostic.router import router as skin_diagnostic_router
+from app.skin_images.router import router as skin_images_router
 
 logger = logging.getLogger(__name__)
 
@@ -132,6 +133,7 @@ app.include_router(users_router, prefix="/api")
 app.include_router(conversations_router, prefix="/api")
 app.include_router(messages_router, prefix="/api")
 app.include_router(skin_diagnostic_router, prefix="/api")
+app.include_router(skin_images_router, prefix="/api")
 
 
 @app.get("/health")

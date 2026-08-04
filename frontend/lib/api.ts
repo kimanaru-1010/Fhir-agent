@@ -91,6 +91,34 @@ export interface SkinDiagnosticStartResponse {
   current_step: string;
 }
 
+export interface SkinImageAnalyzeResponse {
+  binary_id: string;
+  media_id: string;
+  diagnostic_report_id: string;
+  modality: string;
+  analysis_text: string;
+  image_url: string;
+  created_at: string;
+}
+
+export interface SkinImageSummary {
+  diagnostic_report_id: string;
+  media_id: string | null;
+  binary_id: string | null;
+  modality: string | null;
+  conclusion: string;
+  image_url: string | null;
+  created_at: string | null;
+}
+
+export interface SkinImageListResponse {
+  items: SkinImageSummary[];
+}
+
+export interface SkinImageDetailResponse extends SkinImageSummary {
+  storage_path: string | null;
+}
+
 export class ApiError extends Error {
   status: number;
   detail: string;
@@ -302,4 +330,31 @@ export async function submitSkinDiagnosticAnswers(
       body: JSON.stringify({ answers }),
     },
   );
+}
+
+export async function analyzeSkinImage(
+  image: File,
+  patientId: string,
+): Promise<SkinImageAnalyzeResponse> {
+  const body = new FormData();
+  body.append("patient_id", patientId);
+  body.append("image", image);
+
+  const response = await apiFetch("/skin-images/analyze", {
+    method: "POST",
+    body,
+  });
+  if (!response.ok) {
+    throw new ApiError(response.status, await readError(response));
+  }
+  return response.json() as Promise<SkinImageAnalyzeResponse>;
+}
+
+export async function listSkinImages(patientId?: string): Promise<SkinImageListResponse> {
+  const suffix = patientId ? `?patient_id=${encodeURIComponent(patientId)}` : "";
+  return jsonRequest<SkinImageListResponse>(`/skin-images${suffix}`);
+}
+
+export async function getSkinImageReport(reportId: string): Promise<SkinImageDetailResponse> {
+  return jsonRequest<SkinImageDetailResponse>(`/skin-images/${reportId}`);
 }

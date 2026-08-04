@@ -24,7 +24,7 @@ def _make_user(user_id=None) -> User:
         id=user_id or uuid4(),
         username="skin_user",
         password_hash="hashed",
-        external_id=None,
+        external_id="PATIENT-SKIN-001",
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc),
     )

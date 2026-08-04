@@ -76,6 +76,7 @@ async def call_llm(
     base_url: str,
     model: str,
     image_path: str | None = None,
+    image_data_uri: str | None = None,
     system_prompt: str | None = None,
     temperature: float = 0,
     max_tokens: int = 4096,
@@ -88,7 +89,9 @@ async def call_llm(
     )
 
     content: list[dict] = [{"type": "text", "text": prompt}]
-    if image_path:
+    if image_data_uri:
+        content.append({"type": "image_url", "image_url": {"url": image_data_uri}})
+    elif image_path:
         content.append({"type": "image_url", "image_url": {"url": image_to_data_uri(image_path)}})
 
     messages: list[dict] = []

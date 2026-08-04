@@ -42,8 +42,8 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
             detail="Username already registered",
         )
 
-    # Check for duplicate external_id
     if req.external_id is not None:
+        # Optional external IDs must still be unique when provided.
         existing_ext = await db.execute(
             select(User).where(User.external_id == req.external_id)
         )

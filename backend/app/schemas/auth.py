@@ -27,6 +27,14 @@ class RegisterRequest(BaseModel):
             raise ValueError("username must not be blank after trimming")
         return v
 
+    @field_validator("external_id")
+    @classmethod
+    def _trim_external_id(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        v = v.strip()
+        return v or None
+
 
 class LoginRequest(BaseModel):
     username: str

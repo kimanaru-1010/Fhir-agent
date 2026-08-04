@@ -18,16 +18,21 @@ import {
 import { Check, ImagePlus, Send, Stethoscope } from "lucide-react";
 import {
   ApiError,
+  analyzeSkinImage,
   getAccessToken,
   getSkinDiagnosticStatus,
+  listSkinImages,
   startSkinDiagnostic,
   submitSkinDiagnosticAnswers,
 } from "@/lib/api";
 import type {
+  SkinImageAnalyzeResponse,
+  SkinImageSummary,
   SkinDiagnosticResult,
   SkinDiagnosticStatus,
   SkinPendingQuestion,
 } from "@/lib/api";
+import { API_BASE } from "@/lib/config";
 
 
 function hasResult(status: SkinDiagnosticStatus | null): status is SkinDiagnosticStatus & { result: SkinDiagnosticResult } {
@@ -52,6 +57,7 @@ function stepLabel(step: string): string {
 }
 
 export function SkinDiagnosticPanel() {
+  const [mode, setMode] = useState<"diagnostic" | "graph">("diagnostic");
   const [image, setImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [anamnesis, setAnamnesis] = useState("");
@@ -60,6 +66,11 @@ export function SkinDiagnosticPanel() {
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(false);
   const [submittingAnswers, setSubmittingAnswers] = useState(false);
+  const [graphLoading, setGraphLoading] = useState(false);
+  const [graphPatientId, setGraphPatientId] = useState("");
+  const [graphResult, setGraphResult] = useState<SkinImageAnalyzeResponse | null>(null);
+  const [graphHistory, setGraphHistory] = useState<SkinImageSummary[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const submittedStepRef = useRef<string | null>(null);
@@ -102,6 +113,27 @@ export function SkinDiagnosticPanel() {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
   }, [previewUrl, stopPolling]);
 
+  const loadGraphHistory = useCallback(async () => {
+    if (!getAccessToken()) return;
+    setHistoryLoading(true);
+    try {
+      const data = await listSkinImages();
+      setGraphHistory(data.items);
+    } catch (err) {
+      if (err instanceof ApiError && err.status !== 404) {
+        setError(err.message);
+      }
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (mode === "graph") {
+      void loadGraphHistory();
+    }
+  }, [mode, loadGraphHistory]);
+
   function onImageChange(file: File | null) {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setImage(file);
@@ -142,6 +174,34 @@ export function SkinDiagnosticPanel() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function analyzeToGraph() {
+    const patientId = graphPatientId.trim();
+    if (!image || !patientId || graphLoading) return;
+    if (!getAccessToken()) {
+      setError("Sign in from the Chat tab before using skin image analysis.");
+      return;
+    }
+    setGraphLoading(true);
+    setGraphResult(null);
+    setError(null);
+    try {
+      const result = await analyzeSkinImage(image, patientId);
+      setGraphResult(result);
+      await loadGraphHistory();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to analyze image");
+    } finally {
+      setGraphLoading(false);
+    }
+  }
+
+  function backendImageUrl(path: string | null): string {
+    if (!path) return "";
+    if (path.startsWith("http")) return path;
+    const base = API_BASE.replace(/\/api$/, "");
+    return `${base}${path}`;
   }
 
   function setAnswer(question: SkinPendingQuestion, answer: string) {
@@ -199,11 +259,31 @@ export function SkinDiagnosticPanel() {
           <Stethoscope size={18} />
           <Heading size="sm">Skin Diagnostic</Heading>
         </HStack>
-        {status && (
-          <Badge colorPalette={status.status === "error" ? "red" : status.status === "completed" ? "green" : "blue"}>
-            {status.status}
-          </Badge>
-        )}
+        <HStack gap={2}>
+          <HStack gap={1} bg="gray.50" p={1} borderRadius="md">
+            <Button
+              size="xs"
+              variant={mode === "diagnostic" ? "solid" : "ghost"}
+              colorPalette="blue"
+              onClick={() => setMode("diagnostic")}
+            >
+              Diagnostic run
+            </Button>
+            <Button
+              size="xs"
+              variant={mode === "graph" ? "solid" : "ghost"}
+              colorPalette="blue"
+              onClick={() => setMode("graph")}
+            >
+              Image graph
+            </Button>
+          </HStack>
+          {status && mode === "diagnostic" && (
+            <Badge colorPalette={status.status === "error" ? "red" : status.status === "completed" ? "green" : "blue"}>
+              {status.status}
+            </Badge>
+          )}
+        </HStack>
       </HStack>
 
       {error && (
@@ -244,35 +324,60 @@ export function SkinDiagnosticPanel() {
               resize="vertical"
             />
           </Box>
-          <Button colorPalette="blue" onClick={startRun} disabled={!image || loading} loading={loading}>
-            <Send size={14} />
-            Start diagnostic run
-          </Button>
+          {mode === "graph" && (
+            <Box>
+              <Text fontSize="xs" fontWeight="medium" color="gray.600" mb={1}>Patient ID</Text>
+              <Input
+                value={graphPatientId}
+                onChange={(event) => setGraphPatientId(event.target.value)}
+                placeholder="FHIR Patient ID"
+                autoComplete="off"
+              />
+            </Box>
+          )}
+          {mode === "diagnostic" ? (
+            <Button colorPalette="blue" onClick={startRun} disabled={!image || loading} loading={loading}>
+              <Send size={14} />
+              Start diagnostic run
+            </Button>
+          ) : (
+            <Button
+              colorPalette="blue"
+              onClick={analyzeToGraph}
+              disabled={!image || !graphPatientId.trim() || graphLoading}
+              loading={graphLoading}
+            >
+              <Send size={14} />
+              Analyze and save to graph
+            </Button>
+          )}
         </VStack>
 
         <VStack align="stretch" gap={4} flex={1} minW={0}>
-          {status ? (
-            <Box borderWidth="1px" borderColor="gray.200" borderRadius="md" p={3}>
-              <HStack justify="space-between" mb={2}>
-                <Text fontSize="sm" fontWeight="medium">{stepLabel(status.current_step)}</Text>
-                {(status.status === "running" || loading) && <Spinner size="xs" />}
-              </HStack>
-              <Box h="2" bg="gray.100" borderRadius="full" overflow="hidden">
-                <Box
-                  h="100%"
-                  bg="blue.500"
-                  width={`${Math.min((status.progress / 7) * 100, 100)}%`}
-                  transition="width 0.2s"
-                />
-              </Box>
-            </Box>
-          ) : (
-            <Flex flex={1} align="center" justify="center" minH="260px" color="gray.500">
-              <Text fontSize="sm">Upload an image and start a run.</Text>
-            </Flex>
-          )}
+          {mode === "diagnostic" ? (
+            <>
+              {status ? (
+                <Box borderWidth="1px" borderColor="gray.200" borderRadius="md" p={3}>
+                  <HStack justify="space-between" mb={2}>
+                    <Text fontSize="sm" fontWeight="medium">{stepLabel(status.current_step)}</Text>
+                    {(status.status === "running" || loading) && <Spinner size="xs" />}
+                  </HStack>
+                  <Box h="2" bg="gray.100" borderRadius="full" overflow="hidden">
+                    <Box
+                      h="100%"
+                      bg="blue.500"
+                      width={`${Math.min((status.progress / 7) * 100, 100)}%`}
+                      transition="width 0.2s"
+                    />
+                  </Box>
+                </Box>
+              ) : (
+                <Flex flex={1} align="center" justify="center" minH="260px" color="gray.500">
+                  <Text fontSize="sm">Upload an image and start a run.</Text>
+                </Flex>
+              )}
 
-          {pendingQuestions.length > 0 && (
+              {pendingQuestions.length > 0 && (
             <Box borderWidth="1px" borderColor="gray.200" borderRadius="md" p={3}>
               <Heading size="xs" mb={3}>Clinical questions</Heading>
               <VStack align="stretch" gap={3}>
@@ -316,9 +421,9 @@ export function SkinDiagnosticPanel() {
                 Submit answers
               </Button>
             </Box>
-          )}
+              )}
 
-          {hasResult(status) && (
+              {hasResult(status) && (
             <Box borderWidth="1px" borderColor="gray.200" borderRadius="md" p={3}>
               <Heading size="xs" mb={3}>Diagnostic result</Heading>
               <VStack align="stretch" gap={3}>
@@ -355,6 +460,56 @@ export function SkinDiagnosticPanel() {
                 </Box>
               </VStack>
             </Box>
+              )}
+            </>
+          ) : (
+            <>
+              {graphResult && (
+                <Box borderWidth="1px" borderColor="gray.200" borderRadius="md" p={3}>
+                  <HStack justify="space-between" align="start" mb={2}>
+                    <Heading size="xs">Saved analysis</Heading>
+                    <Badge colorPalette="green">{graphResult.modality}</Badge>
+                  </HStack>
+                  <Text fontSize="xs" color="gray.500" mb={2}>
+                    DiagnosticReport/{graphResult.diagnostic_report_id}
+                  </Text>
+                  <Text fontSize="sm" whiteSpace="pre-wrap">{graphResult.analysis_text}</Text>
+                </Box>
+              )}
+
+              <Box borderWidth="1px" borderColor="gray.200" borderRadius="md" p={3}>
+                <HStack justify="space-between" mb={3}>
+                  <Heading size="xs">Image history</Heading>
+                  {historyLoading && <Spinner size="xs" />}
+                </HStack>
+                {graphHistory.length === 0 ? (
+                  <Text fontSize="sm" color="gray.500">No saved skin image analyses yet.</Text>
+                ) : (
+                  <VStack align="stretch" gap={3}>
+                    {graphHistory.map((item) => (
+                      <HStack key={item.diagnostic_report_id} align="start" gap={3} borderBottom="1px solid" borderColor="gray.100" pb={3}>
+                        {item.image_url ? (
+                          <Box w="72px" h="72px" flexShrink={0} overflow="hidden" borderRadius="md" borderWidth="1px" borderColor="gray.200">
+                            <img
+                              src={backendImageUrl(item.image_url)}
+                              alt="Saved skin image"
+                              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                            />
+                          </Box>
+                        ) : null}
+                        <Box minW={0}>
+                          <HStack gap={2} mb={1}>
+                            {item.modality && <Badge size="sm">{item.modality}</Badge>}
+                            {item.created_at && <Text fontSize="xs" color="gray.500">{item.created_at}</Text>}
+                          </HStack>
+                          <Text fontSize="sm" whiteSpace="pre-wrap" lineClamp={4}>{item.conclusion}</Text>
+                        </Box>
+                      </HStack>
+                    ))}
+                  </VStack>
+                )}
+              </Box>
+            </>
           )}
         </VStack>
       </Flex>

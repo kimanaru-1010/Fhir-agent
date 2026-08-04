@@ -657,7 +657,15 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
               autoComplete={authMode === "login" ? "current-password" : "new-password"}
             />
             {error && <Text color="red.500" fontSize="sm">{error}</Text>}
-            <Button colorPalette="blue" onClick={handleAuthSubmit} loading={authLoading}>
+            <Button
+              colorPalette="blue"
+              onClick={handleAuthSubmit}
+              loading={authLoading}
+              disabled={
+                !username.trim() ||
+                !password
+              }
+            >
               {authMode === "login" ? "Sign in" : "Create and sign in"}
             </Button>
             <Button

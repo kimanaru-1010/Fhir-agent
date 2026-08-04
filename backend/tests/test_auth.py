@@ -140,6 +140,7 @@ def test_register_duplicate_username(mocker: MockerFixture):
     resp = client.post("/api/auth/register", json={
         "username": "dup_user",
         "password": "strongpassword123",
+        "external_id": "EXT-DUP-USERNAME",
     })
     assert resp.status_code == 409
 
@@ -156,6 +157,7 @@ def test_register_duplicate_external_id(mocker: MockerFixture):
         "external_id": "SAME-EXT",
     })
     assert resp.status_code == 409
+    assert resp.json()["detail"] == "external_id already registered"
 
 
 def test_register_integrity_error(mocker: MockerFixture):
@@ -175,6 +177,7 @@ def test_register_integrity_error(mocker: MockerFixture):
     resp = client.post("/api/auth/register", json={
         "username": "race_user",
         "password": "strongpassword123",
+        "external_id": "EXT-RACE",
     })
     assert resp.status_code == 409
     assert mock_session.rollback.assert_awaited_once
@@ -470,6 +473,7 @@ def test_password_not_in_register_response(mocker: MockerFixture):
     resp = client.post("/api/auth/register", json={
         "username": "sec_user",
         "password": "mysecret123",
+        "external_id": "EXT-SEC-1",
     })
     body = resp.json()
 
@@ -506,6 +510,7 @@ def test_password_hash_not_in_response(mocker: MockerFixture):
     resp = client.post("/api/auth/register", json={
         "username": "sec_user2",
         "password": "mysecret456",
+        "external_id": "EXT-SEC-2",
     })
     assert "password_hash" not in resp.json()
 
@@ -560,6 +565,7 @@ def test_register_short_password(mocker: MockerFixture):
     resp = client.post("/api/auth/register", json={
         "username": "shortpwd_user",
         "password": "1234567",
+        "external_id": "EXT-SHORT-PWD",
     })
     assert resp.status_code == 422
 
@@ -571,8 +577,34 @@ def test_register_invalid_username(mocker: MockerFixture):
     resp = client.post("/api/auth/register", json={
         "username": "bad user!@#",
         "password": "strongpassword123",
+        "external_id": "EXT-BAD-USERNAME",
     })
     assert resp.status_code == 422
+
+
+def test_register_allows_missing_external_id(mocker: MockerFixture):
+    app, mock_session, mock_result = _make_test_app()
+    client = TestClient(app)
+
+    mock_result.scalar_one_or_none.return_value = None
+    mock_session.add = MagicMock()
+    mock_session.commit = AsyncMock()
+
+    now = datetime.now(timezone.utc)
+
+    async def _refresh_user(user):
+        user.id = uuid4()
+        user.created_at = now
+        user.updated_at = now
+
+    mock_session.refresh = AsyncMock(side_effect=_refresh_user)
+
+    resp = client.post("/api/auth/register", json={
+        "username": "doctor_user",
+        "password": "strongpassword123",
+    })
+    assert resp.status_code == 201
+    assert resp.json()["external_id"] is None
 
 
 def test_login_empty_username_rejected(mocker: MockerFixture):
