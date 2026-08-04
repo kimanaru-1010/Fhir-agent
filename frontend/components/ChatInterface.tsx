@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { API_BASE, DEMO_SCENARIOS, DOMAIN } from "@/lib/config";
+import { API_BASE, DOMAIN } from "@/lib/config";
 import type { GraphData } from "@/lib/config";
 import {
   ApiError,
@@ -727,8 +727,6 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
     }
   }
 
-  const allPrompts = DEMO_SCENARIOS.flatMap((s) => s.prompts);
-
   if (!authReady) {
     return (
       <Flex align="center" justify="center" h="100%">
@@ -868,36 +866,19 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
         )}
 
         {messages.length === 0 && !loading && !loadingMessages && (
-          <Flex direction="column" flex={1} justify="center" px={4} py={6}>
-            <VStack gap={4}>
+          <Flex direction="column" flex={1} justify="center" px={4} py={4} minH={0}>
+            <VStack gap={2}>
               <Text fontSize="lg" fontWeight="medium" color="gray.700">
                 How can I help you?
               </Text>
-              <HStack gap={1} flexShrink={0} color="gray.500" fontSize="xs" fontWeight="medium">
+              <Button
+                size="xs"
+                variant="outline"
+                onClick={() => sendMessage("Show me all patients with a chronic diagnosis")}
+              >
                 <Sparkles size={14} />
-                <Text>Try these</Text>
-              </HStack>
-              <Flex gap={2} flexWrap="wrap" justify="center" maxW="500px">
-                {allPrompts.map((prompt) => (
-                  <Button
-                    key={prompt}
-                    size="xs"
-                    variant="outline"
-                    rounded="full"
-                    px={3}
-                    fontWeight="normal"
-                    whiteSpace="normal"
-                    textAlign="start"
-                    height="auto"
-                    py={1.5}
-                    maxW="320px"
-                    onClick={() => sendMessage(prompt)}
-                    title={prompt}
-                  >
-                    {prompt}
-                  </Button>
-                ))}
-              </Flex>
+                Try a sample prompt
+              </Button>
             </VStack>
           </Flex>
         )}
@@ -1072,7 +1053,45 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
           <div ref={messagesEndRef} />
         </VStack>
 
-        <Box px={4} py={3} borderTop="1px solid" borderColor="gray.200">
+        <Box px={4} pt={3} pb="72px" borderTop="1px solid" borderColor="gray.200">
+          <Box mb={2}>
+            <HStack gap={2} align="center" flexWrap="wrap">
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                style={{ display: "none" }}
+                onChange={(event) => setChatImage(event.target.files?.[0] ?? null)}
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={loading || uploadingImage}
+              >
+                <ImagePlus size={16} />
+                Upload image
+              </Button>
+              {chatImage && (
+                <>
+                  <Badge variant="subtle" colorPalette="blue" maxW="260px" truncate>
+                    {chatImage.name}
+                  </Badge>
+                  <Input
+                    value={chatImagePatientId}
+                    onChange={(event) => setChatImagePatientId(event.target.value)}
+                    placeholder="Patient ID"
+                    size="sm"
+                    w="160px"
+                    autoComplete="off"
+                  />
+                  <IconButton aria-label="Remove image" size="sm" variant="ghost" onClick={clearChatImage}>
+                    <X size={14} />
+                  </IconButton>
+                </>
+              )}
+            </HStack>
+          </Box>
           <Box
             borderWidth="1px"
             borderColor="gray.200"
@@ -1080,28 +1099,6 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
             _focusWithin={{ borderColor: "blue.400", boxShadow: "0 0 0 1px var(--chakra-colors-blue-400)" }}
             transition="border-color 0.2s, box-shadow 0.2s"
           >
-            {chatImage && (
-              <Box px={3} py={2} borderBottomWidth="1px" borderColor="gray.100" bg="gray.50">
-                <VStack align="stretch" gap={2}>
-                  <HStack justify="space-between" gap={2}>
-                    <HStack gap={2} minW={0}>
-                      <ImagePlus size={14} />
-                      <Text fontSize="xs" truncate>{chatImage.name}</Text>
-                    </HStack>
-                    <IconButton aria-label="Remove image" size="2xs" variant="ghost" onClick={clearChatImage}>
-                      <X size={12} />
-                    </IconButton>
-                  </HStack>
-                  <Input
-                    value={chatImagePatientId}
-                    onChange={(event) => setChatImagePatientId(event.target.value)}
-                    placeholder="Patient ID"
-                    size="sm"
-                    autoComplete="off"
-                  />
-                </VStack>
-              </Box>
-            )}
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -1117,22 +1114,6 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
             />
             <HStack px={2} py={1.5} justify="space-between">
               <HStack gap={2}>
-                <input
-                  ref={imageInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  style={{ display: "none" }}
-                  onChange={(event) => setChatImage(event.target.files?.[0] ?? null)}
-                />
-                <IconButton
-                  aria-label="Attach skin image"
-                  size="xs"
-                  variant="ghost"
-                  onClick={() => imageInputRef.current?.click()}
-                  disabled={loading || uploadingImage}
-                >
-                  <ImagePlus size={14} />
-                </IconButton>
                 <Text fontSize="xs" color="gray.400" display={{ base: "none", sm: "block" }}>
                   {chatImage ? "Image upload will save to Neo4j" : "Enter to send, Shift+Enter for new line"}
                 </Text>
