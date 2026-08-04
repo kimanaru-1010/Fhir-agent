@@ -14,6 +14,7 @@ from app.skin_diagnostic.llm_client import strip_hidden_reasoning
 from app.skin_images.fhir_builders import build_skin_analysis_bundle
 from app.skin_images.image_processing import ProcessedImage
 from app.skin_images import neo4j_repository
+from app.skin_images.references import build_image_api_url, extract_binary_id
 from app.skin_images.router import router
 from app.skin_images.schemas import ResolvedSkinImageSearchFilters, SkinImageSearchFilters
 from app.skin_images.search_filters import LOCAL_TZ, resolve_skin_image_filters
@@ -60,6 +61,16 @@ def test_analyze_requires_linked_patient_in_neo4j(mocker):
     assert response.json()["detail"] == "Patient was not found in Neo4j"
     process_mock.assert_not_awaited()
     save_mock.assert_not_awaited()
+
+
+def test_extract_binary_id_accepts_id_relative_and_absolute_url():
+    assert extract_binary_id("17761") == "17761"
+    assert extract_binary_id("Binary/17761") == "17761"
+    assert extract_binary_id("https://fhir.example.test/fhir/Binary/17761") == "17761"
+
+
+def test_build_image_api_url_uses_binary_id_only():
+    assert build_image_api_url("Binary/17761") == "/api/skin-images/files/17761"
 
 
 def test_analyze_saves_skin_resources_for_selected_patient(mocker):
@@ -109,6 +120,7 @@ def test_analyze_saves_skin_resources_for_selected_patient(mocker):
     assert data["media_id"] == "media-1"
     assert data["diagnostic_report_id"] == "report-1"
     assert data["analysis_text"] == "AI skin analysis"
+    assert data["image_url"].startswith("/api/skin-images/files/binary-")
     save_mock.assert_awaited_once()
     _, kwargs = save_mock.await_args
     assert kwargs["patient_id"] == "10796"
@@ -164,6 +176,21 @@ def test_list_images_can_filter_by_patient_id(mocker):
     list_mock.assert_awaited_once_with("patient-a")
 
 
+def test_list_images_allows_doctor_with_external_id_to_filter_any_patient(mocker):
+    app = _make_app(_make_user("patient-a"))
+    client = TestClient(app)
+
+    list_mock = mocker.patch(
+        "app.skin_images.router.list_skin_images",
+        new=AsyncMock(return_value=[]),
+    )
+
+    response = client.get("/api/skin-images?patient_id=patient-b")
+
+    assert response.status_code == 200
+    list_mock.assert_awaited_once_with("patient-b")
+
+
 def test_get_image_file_returns_binary_data_from_neo4j(mocker):
     app = _make_app(_make_user())
     client = TestClient(app)
@@ -185,6 +212,21 @@ def test_get_image_file_returns_binary_data_from_neo4j(mocker):
     assert response.status_code == 200
     assert response.headers["content-type"] == "image/jpeg"
     assert response.content == b"normalized-image"
+
+
+@pytest.mark.anyio
+async def test_get_binary_query_keeps_patient_scope(mocker):
+    execute_mock = mocker.patch(
+        "app.skin_images.neo4j_repository.execute_cypher",
+        new=AsyncMock(return_value=[]),
+    )
+
+    await neo4j_repository.get_binary_for_skin_image("binary-1")
+
+    query = execute_mock.await_args.args[0]
+    assert "WITH patient, content, code" in query
+    assert "WITH patient, content, resolved" in query
+    assert "RETURN patient.id AS patient_id" in query
 
 
 def test_resolve_skin_image_filters_converts_today_to_utc_range():
@@ -213,6 +255,7 @@ async def test_search_patient_skin_images_starts_from_patient_and_limits(mocker)
     assert "MATCH (patient:FHIRResource:Patient" in query
     assert "id: $patient_id" in query
     assert "LIMIT $count" in query
+    assert "binary.data" not in query
     assert params["patient_id"] == "10796"
     assert params["modality"] == "XC"
     assert params["count"] == 3
@@ -229,7 +272,7 @@ async def test_skin_image_chat_request_returns_attachments(mocker):
                     "diagnostic_report_id": "report-1",
                     "media_id": "media-1",
                     "binary_id": "binary-1",
-                    "image_url": "/api/skin-images/files/binary-1",
+                    "url": "/api/skin-images/files/binary-1",
                     "content_type": "image/jpeg",
                     "created_at": "2026-08-04T02:00:00Z",
                     "conclusion": "AI conclusion",
@@ -243,6 +286,7 @@ async def test_skin_image_chat_request_returns_attachments(mocker):
     assert result.handled is True
     assert result.attachments
     assert result.attachments[0].binary_id == "binary-1"
+    assert result.attachments[0].url == "/api/skin-images/files/binary-1"
 
 
 def test_build_skin_analysis_bundle_preserves_resource_order():

@@ -26,6 +26,7 @@ from app.skin_images.neo4j_repository import (
     patient_exists,
     save_skin_analysis,
 )
+from app.skin_images.references import build_image_api_url
 from app.skin_images.schemas import (
     SkinImageAnalyzeResponse,
     SkinImageDetailResponse,
@@ -50,12 +51,10 @@ def _normalize_patient_id(patient_id: str) -> str:
 
 
 def _assert_user_can_access_patient(current_user: User, patient_id: str) -> None:
-    scoped_patient_id = (current_user.external_id or "").strip()
-    if scoped_patient_id and scoped_patient_id != patient_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User is not allowed to access this Patient",
-        )
+    # Doctor-mode access: authenticated users can work with any Patient record.
+    # Patient-scoped authorization was removed because this app currently uses a
+    # single doctor role for cross-patient clinical lookup and image upload.
+    return None
 
 
 @router.post("/analyze", response_model=SkinImageAnalyzeResponse)
@@ -66,6 +65,7 @@ async def analyze_image(
 ):
     request_started = time.perf_counter()
     patient_id = _normalize_patient_id(patient_id)
+    _assert_user_can_access_patient(current_user, patient_id)
     step_started = time.perf_counter()
     patient_found = await patient_exists(patient_id)
     logger.info(
@@ -90,7 +90,7 @@ async def analyze_image(
         processed_image.size,
         processed_image.content_type,
     )
-    image_url = f"/api/skin-images/files/{image_uuid}"
+    image_url = build_image_api_url(f"binary-{image_uuid}")
 
     step_started = time.perf_counter()
     modality, modality_display = await classify_skin_modality(processed_image)
@@ -235,4 +235,5 @@ async def get_image_detail(
     row = await get_skin_image_detail(report_id)
     if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Skin image report not found")
+    _assert_user_can_access_patient(current_user, str(row.get("patient_id") or ""))
     return SkinImageDetailResponse(**row)

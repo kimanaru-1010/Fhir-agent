@@ -39,6 +39,7 @@ export interface ChatMessage {
 
 export interface ChatImageAttachment {
   type: "image";
+  placement?: "user-upload" | "assistant-result";
   patient_id: string;
   diagnostic_report_id: string;
   media_id: string;
@@ -64,12 +65,14 @@ export interface InitialExchangeResponse {
   conversation: Conversation;
   user_message: ChatMessage;
   assistant_message: ChatMessage;
+  attachments?: ChatImageAttachment[];
 }
 
 export interface MessageExchangeResponse {
   conversation_id: string;
   user_message: ChatMessage;
   assistant_message: ChatMessage;
+  attachments?: ChatImageAttachment[];
 }
 
 export interface SkinPendingQuestion {

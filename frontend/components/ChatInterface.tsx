@@ -627,6 +627,7 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
 
   async function uploadImageFromChat(messageText: string) {
     if (!chatImage || !user) return;
+
     const patientId = chatImagePatientId.trim();
     if (!patientId) {
       setError("Enter Patient ID before uploading the image.");
@@ -636,25 +637,19 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
     const localUserId = `local-user-${crypto.randomUUID()}`;
     const localAssistantId = `local-assistant-${crypto.randomUUID()}`;
     const userContent = messageText || `Upload skin image for Patient/${patientId}`;
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: localUserId,
-        conversation_id: activeConversationId ?? "local-upload",
-        role: "user",
-        content: userContent,
-        created_at: new Date().toISOString(),
-      },
-    ]);
-    setInput("");
+
     setUploadingImage(true);
     setLoading(true);
     setError(null);
 
     try {
       const result = await analyzeSkinImage(chatImage, patientId);
+
+      const conversationId = activeConversationId ?? "local-upload";
+
       const attachment: ChatImageAttachment = {
         type: "image",
+        placement: "user-upload",
         patient_id: patientId,
         diagnostic_report_id: result.diagnostic_report_id,
         media_id: result.media_id,
@@ -662,22 +657,31 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
         url: result.image_url,
         content_type: chatImage.type || "image/jpeg",
         created_at: result.created_at,
-        title: "Ảnh phân tích da",
-        description: result.analysis_text,
       };
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: localAssistantId,
-          conversation_id: activeConversationId ?? "local-upload",
-          role: "assistant",
-          content: `Đã phân tích và lưu ảnh da cho bệnh nhân ${patientId}.\n\n${result.analysis_text}`,
-          created_at: new Date().toISOString(),
-          attachments: [attachment],
-        },
-      ]);
-      clearChatImage();
+
+      const userMessage: Message = {
+        id: localUserId,
+        conversation_id: conversationId,
+        role: "user",
+        content: userContent,
+        created_at: new Date().toISOString(),
+        attachments: [attachment],
+      };
+
+      const assistantMessage: Message = {
+        id: localAssistantId,
+        conversation_id: conversationId,
+        role: "assistant",
+        content: `Đã phân tích và lưu ảnh da cho bệnh nhân ${patientId}.\n\n${result.analysis_text}`,
+        created_at: new Date().toISOString(),
+        attachments: [],
+      };
+
+      setMessages((previous) => [...previous, userMessage, assistantMessage]);
+
+      setInput("");
       setChatImagePatientId("");
+      clearChatImage();
     } catch (err) {
       setMessages((prev) => [
         ...prev,
@@ -690,6 +694,7 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
           failed: true,
         },
       ]);
+      setError(err instanceof Error ? err.message : "Unable to upload image");
     } finally {
       setUploadingImage(false);
       setLoading(false);
@@ -966,21 +971,23 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
                           Retry
                         </Button>
                       )}
-                      {msg.attachments && msg.attachments.length > 0 && (
-                        <VStack align="stretch" gap={3} mt={3}>
-                          {msg.attachments.map((attachment) => (
-                            <SkinImageAttachmentView
-                              key={`${attachment.diagnostic_report_id}-${attachment.binary_id}`}
-                              attachment={attachment}
-                            />
-                          ))}
-                        </VStack>
-                      )}
                     </Box>
                   ) : (
                     <Text fontSize="sm" whiteSpace="pre-wrap" color={msg.failed ? "red.600" : undefined}>
                       {msg.content}
                     </Text>
+                  )}
+                  {msg.attachments && msg.attachments.length > 0 && (
+                    <VStack align="stretch" gap={3} mt={3}>
+                      {msg.attachments.map((attachment) => (
+                        <SkinImageAttachmentView
+                          key={`${attachment.diagnostic_report_id}-${attachment.binary_id}`}
+                          attachment={attachment}
+                          role={msg.role}
+                          messageContent={msg.content}
+                        />
+                      ))}
+                    </VStack>
                   )}
                 </Box>
               </Flex>
@@ -1207,7 +1214,15 @@ function ToolCallTimeline({ toolCalls }: { toolCalls: ToolCall[] }) {
   );
 }
 
-function SkinImageAttachmentView({ attachment }: { attachment: ChatImageAttachment }) {
+function SkinImageAttachmentView({
+  attachment,
+  role,
+  messageContent,
+}: {
+  attachment: ChatImageAttachment;
+  role: "user" | "assistant" | "system";
+  messageContent: string;
+}) {
   const [objectUrl, setObjectUrl] = useState("");
   const [loadError, setLoadError] = useState("");
 
@@ -1249,29 +1264,57 @@ function SkinImageAttachmentView({ attachment }: { attachment: ChatImageAttachme
     };
   }, [attachment.url]);
 
-  const shortDescription = attachment.description
+  // Use placement if available, otherwise fallback based on role
+  const placement = attachment.placement ?? (role === "user" ? "user-upload" : "assistant-result");
+
+  if (placement === "user-upload") {
+    return (
+      <Box mt={2} maxW="420px" overflow="hidden" borderRadius="xl" borderWidth="1px" borderColor="gray.200">
+        {objectUrl ? (
+          <Box bg="gray.50">
+            <img
+              src={objectUrl}
+              alt={attachment.title || "Skin image attachment"}
+              style={{ width: "100%", maxHeight: "360px", objectFit: "contain", display: "block" }}
+            />
+          </Box>
+        ) : (
+          <Flex h="160px" align="center" justify="center" bg="gray.50" color={loadError ? "red.500" : "gray.500"}>
+            {loadError ? <Text fontSize="sm">{loadError}</Text> : <Spinner size="sm" />}
+          </Flex>
+        )}
+      </Box>
+    );
+  }
+
+  // Assistant result view
+  const descriptionPreview = attachment.description?.slice(0, 80).toLowerCase() || "";
+  const shouldShowDescription = Boolean(
+    attachment.description &&
+      (!descriptionPreview || !messageContent.toLowerCase().includes(descriptionPreview)),
+  );
+  const shortDescription = shouldShowDescription && attachment.description
     ? attachment.description.length > 320
       ? `${attachment.description.slice(0, 320).trim()}...`
       : attachment.description
     : "";
 
   return (
-    <Box borderWidth="1px" borderColor="gray.200" borderRadius="md" overflow="hidden" bg="white">
-      <Box px={3} py={2} borderBottomWidth="1px" borderColor="gray.100">
-        <HStack justify="space-between" align="start" gap={3}>
-          <Box minW={0}>
-            <Text fontSize="sm" fontWeight="medium">
-              {attachment.title || "Skin image"}
-            </Text>
-            <Text fontSize="xs" color="gray.500">
-              Patient/{attachment.patient_id} · {attachment.created_at || attachment.diagnostic_report_id}
-            </Text>
-          </Box>
-          <Badge size="sm">{attachment.content_type || "image"}</Badge>
-        </HStack>
-      </Box>
+    <Box mt={3}>
+      {attachment.title && (
+        <Text fontWeight="semibold" fontSize="sm">
+          {attachment.title}
+        </Text>
+      )}
+
+      {attachment.created_at && (
+        <Text fontSize="xs" color="gray.500">
+          Patient/{attachment.patient_id} · {attachment.created_at}
+        </Text>
+      )}
+
       {objectUrl ? (
-        <Box bg="gray.50">
+        <Box bg="gray.50" mt={2} borderRadius="md" overflow="hidden" borderWidth="1px" borderColor="gray.200">
           <img
             src={objectUrl}
             alt={attachment.title || "Skin image attachment"}
@@ -1279,12 +1322,13 @@ function SkinImageAttachmentView({ attachment }: { attachment: ChatImageAttachme
           />
         </Box>
       ) : (
-        <Flex h="160px" align="center" justify="center" bg="gray.50" color={loadError ? "red.500" : "gray.500"}>
+        <Flex h="160px" align="center" justify="center" bg="gray.50" color={loadError ? "red.500" : "gray.500"} mt={2} borderRadius="md">
           {loadError ? <Text fontSize="sm">{loadError}</Text> : <Spinner size="sm" />}
         </Flex>
       )}
+
       {shortDescription && (
-        <Text px={3} py={2} fontSize="xs" color="gray.600" whiteSpace="pre-wrap">
+        <Text mt={2} fontSize="xs" color="gray.600" whiteSpace="pre-wrap" lineClamp={3}>
           {shortDescription}
         </Text>
       )}

@@ -38,7 +38,7 @@ def resolve_skin_image_filters(
         from_datetime=_to_utc(local_from),
         to_datetime=_to_utc(local_to),
         sort=filters.sort if filters.sort in {"asc", "desc"} else "desc",
-        count=min(max(filters.count, 1), 10),
+        count=max(filters.count, 1) if filters.count is not None else None,
     )
 
 

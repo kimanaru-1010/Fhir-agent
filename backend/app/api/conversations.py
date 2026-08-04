@@ -19,7 +19,7 @@ from app.schemas.conversation import (
     ConversationResponse,
 )
 from app.schemas.message import MessageResponse
-from app.services.chat import generate_assistant_response, persist_chat_memory
+from app.services.chat import generate_assistant_exchange, persist_chat_memory
 from app.services.chat_stream import (
     serialize_conversation,
     serialize_message,
@@ -116,7 +116,7 @@ async def create_conversation(
         )
 
     try:
-        assistant_content = await generate_assistant_response(
+        assistant_content, attachments = await generate_assistant_exchange(
             content=req.first_message,
             user_id=str(current_user.id),
             conversation_id=str(conversation.id),
@@ -126,6 +126,7 @@ async def create_conversation(
             conversation_id=conversation.id,
             role="assistant",
             content=assistant_content,
+            attachments=[item.model_dump(mode="json") for item in attachments],
         )
         db.add(assistant_message)
         conversation.updated_at = datetime.now(timezone.utc)

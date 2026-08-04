@@ -50,7 +50,7 @@ class SkinImageSearchFilters(BaseModel):
     time_range: str | None = None
     last_N_minutes: int | None = None
     sort: Literal["asc", "desc"] = "desc"
-    count: int = Field(default=5, ge=1, le=10)
+    count: int | None = Field(default=5, ge=1)
 
 
 class ResolvedSkinImageSearchFilters(BaseModel):
@@ -59,7 +59,7 @@ class ResolvedSkinImageSearchFilters(BaseModel):
     from_datetime: datetime | None = None
     to_datetime: datetime | None = None
     sort: Literal["asc", "desc"] = "desc"
-    count: int = Field(default=5, ge=1, le=10)
+    count: int | None = Field(default=5, ge=1)
 
 
 class SkinImageSearchResult(BaseModel):

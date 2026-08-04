@@ -7,6 +7,7 @@ from typing import Any
 
 from app.graph.client import execute_cypher
 from app.skin_images.fhir_builders import build_skin_analysis_bundle
+from app.skin_images.references import build_image_api_url, extract_binary_id
 from app.skin_images.schemas import ResolvedSkinImageSearchFilters
 
 
@@ -134,7 +135,8 @@ async def list_skin_images(patient_id: str | None = None) -> list[dict[str, Any]
         MATCH (subject:Reference)<-[:subject]-(report:FHIRResource:DiagnosticReport)
         WHERE $patient_id IS NULL OR subject.reference = "Patient/" + $patient_id
         OPTIONAL MATCH (report)-[:code]->(code:FHIR_ELEMENT:code)
-        WITH subject, report, code
+        OPTIONAL MATCH (subject)-[:RESOLVES_TO]->(patient:FHIRResource:Patient)
+        WITH subject, patient, report, code
         WHERE code.text IS NULL OR code.text = "AI Skin Lesion Analysis"
         MATCH (report)-[:media]->(:FHIR_ELEMENT:media)
           -[:link]->(:Reference)-[:RESOLVES_TO]->(media:FHIRResource:Media)
@@ -143,6 +145,7 @@ async def list_skin_images(patient_id: str | None = None) -> list[dict[str, Any]
         OPTIONAL MATCH (media)-[:modality]->(:FHIR_ELEMENT:modality)
           -[:coding]->(coding:FHIR_ELEMENT:Coding)
         RETURN report.id AS diagnostic_report_id,
+               coalesce(patient.id, replace(subject.reference, "Patient/", "")) AS patient_id,
                report.conclusion AS conclusion,
                report.issued AS created_at,
                media.id AS media_id,
@@ -163,9 +166,10 @@ async def list_skin_images(patient_id: str | None = None) -> list[dict[str, Any]
 async def get_skin_image_detail(report_id: str) -> dict[str, Any] | None:
     rows = await execute_cypher(
         """
-        MATCH (:Reference)<-[:subject]-(report:FHIRResource:DiagnosticReport {id: $report_id})
+        MATCH (subject:Reference)<-[:subject]-(report:FHIRResource:DiagnosticReport {id: $report_id})
         OPTIONAL MATCH (report)-[:code]->(code:FHIR_ELEMENT:code)
-        WITH report, code
+        OPTIONAL MATCH (subject)-[:RESOLVES_TO]->(patient:FHIRResource:Patient)
+        WITH subject, patient, report, code
         WHERE code.text IS NULL OR code.text = "AI Skin Lesion Analysis"
         OPTIONAL MATCH (report)-[:media]->(:FHIR_ELEMENT:media)
           -[:link]->(:Reference)-[:RESOLVES_TO]->(media:FHIRResource:Media)
@@ -174,6 +178,7 @@ async def get_skin_image_detail(report_id: str) -> dict[str, Any] | None:
         OPTIONAL MATCH (media)-[:modality]->(:FHIR_ELEMENT:modality)
           -[:coding]->(coding:FHIR_ELEMENT:Coding)
         RETURN report.id AS diagnostic_report_id,
+               coalesce(patient.id, replace(subject.reference, "Patient/", "")) AS patient_id,
                report.conclusion AS conclusion,
                report.issued AS created_at,
                media.id AS media_id,
@@ -201,10 +206,10 @@ async def get_binary_for_skin_image(binary_id: str) -> dict[str, Any] | None:
           -[:link]->(:Reference)-[:RESOLVES_TO]->(:FHIRResource:Media)
           -[:content]->(content:FHIR_ELEMENT:content)
         OPTIONAL MATCH (report)-[:code]->(code:FHIR_ELEMENT:code)
-        WITH content, code
+        WITH patient, content, code
         WHERE code.text IS NULL OR code.text = "AI Skin Lesion Analysis"
         OPTIONAL MATCH (content)-[:RESOLVES_TO]->(resolved:FHIRResource:Binary)
-        WITH content, resolved
+        WITH patient, content, resolved
         WHERE content.url = "Binary/" + $binary_id
            OR resolved.id = $binary_id
         MATCH (binary:FHIRResource:Binary {id: $binary_id})
@@ -224,6 +229,7 @@ async def search_patient_skin_images(
     filters: ResolvedSkinImageSearchFilters,
 ) -> list[dict[str, Any]]:
     order_clause = "ORDER BY issuedAt ASC" if filters.sort == "asc" else "ORDER BY issuedAt DESC"
+    limit_clause = "LIMIT $count" if filters.count is not None else ""
     rows = await execute_cypher(
         f"""
         MATCH (patient:FHIRResource:Patient {{
@@ -237,7 +243,12 @@ async def search_patient_skin_images(
           -[:link]->(:Reference)
           -[:RESOLVES_TO]->(media:FHIRResource:Media)
         MATCH (media)-[:content]->(content:FHIR_ELEMENT:content)
-        MATCH (content)-[:RESOLVES_TO]->(binary:FHIRResource:Binary)
+        OPTIONAL MATCH (content)-[:RESOLVES_TO]->(resolved_binary:FHIRResource:Binary)
+        OPTIONAL MATCH (binary:FHIRResource:Binary)
+        WHERE binary = resolved_binary
+           OR content.url = binary.id
+           OR content.url = "Binary/" + binary.id
+           OR content.url ENDS WITH "/Binary/" + binary.id
         OPTIONAL MATCH (media)-[:modality]->(:FHIR_ELEMENT:modality)
           -[:coding]->(coding:FHIR_ELEMENT:Coding)
         WITH patient, report, media, content, binary, coding,
@@ -254,9 +265,9 @@ async def search_patient_skin_images(
                binary.id AS binary_id,
                coding.code AS modality,
                coalesce(content.contentType, binary.contentType) AS content_type,
-               "/api/skin-images/files/" + binary.id AS image_url
+               coalesce(binary.id, content.url) AS binary_reference
         {order_clause}
-        LIMIT $count
+        {limit_clause}
         """,
         {
             "patient_id": filters.patient_id,
@@ -267,4 +278,21 @@ async def search_patient_skin_images(
         },
         collect=False,
     )
-    return [row for row in rows if row.get("binary_id") and row.get("image_url")]
+    results: list[dict[str, Any]] = []
+    for row in rows:
+        binary_id = extract_binary_id(row.get("binary_id") or row.get("binary_reference"))
+        if not binary_id:
+            continue
+        results.append(
+            {
+                "patient_id": str(row.get("patient_id") or ""),
+                "diagnostic_report_id": str(row.get("diagnostic_report_id") or ""),
+                "media_id": str(row.get("media_id") or ""),
+                "binary_id": binary_id,
+                "created_at": row.get("created_at"),
+                "conclusion": row.get("conclusion"),
+                "content_type": row.get("content_type"),
+                "url": build_image_api_url(row.get("binary_reference") or binary_id),
+            }
+        )
+    return results

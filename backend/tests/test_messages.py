@@ -1,4 +1,4 @@
-﻿"""Tests for conversation message API."""
+"""Tests for conversation message API."""
 
 from __future__ import annotations
 
@@ -276,11 +276,11 @@ def test_create_message_success():
     conv = _make_conversation(user_id=user.id)
     app, mock_session, _ = _make_test_app(current_user=user)
     _configure_execute_results(mock_session, [_result(scalar_one_or_none=conv)])
-    agent = AsyncMock(return_value="Assistant answer")
+    agent = AsyncMock(return_value=("Assistant answer", []))
     memory = AsyncMock()
 
     with (
-        patch("app.api.messages.generate_assistant_response", agent),
+        patch("app.api.messages.generate_assistant_exchange", agent),
         patch("app.api.messages.persist_chat_memory", memory),
     ):
         resp = TestClient(app).post(
@@ -340,11 +340,11 @@ def test_create_message_other_user_returns_404_and_does_not_call_agent():
     user = _make_user()
     app, mock_session, _ = _make_test_app(current_user=user)
     _configure_execute_results(mock_session, [_result(scalar_one_or_none=None)])
-    agent = AsyncMock(return_value="Assistant answer")
+    agent = AsyncMock(return_value=("Assistant answer", []))
     memory = AsyncMock()
 
     with (
-        patch("app.api.messages.generate_assistant_response", agent),
+        patch("app.api.messages.generate_assistant_exchange", agent),
         patch("app.api.messages.persist_chat_memory", memory),
     ):
         resp = TestClient(app).post(
@@ -366,7 +366,7 @@ def test_create_message_agent_error_rolls_back():
     memory = AsyncMock()
 
     with (
-        patch("app.api.messages.generate_assistant_response", agent),
+        patch("app.api.messages.generate_assistant_exchange", agent),
         patch("app.api.messages.persist_chat_memory", memory),
     ):
         resp = TestClient(app).post(
@@ -392,7 +392,7 @@ def test_create_message_empty_agent_response_rolls_back():
 
     memory = AsyncMock()
     with (
-        patch("app.api.messages.generate_assistant_response", AsyncMock(return_value="")),
+        patch("app.api.messages.generate_assistant_exchange", AsyncMock(return_value=("", []))),
         patch("app.api.messages.persist_chat_memory", memory),
     ):
         resp = TestClient(app).post(
@@ -414,7 +414,7 @@ def test_create_message_none_agent_response_rolls_back():
 
     memory = AsyncMock()
     with (
-        patch("app.api.messages.generate_assistant_response", AsyncMock(return_value=None)),
+        patch("app.api.messages.generate_assistant_exchange", AsyncMock(return_value=None)),
         patch("app.api.messages.persist_chat_memory", memory),
     ):
         resp = TestClient(app).post(
@@ -443,7 +443,7 @@ def test_create_message_user_commit_error_rolls_back_before_agent():
 
     memory = AsyncMock()
     with (
-        patch("app.api.messages.generate_assistant_response", AsyncMock(return_value="Answer")),
+        patch("app.api.messages.generate_assistant_exchange", AsyncMock(return_value=("Answer", []))),
         patch("app.api.messages.persist_chat_memory", memory),
     ):
         resp = TestClient(app).post(
@@ -471,7 +471,7 @@ def test_create_message_commit_error_rolls_back():
 
     memory = AsyncMock()
     with (
-        patch("app.api.messages.generate_assistant_response", AsyncMock(return_value="Answer")),
+        patch("app.api.messages.generate_assistant_exchange", AsyncMock(return_value=("Answer", []))),
         patch("app.api.messages.persist_chat_memory", memory),
     ):
         resp = TestClient(app).post(
@@ -492,7 +492,7 @@ def test_create_message_memory_error_after_commit_still_returns_201():
     memory = AsyncMock(side_effect=RuntimeError("mem0 failed"))
 
     with (
-        patch("app.api.messages.generate_assistant_response", AsyncMock(return_value="Answer")),
+        patch("app.api.messages.generate_assistant_exchange", AsyncMock(return_value=("Answer", []))),
         patch("app.api.messages.persist_chat_memory", memory),
     ):
         resp = TestClient(app).post(
@@ -532,11 +532,11 @@ def test_stream_message_success_forwards_tool_events_and_persists_messages():
             {"query": "Nguyen Van A"},
             "1 patient found",
         )
-        return "Assistant streamed answer"
+        return "Assistant streamed answer", []
 
     memory = AsyncMock()
     with (
-        patch("app.services.chat_stream.generate_assistant_response", AsyncMock(side_effect=_agent)) as agent,
+        patch("app.services.chat_stream.generate_assistant_exchange", AsyncMock(side_effect=_agent)) as agent,
         patch("app.services.chat_stream.persist_chat_memory", memory),
         patch("app.services.chat_stream.AsyncSessionFactory", _SessionFactory(assistant_session)),
     ):
@@ -619,10 +619,10 @@ def test_stream_message_ignores_collector_text_delta_and_done_duplicates():
         collector.collect_tool_call("search_patient", {"query": "A"}, "done")
         collector.emit_text_delta("old delta")
         collector.emit_done("old done", conversation_id)
-        return "Final answer"
+        return "Final answer", []
 
     with (
-        patch("app.services.chat_stream.generate_assistant_response", AsyncMock(side_effect=_agent)),
+        patch("app.services.chat_stream.generate_assistant_exchange", AsyncMock(side_effect=_agent)),
         patch("app.services.chat_stream.persist_chat_memory", AsyncMock()),
         patch("app.services.chat_stream.AsyncSessionFactory", _SessionFactory(assistant_session)),
     ):
@@ -643,9 +643,9 @@ def test_stream_message_ownership_failure_does_not_call_agent():
     user = _make_user()
     app, mock_session, _ = _make_test_app(current_user=user)
     _configure_execute_results(mock_session, [_result(scalar_one_or_none=None)])
-    agent = AsyncMock(return_value="Answer")
+    agent = AsyncMock(return_value=("Answer", []))
 
-    with patch("app.services.chat_stream.generate_assistant_response", agent):
+    with patch("app.services.chat_stream.generate_assistant_exchange", agent):
         resp = TestClient(app).post(
             f"/api/conversations/{uuid4()}/messages/stream",
             json={"content": "Hello"},
@@ -682,11 +682,11 @@ def test_stream_message_user_commit_error_returns_500_before_agent():
             orig=Exception("user commit"),
         )
     )
-    agent = AsyncMock(return_value="Answer")
+    agent = AsyncMock(return_value=("Answer", []))
     memory = AsyncMock()
 
     with (
-        patch("app.services.chat_stream.generate_assistant_response", agent),
+        patch("app.services.chat_stream.generate_assistant_exchange", agent),
         patch("app.services.chat_stream.persist_chat_memory", memory),
     ):
         resp = TestClient(app).post(
@@ -709,7 +709,7 @@ def test_stream_message_agent_error_keeps_user_message_and_emits_error():
 
     with (
         patch(
-            "app.services.chat_stream.generate_assistant_response",
+            "app.services.chat_stream.generate_assistant_exchange",
             AsyncMock(side_effect=RuntimeError("agent failed")),
         ),
         patch("app.services.chat_stream.persist_chat_memory", memory),
@@ -744,7 +744,7 @@ def test_stream_message_assistant_commit_error_emits_error_without_memory():
     memory = AsyncMock()
 
     with (
-        patch("app.services.chat_stream.generate_assistant_response", AsyncMock(return_value="Answer")),
+        patch("app.services.chat_stream.generate_assistant_exchange", AsyncMock(return_value=("Answer", []))),
         patch("app.services.chat_stream.persist_chat_memory", memory),
         patch("app.services.chat_stream.AsyncSessionFactory", _SessionFactory(assistant_session)),
     ):
@@ -769,7 +769,7 @@ def test_stream_message_memory_error_still_emits_done():
     _configure_execute_results(assistant_session, [_result(scalar_one_or_none=conv)])
 
     with (
-        patch("app.services.chat_stream.generate_assistant_response", AsyncMock(return_value="Answer")),
+        patch("app.services.chat_stream.generate_assistant_exchange", AsyncMock(return_value=("Answer", []))),
         patch(
             "app.services.chat_stream.persist_chat_memory",
             AsyncMock(side_effect=RuntimeError("mem0 failed")),
@@ -839,3 +839,4 @@ def test_message_routes_registered_without_patch_or_delete():
     assert ("/api/conversations/{conversation_id}/messages", "delete") not in message_routes
     assert ("/api/conversations/{conversation_id}/messages/stream", "patch") not in message_routes
     assert ("/api/conversations/{conversation_id}/messages/stream", "delete") not in message_routes
+

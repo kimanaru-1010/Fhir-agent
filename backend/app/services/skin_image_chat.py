@@ -74,7 +74,8 @@ async def maybe_answer_skin_image_request(content: str) -> SkinImageChatResult:
 def build_skin_image_attachments(rows: list[dict]) -> list[ChatImageAttachment]:
     attachments: list[ChatImageAttachment] = []
     for row in rows:
-        if not row.get("image_url") or not row.get("binary_id"):
+        image_url = row.get("url") or row.get("image_url")
+        if not image_url or not row.get("binary_id"):
             continue
         attachments.append(
             ChatImageAttachment(
@@ -82,7 +83,7 @@ def build_skin_image_attachments(rows: list[dict]) -> list[ChatImageAttachment]:
                 diagnostic_report_id=str(row["diagnostic_report_id"]),
                 media_id=str(row["media_id"]),
                 binary_id=str(row["binary_id"]),
-                url=str(row["image_url"]),
+                url=str(image_url),
                 content_type=row.get("content_type"),
                 created_at=row.get("created_at"),
                 title="Ảnh phân tích da",

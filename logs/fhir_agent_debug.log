@@ -1,0 +1,24 @@
+2026-08-04 13:25:19,314 | WARNING | REQUEST DIAGNOSTIC | event=handler_entry | run_id=de5936f7b51f | handler=generate_agent_response | process_id=14136 | task_id=2882310076416 | supplied_session_id=conversation-1 | message_fingerprint=185f8db32271fe25 | active_runs=1 | duplicate_candidates=[]
+2026-08-04 13:25:19,318 | DEBUG | REQUEST CALL STACK | run_id=de5936f7b51f | run_forever@base_events.py:679 <- _run_once@base_events.py:2027 <- _run@events.py:89 <- wrapper@_asyncio.py:2464 <- run_test@test_agent.py:178 <- generate_agent_response@fhir.py:2294
+2026-08-04 13:25:19,318 | INFO | MODEL RUN START | run_id=de5936f7b51f | handler=generate_agent_response | session_id=conversation-1
+2026-08-04 13:25:19,318 | DEBUG | MODEL USAGE | run_id=de5936f7b51f
+{
+  "total_tokens": 10
+}
+2026-08-04 13:25:19,318 | INFO | TOKENS | run_id=de5936f7b51f | session=conversation-1 | usage={'total_tokens': 10}
+2026-08-04 13:25:19,318 | DEBUG | MODEL FINAL OUTPUT | run_id=de5936f7b51f | session_id=conversation-1
+Assistant response
+2026-08-04 13:25:19,318 | INFO | MODEL RUN END | run_id=de5936f7b51f | handler=generate_agent_response | session_id=conversation-1 | chars=18
+2026-08-04 13:25:19,318 | WARNING | REQUEST DIAGNOSTIC | event=handler_exit | run_id=de5936f7b51f | handler=generate_agent_response | outcome=success | duration_sec=0.004 | tool_calls=0 | tool_result_chars=0 | active_runs=0
+2026-08-04 13:25:19,322 | WARNING | REQUEST DIAGNOSTIC | event=handler_entry | run_id=f966d5509515 | handler=generate_agent_response | process_id=14136 | task_id=2882311783360 | supplied_session_id=conversation-1 | message_fingerprint=fca3787cac7475fc | active_runs=1 | duplicate_candidates=[]
+2026-08-04 13:25:19,323 | DEBUG | REQUEST CALL STACK | run_id=f966d5509515 | run_forever@base_events.py:679 <- _run_once@base_events.py:2027 <- _run@events.py:89 <- wrapper@_asyncio.py:2464 <- run_test@test_agent.py:206 <- generate_agent_response@fhir.py:2294
+2026-08-04 13:25:19,323 | INFO | MODEL RUN START | run_id=f966d5509515 | handler=generate_agent_response | session_id=conversation-1
+2026-08-04 13:25:19,323 | DEBUG | MODEL USAGE | run_id=f966d5509515
+{
+  "total_tokens": 10
+}
+2026-08-04 13:25:19,323 | INFO | TOKENS | run_id=f966d5509515 | session=conversation-1 | usage={'total_tokens': 10}
+2026-08-04 13:25:19,323 | DEBUG | MODEL FINAL OUTPUT | run_id=f966d5509515 | session_id=conversation-1
+Assistant response
+2026-08-04 13:25:19,323 | INFO | MODEL RUN END | run_id=f966d5509515 | handler=generate_agent_response | session_id=conversation-1 | chars=18
+2026-08-04 13:25:19,323 | WARNING | REQUEST DIAGNOSTIC | event=handler_exit | run_id=f966d5509515 | handler=generate_agent_response | outcome=success | duration_sec=0.001 | tool_calls=0 | tool_result_chars=0 | active_runs=0

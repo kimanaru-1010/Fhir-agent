@@ -1,4 +1,4 @@
-﻿"""Tests for conversation-aware SSE creation."""
+"""Tests for conversation-aware SSE creation."""
 
 from __future__ import annotations
 
@@ -98,11 +98,11 @@ def test_create_conversation_stream_success_starts_conversation_and_persists_exc
             {"query": "Nguyen Van A"},
             "1 patient found",
         )
-        return "Assistant streamed answer"
+        return "Assistant streamed answer", []
 
     memory = AsyncMock()
     with (
-        patch("app.services.chat_stream.generate_assistant_response", AsyncMock(side_effect=_agent)) as agent,
+        patch("app.services.chat_stream.generate_assistant_exchange", AsyncMock(side_effect=_agent)) as agent,
         patch("app.services.chat_stream.persist_chat_memory", memory),
         patch("app.services.chat_stream.AsyncSessionFactory", _SessionFactory(assistant_session)),
     ):
@@ -195,11 +195,11 @@ def test_create_conversation_stream_user_commit_error_returns_500_before_agent()
             orig=Exception("user commit"),
         )
     )
-    agent = AsyncMock(return_value="Answer")
+    agent = AsyncMock(return_value=("Answer", []))
     memory = AsyncMock()
 
     with (
-        patch("app.services.chat_stream.generate_assistant_response", agent),
+        patch("app.services.chat_stream.generate_assistant_exchange", agent),
         patch("app.services.chat_stream.persist_chat_memory", memory),
     ):
         resp = TestClient(app).post(
@@ -220,7 +220,7 @@ def test_create_conversation_stream_agent_error_keeps_user_message_and_emits_err
 
     with (
         patch(
-            "app.services.chat_stream.generate_assistant_response",
+            "app.services.chat_stream.generate_assistant_exchange",
             AsyncMock(side_effect=RuntimeError("agent failed")),
         ),
         patch("app.services.chat_stream.persist_chat_memory", memory),
@@ -256,7 +256,7 @@ def test_create_conversation_stream_assistant_commit_error_emits_error_without_m
     memory = AsyncMock()
 
     with (
-        patch("app.services.chat_stream.generate_assistant_response", AsyncMock(return_value="Answer")),
+        patch("app.services.chat_stream.generate_assistant_exchange", AsyncMock(return_value=("Answer", []))),
         patch("app.services.chat_stream.persist_chat_memory", memory),
         patch("app.services.chat_stream.AsyncSessionFactory", _SessionFactory(assistant_session)),
     ):
@@ -282,7 +282,7 @@ def test_create_conversation_stream_memory_error_still_emits_done():
     assistant_session.execute = AsyncMock(side_effect=_lookup_created_conversation)
 
     with (
-        patch("app.services.chat_stream.generate_assistant_response", AsyncMock(return_value="Answer")),
+        patch("app.services.chat_stream.generate_assistant_exchange", AsyncMock(return_value=("Answer", []))),
         patch(
             "app.services.chat_stream.persist_chat_memory",
             AsyncMock(side_effect=RuntimeError("mem0 failed")),
@@ -315,3 +315,4 @@ def test_conversation_stream_route_registered_without_hiding_static_path():
     assert ("/api/conversations/stream", "post") in routes
     assert ("/api/conversations/{conversation_id}", "get") in routes
     assert ("/api/conversations/{conversation_id}", "delete") in routes
+

@@ -1,4 +1,4 @@
-﻿"""Tests for conversation management API."""
+"""Tests for conversation management API."""
 
 from __future__ import annotations
 
@@ -167,10 +167,10 @@ def _post_create_conversation(
     *,
     agent_response: str = "Assistant answer",
 ):
-    agent = AsyncMock(return_value=agent_response)
+    agent = AsyncMock(return_value=(agent_response, []))
     memory = AsyncMock()
     with (
-        patch("app.api.conversations.generate_assistant_response", agent),
+        patch("app.api.conversations.generate_assistant_exchange", agent),
         patch("app.api.conversations.persist_chat_memory", memory),
     ):
         response = client.post("/api/conversations", json=payload)
@@ -384,11 +384,11 @@ def test_create_conversation_commit_error():
             statement=None, params=None, orig=Exception("duplicate"),
         ),
     )
-    agent = AsyncMock(return_value="Answer")
+    agent = AsyncMock(return_value=("Answer", []))
     memory = AsyncMock()
 
     with (
-        patch("app.api.conversations.generate_assistant_response", agent),
+        patch("app.api.conversations.generate_assistant_exchange", agent),
         patch("app.api.conversations.persist_chat_memory", memory),
     ):
         resp = client.post("/api/conversations", json={"first_message": "Should fail"})
@@ -409,11 +409,11 @@ def test_create_conversation_flush_error():
             statement=None, params=None, orig=Exception("constraint"),
         ),
     )
-    agent = AsyncMock(return_value="Answer")
+    agent = AsyncMock(return_value=("Answer", []))
     memory = AsyncMock()
 
     with (
-        patch("app.api.conversations.generate_assistant_response", agent),
+        patch("app.api.conversations.generate_assistant_exchange", agent),
         patch("app.api.conversations.persist_chat_memory", memory),
     ):
         resp = client.post("/api/conversations", json={"first_message": "Should fail"})
@@ -432,7 +432,7 @@ def test_create_conversation_agent_error_rolls_back():
     memory = AsyncMock()
 
     with (
-        patch("app.api.conversations.generate_assistant_response", agent),
+        patch("app.api.conversations.generate_assistant_exchange", agent),
         patch("app.api.conversations.persist_chat_memory", memory),
     ):
         resp = client.post("/api/conversations", json={"first_message": "Hello"})
@@ -448,11 +448,11 @@ def test_create_conversation_memory_error_after_commit_still_returns_201():
     user = _make_user()
     app, mock_session, mock_result = _make_test_app(current_user=user)
     client = TestClient(app)
-    agent = AsyncMock(return_value="Assistant answer")
+    agent = AsyncMock(return_value=("Assistant answer", []))
     memory = AsyncMock(side_effect=RuntimeError("mem0 failed"))
 
     with (
-        patch("app.api.conversations.generate_assistant_response", agent),
+        patch("app.api.conversations.generate_assistant_exchange", agent),
         patch("app.api.conversations.persist_chat_memory", memory),
     ):
         resp = client.post("/api/conversations", json={"first_message": "Hello"})
@@ -593,7 +593,7 @@ def test_get_conversation_other_user():
     user_a = _make_user(id=uuid4(), username="alice")
     conv = _make_conversation(id=uuid4(), user_id=user_a.id)
 
-    # DB would find the conv, but query also filters by user_b.id â†’ None
+    # DB would find the conv, but query also filters by user_b.id → None
     mock_result.scalar_one_or_none.return_value = None
 
     resp = client.get(f"/api/conversations/{conv.id}")
@@ -689,7 +689,7 @@ def test_security_no_user_id_in_request():
 
 
 def test_security_user_a_cannot_see_user_b_conversation():
-    """User A queries with user B's conversation ID â†’ 404."""
+    """User A queries with user B's conversation ID → 404."""
     user_a = _make_user(id=uuid4(), username="alice")
     app, mock_session, mock_result = _make_test_app(current_user=user_a)
     client = TestClient(app)
@@ -715,3 +715,4 @@ def test_security_user_a_cannot_delete_user_b_conversation():
 
     resp = client.delete(f"/api/conversations/{conv.id}")
     assert resp.status_code == 404
+

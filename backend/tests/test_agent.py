@@ -8,15 +8,19 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import anyio
 
 from app.agents.fhir import (
+    AgentDeps,
     SYSTEM_PROMPT,
     _BATCH_RESOURCE_LIMIT,
+    _CURRENT_IMAGE_ATTACHMENTS,
     _TOOL_RESULT_LIMIT,
     _batch_size_error,
     _format_memory_context,
     _normalize_optional_exact_filter,
+    find_patient_skin_images,
     generate_agent_response,
     handle_message,
 )
+from app.schemas.message import ChatImageAttachment
 
 
 def test_system_prompt_is_concise_and_preserves_core_rules():
@@ -56,6 +60,78 @@ def test_optional_exact_filter_normalizes_wildcard_to_no_filter():
     assert _normalize_optional_exact_filter(" * ") == ""
     assert _normalize_optional_exact_filter("") == ""
     assert _normalize_optional_exact_filter("Condition") == "Condition"
+
+
+def test_find_patient_skin_images_returns_metadata_only_and_collects_attachment():
+    async def run_test():
+        ctx = MagicMock()
+        ctx.deps = AgentDeps(session_id="session-1", user_id="doctor-1")
+        attachments: list[ChatImageAttachment] = []
+        token = _CURRENT_IMAGE_ATTACHMENTS.set(attachments)
+
+        try:
+            with patch(
+                "app.agents.fhir.search_patient_skin_images",
+                AsyncMock(
+                    return_value=[
+                        {
+                            "patient_id": "12261",
+                            "diagnostic_report_id": "report-1",
+                            "media_id": "media-1",
+                            "binary_id": "17761",
+                            "created_at": "2026-08-04T03:00:00Z",
+                            "conclusion": "Skin image conclusion",
+                            "content_type": "image/jpeg",
+                            "data": "must-not-leak",
+                        }
+                    ]
+                ),
+            ) as search:
+                result = await find_patient_skin_images(
+                    ctx,
+                    patient_id="12261",
+                    count=1,
+                    sort="desc",
+                )
+        finally:
+            _CURRENT_IMAGE_ATTACHMENTS.reset(token)
+
+        payload = json.loads(result)
+        row = payload["data"][0]
+        filters = search.await_args.args[0]
+        assert filters.patient_id == "12261"
+        assert filters.count == 1
+        assert filters.sort == "desc"
+        assert row == {
+            "patient_id": "12261",
+            "diagnostic_report_id": "report-1",
+            "media_id": "media-1",
+            "binary_id": "17761",
+            "created_at": "2026-08-04T03:00:00Z",
+            "content_type": "image/jpeg",
+            "url": "/api/skin-images/files/17761",
+        }
+        assert "data" not in row
+        assert "conclusion" not in row
+        assert "must-not-leak" not in json.dumps(payload)
+        assert attachments[0].url == "/api/skin-images/files/17761"
+        assert attachments[0].description is None
+
+    anyio.run(run_test)
+
+
+def test_find_patient_skin_images_requires_patient_context():
+    async def run_test():
+        ctx = MagicMock()
+        ctx.deps = AgentDeps(session_id="session-1", user_id="doctor-1")
+
+        result = await find_patient_skin_images(ctx, patient_id=None)
+
+        payload = json.loads(result)
+        assert payload["status"] == "patient_required"
+        assert payload["data"] == []
+
+    anyio.run(run_test)
 
 
 def test_format_memory_context_includes_timestamps_and_conflict_rule():

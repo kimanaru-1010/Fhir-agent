@@ -40,6 +40,7 @@ async def persist_assistant_message(
     conversation_id: UUID,
     user_id: UUID,
     content: str,
+    attachments: list[Any] | None = None,
 ) -> tuple[Conversation, Message]:
     async with AsyncSessionFactory() as session:
         result = await session.execute(
@@ -56,6 +57,7 @@ async def persist_assistant_message(
             conversation_id=conversation.id,
             role="assistant",
             content=content,
+            attachments=attachments or [],
         )
         try:
             session.add(assistant_message)
@@ -125,6 +127,7 @@ async def stream_persisted_exchange(
             conversation_id=conversation_id,
             user_id=user_id,
             content=assistant_content,
+            attachments=[item.model_dump(mode="json") for item in attachments],
         )
 
         conversation_payload = serialize_conversation(conversation)

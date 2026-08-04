@@ -24,16 +24,6 @@ class MessageCreateRequest(BaseModel):
         return value
 
 
-class MessageResponse(BaseModel):
-    id: UUID
-    conversation_id: UUID
-    role: str
-    content: str
-    created_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
-
-
 class ChatImageAttachment(BaseModel):
     type: Literal["image"] = "image"
     patient_id: str
@@ -47,6 +37,22 @@ class ChatImageAttachment(BaseModel):
     description: str | None = None
 
 
+class MessageResponse(BaseModel):
+    id: UUID
+    conversation_id: UUID
+    role: str
+    content: str
+    attachments: list[ChatImageAttachment] = Field(default_factory=list)
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+    @field_validator("attachments", mode="before")
+    @classmethod
+    def normalize_attachments(cls, value):
+        return [] if value is None else value
+
+
 class MessageListResponse(BaseModel):
     items: list[MessageResponse]
     total: int
@@ -56,4 +62,4 @@ class MessageExchangeResponse(BaseModel):
     conversation_id: UUID
     user_message: MessageResponse
     assistant_message: MessageResponse
-    attachments: list[ChatImageAttachment] = []
+    attachments: list[ChatImageAttachment] = Field(default_factory=list)

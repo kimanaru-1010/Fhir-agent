@@ -23,7 +23,12 @@ from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.usage import UsageLimits
 
 from app.graph.client import execute_cypher, get_schema
+from app.schemas.message import ChatImageAttachment
 from app.services.long_term_memory import save_conversation_memory, search_memories
+from app.skin_images.neo4j_repository import search_patient_skin_images
+from app.skin_images.references import build_image_api_url
+from app.skin_images.schemas import SkinImageSearchFilters
+from app.skin_images.search_filters import resolve_skin_image_filters
 
 
 # SYSTEM_PROMPT = """
@@ -481,9 +486,9 @@ Always:
 - provide correct argument types;
 - reuse previously retrieved values;
 - prefer batch operations for repeated work.
-- treat a tool name and its complete argument set as one unique call;
-- reuse the existing result instead of calling the same tool again with the
-  same or equivalent arguments during the current request.
+- keep a registry of tool name + normalized arguments.
+- before each tool call, compare against that registry.
+- reuse the existing result instead of making a duplicate call.
 
 Never:
 
@@ -491,7 +496,9 @@ Never:
 - guess field names;
 - guess graph structure;
 - repeat a tool call with the same or equivalent arguments;
-- repeat identical failed operations.
+- retry only to verify, refresh, or confirm the same result;
+- repeat arguments that only change formatting, ordering, or wording;
+- repeat identical failed, empty, or truncated operations.
 
 If a tool fails:
 
@@ -534,6 +541,21 @@ Never infer beyond retrieved evidence.
 
 
 ==================================================
+SKIN IMAGE RETRIEVAL
+==================================================
+
+Use find_patient_skin_images for requests to view, retrieve, list, compare, or
+find skin/lesion/dermatology images.
+
+Resolve Patient from explicit id, then active patient context. If none is
+known, ask the doctor to select or provide one.
+
+For latest/gần nhất, use count=1 and sort=desc. For N images, pass count=N.
+For all/toàn bộ/tất cả, set all_images=true. Never invent ids/URLs, query
+Binary.data, or ignore the tool result.
+
+
+==================================================
 FINAL RESPONSE
 ==================================================
 
@@ -568,6 +590,7 @@ class AgentDeps:
 
     session_id: str
     user_id: str
+    active_patient_id: str | None = None
 
 
 internal_llm_client = AsyncOpenAI(
@@ -704,6 +727,22 @@ async def _execute_tool(
     parameters: dict[str, Any] | None = None,
 ) -> str:
     actual_parameters = parameters or {}
+    cache = _CURRENT_TOOL_RESULT_CACHE.get()
+    cache_key = json.dumps(
+        {"tool": tool_name, "parameters": actual_parameters},
+        default=str,
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+    if cache is not None and cache_key in cache:
+        logger.warning(
+            "TOOL DUPLICATE SKIPPED | run_id=%s | handler=%s | tool=%s | parameters=%s",
+            _CURRENT_RUN_ID.get(),
+            _CURRENT_HANDLER.get(),
+            tool_name,
+            cache_key,
+        )
+        return cache[cache_key]
 
     run_id = _CURRENT_RUN_ID.get()
     handler_name = _CURRENT_HANDLER.get()
@@ -779,6 +818,8 @@ async def _execute_tool(
             payload["count"], len(model_content),
         )
 
+        if cache is not None:
+            cache[cache_key] = model_content
         return model_content
 
     except Exception as exc:
@@ -806,12 +847,145 @@ async def _execute_tool(
             model_content,
         )
 
+        if cache is not None:
+            cache[cache_key] = model_content
         return model_content
 
 
 # ---------------------------------------------------------------------------
 # Generic FHIR tools
 # ---------------------------------------------------------------------------
+
+def _store_image_attachments(rows: list[dict[str, Any]]) -> None:
+    current = _CURRENT_IMAGE_ATTACHMENTS.get()
+    if current is None:
+        return
+
+    seen = {item.binary_id for item in current}
+    for row in rows:
+        binary_id = str(row.get("binary_id") or "").strip()
+        if not binary_id or binary_id in seen:
+            continue
+        current.append(
+            ChatImageAttachment(
+                patient_id=str(row.get("patient_id") or ""),
+                diagnostic_report_id=str(row.get("diagnostic_report_id") or ""),
+                media_id=str(row.get("media_id") or ""),
+                binary_id=binary_id,
+                url=build_image_api_url(binary_id),
+                content_type=row.get("content_type"),
+                created_at=row.get("created_at"),
+                title="Ảnh phân tích da",
+                description=None,
+            )
+        )
+        seen.add(binary_id)
+
+
+@agent.tool
+async def find_patient_skin_images(
+    ctx: RunContext[AgentDeps],
+    patient_id: Annotated[
+        str | None,
+        Field(description="FHIR Patient id explicitly selected by the doctor. Omit only when active patient context is available."),
+    ] = None,
+    count: Annotated[
+        int | None,
+        Field(description="Optional number of images to return. Use the doctor's requested number. Omit when all_images is true."),
+    ] = 5,
+    all_images: Annotated[
+        bool,
+        Field(description="Set true when the doctor asks for all/toàn bộ/tất cả matching images."),
+    ] = False,
+    sort: Annotated[
+        str,
+        Field(description="Sort by image timestamp: desc for latest/newest, asc for oldest."),
+    ] = "desc",
+    date_range: Annotated[
+        str | None,
+        Field(description="Optional relative date range: today, yesterday, this_week, last_week, this_month, last_month, this_year, last_year, recent."),
+    ] = None,
+    specific_date: Annotated[
+        str | None,
+        Field(description="Optional exact date, either YYYY-MM-DD or DD/MM/YYYY."),
+    ] = None,
+    modality: Annotated[
+        str | None,
+        Field(description="Optional modality code. Use XC for dermatology images; omit only when intentionally searching all modalities."),
+    ] = "XC",
+) -> str:
+    """
+    Retrieve skin image metadata for a Patient.
+
+    Use when:
+    - The doctor asks to view, retrieve, list, compare, or find skin/lesion images.
+    - The requested output should include chat image attachments.
+
+    Behavior:
+    - Resolves Patient from explicit patient_id, then active patient context.
+    - Queries Neo4j directly through the CyFHIR graph shape.
+    - Returns metadata only and never returns Binary.data or base64.
+    """
+    resolved_patient_id = (patient_id or ctx.deps.active_patient_id or "").strip()
+    if not resolved_patient_id:
+        return _json_response(
+            status="patient_required",
+            count=0,
+            data=[],
+            message="Please ask the doctor to provide or select a Patient ID before retrieving skin images.",
+        )
+
+    normalized_sort = "asc" if str(sort).strip().lower() == "asc" else "desc"
+    requested_count = None if all_images else max(int(count or 5), 1)
+
+    try:
+        filters = resolve_skin_image_filters(
+            SkinImageSearchFilters(
+                patient_id=resolved_patient_id,
+                count=requested_count,
+                sort=normalized_sort,
+                date_range=date_range,
+                specific_date=specific_date,
+                modality=modality or None,
+            )
+        )
+        rows = await search_patient_skin_images(filters)
+    except Exception as exc:
+        payload = {
+            "status": "error",
+            "count": 0,
+            "data": [],
+            "message": str(exc),
+        }
+        return json.dumps(payload, default=str, ensure_ascii=False)
+
+    sanitized_rows: list[dict[str, Any]] = []
+    seen_binary_ids: set[str] = set()
+    for row in rows:
+        binary_id = str(row.get("binary_id") or "").strip()
+        if not binary_id or binary_id in seen_binary_ids:
+            continue
+        sanitized_rows.append(
+            {
+                "patient_id": str(row.get("patient_id") or ""),
+                "diagnostic_report_id": str(row.get("diagnostic_report_id") or ""),
+                "media_id": str(row.get("media_id") or ""),
+                "binary_id": binary_id,
+                "created_at": row.get("created_at"),
+                "content_type": row.get("content_type"),
+                "url": build_image_api_url(binary_id),
+            }
+        )
+        seen_binary_ids.add(binary_id)
+
+    _store_image_attachments(sanitized_rows)
+    return _json_response(
+        status="ok",
+        count=len(sanitized_rows),
+        data=sanitized_rows,
+        message=None if sanitized_rows else "No matching skin images were found.",
+    )
+
 
 @agent.tool
 async def search_patient(
@@ -1942,6 +2116,12 @@ _CURRENT_RUN_ID: contextvars.ContextVar[str] = contextvars.ContextVar(
 _CURRENT_HANDLER: contextvars.ContextVar[str] = contextvars.ContextVar(
     "fhir_agent_handler", default="-"
 )
+_CURRENT_IMAGE_ATTACHMENTS: contextvars.ContextVar[
+    list[ChatImageAttachment] | None
+] = contextvars.ContextVar("fhir_agent_image_attachments", default=None)
+_CURRENT_TOOL_RESULT_CACHE: contextvars.ContextVar[
+    dict[str, str] | None
+] = contextvars.ContextVar("fhir_agent_tool_result_cache", default=None)
 _active_runs: dict[str, dict[str, Any]] = {}
 _recent_run_starts: list[dict[str, Any]] = []
 _DUPLICATE_WINDOW_SECONDS = float(
@@ -2102,11 +2282,15 @@ async def generate_agent_response(
     session_id: str | None = None,
     user_id: str = "anonymous",
     short_term_context: str = "",
+    active_patient_id: str | None = None,
 ) -> dict[str, Any]:
     """Generate a non-streaming agent response without persisting memory."""
     run_id = _generate_run_id()
     run_token = _CURRENT_RUN_ID.set(run_id)
     handler_token = _CURRENT_HANDLER.set("generate_agent_response")
+    image_attachments: list[ChatImageAttachment] = []
+    image_token = _CURRENT_IMAGE_ATTACHMENTS.set(image_attachments)
+    tool_cache_token = _CURRENT_TOOL_RESULT_CACHE.set({})
     _track_run_start(
         run_id=run_id,
         handler_name="generate_agent_response",
@@ -2146,7 +2330,11 @@ If the current request asks for a subset, answer only that subset.
 
         result = await agent.run(
             effective_message,
-            deps=AgentDeps(session_id=resolved_session_id, user_id=user_id),
+            deps=AgentDeps(
+                session_id=resolved_session_id,
+                user_id=user_id,
+                active_patient_id=active_patient_id,
+            ),
             message_history=[],
             usage_limits=UsageLimits(request_limit=_AGENT_REQUEST_LIMIT),
             model_settings=ModelSettings(
@@ -2173,6 +2361,9 @@ If the current request asks for a subset, answer only that subset.
             "session_id": resolved_session_id,
             "graph_data": None,
             "diagnostic_run_id": run_id,
+            "attachments": [
+                item.model_dump(mode="json") for item in image_attachments
+            ],
         }
     except Exception as exc:
         _track_run_end(run_id=run_id, outcome="error", exception=exc)
@@ -2180,6 +2371,8 @@ If the current request asks for a subset, answer only that subset.
     finally:
         _CURRENT_HANDLER.reset(handler_token)
         _CURRENT_RUN_ID.reset(run_token)
+        _CURRENT_IMAGE_ATTACHMENTS.reset(image_token)
+        _CURRENT_TOOL_RESULT_CACHE.reset(tool_cache_token)
 
 
 async def handle_message(
