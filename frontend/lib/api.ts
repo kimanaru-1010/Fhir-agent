@@ -34,6 +34,20 @@ export interface ChatMessage {
   role: "user" | "assistant" | "system";
   content: string;
   created_at: string;
+  attachments?: ChatImageAttachment[];
+}
+
+export interface ChatImageAttachment {
+  type: "image";
+  patient_id: string;
+  diagnostic_report_id: string;
+  media_id: string;
+  binary_id: string;
+  url: string;
+  content_type?: string | null;
+  created_at?: string | null;
+  title?: string | null;
+  description?: string | null;
 }
 
 export interface ConversationListResponse {

@@ -15,6 +15,9 @@ from app.skin_images.fhir_builders import build_skin_analysis_bundle
 from app.skin_images.image_processing import ProcessedImage
 from app.skin_images import neo4j_repository
 from app.skin_images.router import router
+from app.skin_images.schemas import ResolvedSkinImageSearchFilters, SkinImageSearchFilters
+from app.skin_images.search_filters import LOCAL_TZ, resolve_skin_image_filters
+from app.services.skin_image_chat import maybe_answer_skin_image_request
 
 
 def _make_user(external_id: str | None = None) -> User:
@@ -169,6 +172,7 @@ def test_get_image_file_returns_binary_data_from_neo4j(mocker):
         "app.skin_images.router.get_binary_for_skin_image",
         new=AsyncMock(
             return_value={
+                "patient_id": "10796",
                 "binary_id": "binary-1",
                 "data": "bm9ybWFsaXplZC1pbWFnZQ==",
                 "content_type": "image/jpeg",
@@ -181,6 +185,64 @@ def test_get_image_file_returns_binary_data_from_neo4j(mocker):
     assert response.status_code == 200
     assert response.headers["content-type"] == "image/jpeg"
     assert response.content == b"normalized-image"
+
+
+def test_resolve_skin_image_filters_converts_today_to_utc_range():
+    filters = SkinImageSearchFilters(patient_id="10796", date_range="today")
+    now = datetime(2026, 8, 4, 8, 0, tzinfo=LOCAL_TZ)
+
+    resolved = resolve_skin_image_filters(filters, now=now)
+
+    assert resolved.patient_id == "10796"
+    assert resolved.from_datetime.isoformat() == "2026-08-03T17:00:00+00:00"
+    assert resolved.to_datetime.isoformat().startswith("2026-08-04T16:59:59")
+
+
+@pytest.mark.anyio
+async def test_search_patient_skin_images_starts_from_patient_and_limits(mocker):
+    execute_mock = mocker.patch(
+        "app.skin_images.neo4j_repository.execute_cypher",
+        new=AsyncMock(return_value=[]),
+    )
+    filters = ResolvedSkinImageSearchFilters(patient_id="10796", modality="XC", count=3)
+
+    await neo4j_repository.search_patient_skin_images(filters)
+
+    query = execute_mock.await_args.args[0]
+    params = execute_mock.await_args.args[1]
+    assert "MATCH (patient:FHIRResource:Patient" in query
+    assert "id: $patient_id" in query
+    assert "LIMIT $count" in query
+    assert params["patient_id"] == "10796"
+    assert params["modality"] == "XC"
+    assert params["count"] == 3
+
+
+@pytest.mark.anyio
+async def test_skin_image_chat_request_returns_attachments(mocker):
+    mocker.patch(
+        "app.services.skin_image_chat.search_patient_skin_images",
+        new=AsyncMock(
+            return_value=[
+                {
+                    "patient_id": "10796",
+                    "diagnostic_report_id": "report-1",
+                    "media_id": "media-1",
+                    "binary_id": "binary-1",
+                    "image_url": "/api/skin-images/files/binary-1",
+                    "content_type": "image/jpeg",
+                    "created_at": "2026-08-04T02:00:00Z",
+                    "conclusion": "AI conclusion",
+                }
+            ]
+        ),
+    )
+
+    result = await maybe_answer_skin_image_request("Lấy ảnh da gần nhất của bệnh nhân 10796.")
+
+    assert result.handled is True
+    assert result.attachments
+    assert result.attachments[0].binary_id == "binary-1"
 
 
 def test_build_skin_analysis_bundle_preserves_resource_order():

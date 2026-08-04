@@ -8,11 +8,11 @@ import {
 } from "@chakra-ui/react";
 import {
   Send, RotateCcw, ChevronDown, Wrench, Check, Bot, User, Sparkles,
-  Plus, Trash2, LogOut,
+  Plus, Trash2, LogOut, ImagePlus, X,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { DEMO_SCENARIOS, DOMAIN } from "@/lib/config";
+import { API_BASE, DEMO_SCENARIOS, DOMAIN } from "@/lib/config";
 import type { GraphData } from "@/lib/config";
 import {
   ApiError,
@@ -20,6 +20,7 @@ import {
   deleteConversation,
   getAccessToken,
   getStoredUser,
+  analyzeSkinImage,
   listConversations,
   listMessages,
   login,
@@ -28,7 +29,7 @@ import {
   register,
 } from "@/lib/api";
 
-import type { ChatMessage, Conversation, UserProfile } from "@/lib/api";
+import type { ChatImageAttachment, ChatMessage, Conversation, UserProfile } from "@/lib/api";
 import { parseSseStream } from "@/lib/sse";
 import type { ParsedSseEvent } from "@/lib/sse";
 
@@ -63,6 +64,7 @@ interface Message extends ChatMessage {
   failed?: boolean;
   entities?: ExtractedEntity[];
   preferences?: DetectedPreference[];
+  attachments?: ChatImageAttachment[];
 }
 
 interface ChatInterfaceProps {
@@ -150,6 +152,18 @@ function isChatMessage(value: unknown): value is ChatMessage {
   );
 }
 
+function isChatImageAttachment(value: unknown): value is ChatImageAttachment {
+  return (
+    isRecord(value) &&
+    value.type === "image" &&
+    typeof value.patient_id === "string" &&
+    typeof value.diagnostic_report_id === "string" &&
+    typeof value.media_id === "string" &&
+    typeof value.binary_id === "string" &&
+    typeof value.url === "string"
+  );
+}
+
 function isGraphData(value: unknown): value is GraphData {
   return isRecord(value) && Array.isArray(value.results);
 }
@@ -161,6 +175,7 @@ function mapBackendMessage(message: ChatMessage): Message {
     role: message.role,
     content: message.content,
     created_at: message.created_at,
+    attachments: message.attachments,
   };
 }
 
@@ -194,6 +209,9 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
   const [error, setError] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [chatImage, setChatImage] = useState<File | null>(null);
+  const [chatImagePatientId, setChatImagePatientId] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
   const [streamingToolCalls, setStreamingToolCalls] = useState<ToolCall[]>([]);
   const [streamingEntities, setStreamingEntities] = useState<ExtractedEntity[]>([]);
@@ -203,6 +221,7 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
   const textBufferRef = useRef("");
   const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const streamingEntitiesRef = useRef<ExtractedEntity[]>([]);
   const streamingPreferencesRef = useRef<DetectedPreference[]>([]);
 
@@ -313,6 +332,11 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
     textBufferRef.current = "";
   }
 
+  function clearChatImage() {
+    setChatImage(null);
+    if (imageInputRef.current) imageInputRef.current.value = "";
+  }
+
   function startNewConversation() {
     cancelRequest();
     setActiveConversationId(null);
@@ -387,7 +411,11 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
 
   async function sendMessage(text?: string) {
     const messageText = text || input.trim();
-    if (!messageText || loading || !user) return;
+    if ((!messageText && !chatImage) || loading || uploadingImage || !user) return;
+    if (chatImage) {
+      await uploadImageFromChat(messageText);
+      return;
+    }
 
     const targetConversationId = activeConversationId;
     const localUserId = `local-user-${crypto.randomUUID()}`;
@@ -560,6 +588,9 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
           const userMessageData = data.user_message;
           const assistantMessage = data.assistant_message;
           const responseText = asString(data.response) || fullText;
+          const attachments = Array.isArray(data.attachments)
+            ? data.attachments.filter(isChatImageAttachment)
+            : [];
 
           if (isConversation(conversation)) {
             setActiveConversationId(conversation.id);
@@ -581,6 +612,7 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
               toolCalls: toolCalls.length > 0 ? [...toolCalls] : undefined,
               entities: finalEntities.length > 0 ? [...finalEntities] : undefined,
               preferences: finalPreferences.length > 0 ? [...finalPreferences] : undefined,
+              attachments: attachments.length > 0 ? attachments : undefined,
             }));
           }
           resetStreamingState();
@@ -590,6 +622,77 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
         case "error":
           throw new Error(asString(data.detail) || "Streaming error");
       }
+    }
+  }
+
+  async function uploadImageFromChat(messageText: string) {
+    if (!chatImage || !user) return;
+    const patientId = chatImagePatientId.trim();
+    if (!patientId) {
+      setError("Enter Patient ID before uploading the image.");
+      return;
+    }
+
+    const localUserId = `local-user-${crypto.randomUUID()}`;
+    const localAssistantId = `local-assistant-${crypto.randomUUID()}`;
+    const userContent = messageText || `Upload skin image for Patient/${patientId}`;
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: localUserId,
+        conversation_id: activeConversationId ?? "local-upload",
+        role: "user",
+        content: userContent,
+        created_at: new Date().toISOString(),
+      },
+    ]);
+    setInput("");
+    setUploadingImage(true);
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await analyzeSkinImage(chatImage, patientId);
+      const attachment: ChatImageAttachment = {
+        type: "image",
+        patient_id: patientId,
+        diagnostic_report_id: result.diagnostic_report_id,
+        media_id: result.media_id,
+        binary_id: result.binary_id,
+        url: result.image_url,
+        content_type: chatImage.type || "image/jpeg",
+        created_at: result.created_at,
+        title: "Ảnh phân tích da",
+        description: result.analysis_text,
+      };
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: localAssistantId,
+          conversation_id: activeConversationId ?? "local-upload",
+          role: "assistant",
+          content: `Đã phân tích và lưu ảnh da cho bệnh nhân ${patientId}.\n\n${result.analysis_text}`,
+          created_at: new Date().toISOString(),
+          attachments: [attachment],
+        },
+      ]);
+      clearChatImage();
+      setChatImagePatientId("");
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: localAssistantId,
+          conversation_id: activeConversationId ?? "local-upload",
+          role: "assistant",
+          content: `**Error:** ${err instanceof Error ? err.message : "Unable to upload image"}`,
+          created_at: new Date().toISOString(),
+          failed: true,
+        },
+      ]);
+    } finally {
+      setUploadingImage(false);
+      setLoading(false);
     }
   }
 
@@ -882,6 +985,16 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
                           Retry
                         </Button>
                       )}
+                      {msg.attachments && msg.attachments.length > 0 && (
+                        <VStack align="stretch" gap={3} mt={3}>
+                          {msg.attachments.map((attachment) => (
+                            <SkinImageAttachmentView
+                              key={`${attachment.diagnostic_report_id}-${attachment.binary_id}`}
+                              attachment={attachment}
+                            />
+                          ))}
+                        </VStack>
+                      )}
                     </Box>
                   ) : (
                     <Text fontSize="sm" whiteSpace="pre-wrap" color={msg.failed ? "red.600" : undefined}>
@@ -967,11 +1080,33 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
             _focusWithin={{ borderColor: "blue.400", boxShadow: "0 0 0 1px var(--chakra-colors-blue-400)" }}
             transition="border-color 0.2s, box-shadow 0.2s"
           >
+            {chatImage && (
+              <Box px={3} py={2} borderBottomWidth="1px" borderColor="gray.100" bg="gray.50">
+                <VStack align="stretch" gap={2}>
+                  <HStack justify="space-between" gap={2}>
+                    <HStack gap={2} minW={0}>
+                      <ImagePlus size={14} />
+                      <Text fontSize="xs" truncate>{chatImage.name}</Text>
+                    </HStack>
+                    <IconButton aria-label="Remove image" size="2xs" variant="ghost" onClick={clearChatImage}>
+                      <X size={12} />
+                    </IconButton>
+                  </HStack>
+                  <Input
+                    value={chatImagePatientId}
+                    onChange={(event) => setChatImagePatientId(event.target.value)}
+                    placeholder="Patient ID"
+                    size="sm"
+                    autoComplete="off"
+                  />
+                </VStack>
+              </Box>
+            )}
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask about your healthcare data..."
+              placeholder={chatImage ? "Optional note for this upload..." : "Ask about your healthcare data..."}
               border="none"
               _focus={{ boxShadow: "none" }}
               resize="none"
@@ -981,19 +1116,38 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
               py={2}
             />
             <HStack px={2} py={1.5} justify="space-between">
-              <Text fontSize="xs" color="gray.400" display={{ base: "none", sm: "block" }}>
-                Enter to send, Shift+Enter for new line
-              </Text>
-              <IconButton
-                aria-label="Send"
+              <HStack gap={2}>
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  style={{ display: "none" }}
+                  onChange={(event) => setChatImage(event.target.files?.[0] ?? null)}
+                />
+                <IconButton
+                  aria-label="Attach skin image"
+                  size="xs"
+                  variant="ghost"
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={loading || uploadingImage}
+                >
+                  <ImagePlus size={14} />
+                </IconButton>
+                <Text fontSize="xs" color="gray.400" display={{ base: "none", sm: "block" }}>
+                  {chatImage ? "Image upload will save to Neo4j" : "Enter to send, Shift+Enter for new line"}
+                </Text>
+              </HStack>
+              <Button
                 onClick={() => sendMessage()}
-                disabled={!input.trim() || loading}
+                disabled={(!input.trim() && !chatImage) || (chatImage ? !chatImagePatientId.trim() : false) || loading || uploadingImage}
                 size="xs"
                 colorPalette="blue"
                 rounded="md"
+                loading={uploadingImage}
               >
                 <Send size={14} />
-              </IconButton>
+                {chatImage ? "Upload" : ""}
+              </Button>
             </HStack>
           </Box>
         </Box>
@@ -1069,5 +1223,90 @@ function ToolCallTimeline({ toolCalls }: { toolCalls: ToolCall[] }) {
         </Timeline.Item>
       ))}
     </Timeline.Root>
+  );
+}
+
+function SkinImageAttachmentView({ attachment }: { attachment: ChatImageAttachment }) {
+  const [objectUrl, setObjectUrl] = useState("");
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    let revoked = false;
+    let nextObjectUrl = "";
+
+    async function loadImage() {
+      const token = getAccessToken();
+      if (!token) {
+        setLoadError("Please sign in again.");
+        return;
+      }
+      const url = attachment.url.startsWith("http")
+        ? attachment.url
+        : `${API_BASE.replace(/\/api$/, "")}${attachment.url}`;
+      try {
+        const response = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) throw new Error("Unable to load image");
+        const blob = await response.blob();
+        nextObjectUrl = URL.createObjectURL(blob);
+        if (!revoked) {
+          setObjectUrl(nextObjectUrl);
+          setLoadError("");
+        }
+      } catch (err) {
+        if (!revoked) {
+          setLoadError(err instanceof Error ? err.message : "Unable to load image");
+        }
+      }
+    }
+
+    void loadImage();
+    return () => {
+      revoked = true;
+      if (nextObjectUrl) URL.revokeObjectURL(nextObjectUrl);
+    };
+  }, [attachment.url]);
+
+  const shortDescription = attachment.description
+    ? attachment.description.length > 320
+      ? `${attachment.description.slice(0, 320).trim()}...`
+      : attachment.description
+    : "";
+
+  return (
+    <Box borderWidth="1px" borderColor="gray.200" borderRadius="md" overflow="hidden" bg="white">
+      <Box px={3} py={2} borderBottomWidth="1px" borderColor="gray.100">
+        <HStack justify="space-between" align="start" gap={3}>
+          <Box minW={0}>
+            <Text fontSize="sm" fontWeight="medium">
+              {attachment.title || "Skin image"}
+            </Text>
+            <Text fontSize="xs" color="gray.500">
+              Patient/{attachment.patient_id} · {attachment.created_at || attachment.diagnostic_report_id}
+            </Text>
+          </Box>
+          <Badge size="sm">{attachment.content_type || "image"}</Badge>
+        </HStack>
+      </Box>
+      {objectUrl ? (
+        <Box bg="gray.50">
+          <img
+            src={objectUrl}
+            alt={attachment.title || "Skin image attachment"}
+            style={{ width: "100%", maxHeight: "360px", objectFit: "contain", display: "block" }}
+          />
+        </Box>
+      ) : (
+        <Flex h="160px" align="center" justify="center" bg="gray.50" color={loadError ? "red.500" : "gray.500"}>
+          {loadError ? <Text fontSize="sm">{loadError}</Text> : <Spinner size="sm" />}
+        </Flex>
+      )}
+      {shortDescription && (
+        <Text px={3} py={2} fontSize="xs" color="gray.600" whiteSpace="pre-wrap">
+          {shortDescription}
+        </Text>
+      )}
+    </Box>
   );
 }

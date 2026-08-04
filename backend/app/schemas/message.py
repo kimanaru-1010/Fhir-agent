@@ -1,6 +1,7 @@
 """Pydantic schemas for conversation messages."""
 
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -33,6 +34,19 @@ class MessageResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class ChatImageAttachment(BaseModel):
+    type: Literal["image"] = "image"
+    patient_id: str
+    diagnostic_report_id: str
+    media_id: str
+    binary_id: str
+    url: str
+    content_type: str | None = None
+    created_at: str | None = None
+    title: str | None = None
+    description: str | None = None
+
+
 class MessageListResponse(BaseModel):
     items: list[MessageResponse]
     total: int
@@ -42,3 +56,4 @@ class MessageExchangeResponse(BaseModel):
     conversation_id: UUID
     user_message: MessageResponse
     assistant_message: MessageResponse
+    attachments: list[ChatImageAttachment] = []

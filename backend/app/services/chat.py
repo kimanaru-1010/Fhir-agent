@@ -6,7 +6,9 @@ from typing import Any
 from uuid import UUID
 
 from app.agents.fhir import generate_agent_response
+from app.schemas.message import ChatImageAttachment
 from app.services.long_term_memory import save_conversation_memory
+from app.services.skin_image_chat import maybe_answer_skin_image_request
 from app.services.short_term_memory import (
     ShortTermMemoryService,
     build_conversation_context,
@@ -20,6 +22,26 @@ async def generate_assistant_response(
     conversation_id: str,
     current_user_message_id: UUID | None = None,
 ) -> str:
+    response, _ = await generate_assistant_exchange(
+        content=content,
+        user_id=user_id,
+        conversation_id=conversation_id,
+        current_user_message_id=current_user_message_id,
+    )
+    return response
+
+
+async def generate_assistant_exchange(
+    *,
+    content: str,
+    user_id: str,
+    conversation_id: str,
+    current_user_message_id: UUID | None = None,
+) -> tuple[str, list[ChatImageAttachment]]:
+    skin_result = await maybe_answer_skin_image_request(content)
+    if skin_result.handled:
+        return skin_result.response, skin_result.attachments or []
+
     short_term_context = ""
     if current_user_message_id is not None:
         context = await ShortTermMemoryService().prepare_context(
@@ -42,7 +64,7 @@ async def generate_assistant_response(
     assistant_content = extract_agent_text(result)
     if not assistant_content.strip():
         raise RuntimeError("Agent returned an empty response")
-    return assistant_content
+    return assistant_content, []
 
 
 def extract_agent_text(result: Any) -> str:

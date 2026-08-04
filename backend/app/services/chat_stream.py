@@ -17,7 +17,7 @@ from app.db.session import AsyncSessionFactory
 from app.db.models import Conversation, Message
 from app.schemas.conversation import ConversationResponse
 from app.schemas.message import MessageResponse
-from app.services.chat import generate_assistant_response, persist_chat_memory
+from app.services.chat import generate_assistant_exchange, persist_chat_memory
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +95,7 @@ async def stream_persisted_exchange(
         queue_token = collector.set_event_queue(event_queue)
 
         agent_task = asyncio.create_task(
-            generate_assistant_response(
+            generate_assistant_exchange(
                 content=content,
                 user_id=str(user_id),
                 conversation_id=str(conversation_id),
@@ -120,7 +120,7 @@ async def stream_persisted_exchange(
             if event_name in {"tool_start", "tool_end"}:
                 yield format_sse(event_name, event.get("data") or {})
 
-        assistant_content = await agent_task
+        assistant_content, attachments = await agent_task
         conversation, assistant_message = await persist_assistant_message(
             conversation_id=conversation_id,
             user_id=user_id,
@@ -158,6 +158,7 @@ async def stream_persisted_exchange(
                 "user_message": start_payload["user_message"],
                 "assistant_message": assistant_payload,
                 "response": assistant_content,
+                "attachments": [item.model_dump(mode="json") for item in attachments],
             },
         )
     except asyncio.CancelledError:

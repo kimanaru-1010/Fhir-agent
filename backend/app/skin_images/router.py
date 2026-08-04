@@ -49,6 +49,15 @@ def _normalize_patient_id(patient_id: str) -> str:
     return patient_id
 
 
+def _assert_user_can_access_patient(current_user: User, patient_id: str) -> None:
+    scoped_patient_id = (current_user.external_id or "").strip()
+    if scoped_patient_id and scoped_patient_id != patient_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User is not allowed to access this Patient",
+        )
+
+
 @router.post("/analyze", response_model=SkinImageAnalyzeResponse)
 async def analyze_image(
     patient_id: str = Form(...),
@@ -204,6 +213,7 @@ async def get_image_file(
     row = await get_binary_for_skin_image(binary_id)
     if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
+    _assert_user_can_access_patient(current_user, str(row.get("patient_id") or ""))
 
     encoded = str(row.get("data") or "")
     if not encoded:

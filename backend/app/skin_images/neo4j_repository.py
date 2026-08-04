@@ -7,6 +7,7 @@ from typing import Any
 
 from app.graph.client import execute_cypher
 from app.skin_images.fhir_builders import build_skin_analysis_bundle
+from app.skin_images.schemas import ResolvedSkinImageSearchFilters
 
 
 FHIR_LABEL_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
@@ -193,7 +194,8 @@ async def get_skin_image_detail(report_id: str) -> dict[str, Any] | None:
 async def get_binary_for_skin_image(binary_id: str) -> dict[str, Any] | None:
     rows = await execute_cypher(
         """
-        MATCH (:Reference)
+        MATCH (patient:FHIRResource:Patient)
+          <-[:RESOLVES_TO]-(:Reference)
           <-[:subject]-(report:FHIRResource:DiagnosticReport)
           -[:media]->(:FHIR_ELEMENT:media)
           -[:link]->(:Reference)-[:RESOLVES_TO]->(:FHIRResource:Media)
@@ -206,7 +208,8 @@ async def get_binary_for_skin_image(binary_id: str) -> dict[str, Any] | None:
         WHERE content.url = "Binary/" + $binary_id
            OR resolved.id = $binary_id
         MATCH (binary:FHIRResource:Binary {id: $binary_id})
-        RETURN binary.id AS binary_id,
+        RETURN patient.id AS patient_id,
+               binary.id AS binary_id,
                binary.data AS data,
                binary.contentType AS content_type
         LIMIT 1
@@ -215,3 +218,53 @@ async def get_binary_for_skin_image(binary_id: str) -> dict[str, Any] | None:
         collect=False,
     )
     return rows[0] if rows else None
+
+
+async def search_patient_skin_images(
+    filters: ResolvedSkinImageSearchFilters,
+) -> list[dict[str, Any]]:
+    order_clause = "ORDER BY issuedAt ASC" if filters.sort == "asc" else "ORDER BY issuedAt DESC"
+    rows = await execute_cypher(
+        f"""
+        MATCH (patient:FHIRResource:Patient {{
+          resourceType: "Patient",
+          id: $patient_id
+        }})
+        MATCH (report:FHIRResource:DiagnosticReport)
+          -[:subject]->(:Reference)
+          -[:RESOLVES_TO]->(patient)
+        MATCH (report)-[:media]->(:FHIR_ELEMENT:media)
+          -[:link]->(:Reference)
+          -[:RESOLVES_TO]->(media:FHIRResource:Media)
+        MATCH (media)-[:content]->(content:FHIR_ELEMENT:content)
+        MATCH (content)-[:RESOLVES_TO]->(binary:FHIRResource:Binary)
+        OPTIONAL MATCH (media)-[:modality]->(:FHIR_ELEMENT:modality)
+          -[:coding]->(coding:FHIR_ELEMENT:Coding)
+        WITH patient, report, media, content, binary, coding,
+             datetime(coalesce(report.issued, media.createdDateTime)) AS issuedAt
+        WHERE issuedAt IS NOT NULL
+          AND ($from_datetime IS NULL OR issuedAt >= datetime($from_datetime))
+          AND ($to_datetime IS NULL OR issuedAt <= datetime($to_datetime))
+          AND ($modality IS NULL OR coding.code = $modality)
+        RETURN patient.id AS patient_id,
+               report.id AS diagnostic_report_id,
+               report.conclusion AS conclusion,
+               coalesce(report.issued, media.createdDateTime) AS created_at,
+               media.id AS media_id,
+               binary.id AS binary_id,
+               coding.code AS modality,
+               coalesce(content.contentType, binary.contentType) AS content_type,
+               "/api/skin-images/files/" + binary.id AS image_url
+        {order_clause}
+        LIMIT $count
+        """,
+        {
+            "patient_id": filters.patient_id,
+            "modality": filters.modality,
+            "from_datetime": filters.from_datetime.isoformat().replace("+00:00", "Z") if filters.from_datetime else None,
+            "to_datetime": filters.to_datetime.isoformat().replace("+00:00", "Z") if filters.to_datetime else None,
+            "count": filters.count,
+        },
+        collect=False,
+    )
+    return [row for row in rows if row.get("binary_id") and row.get("image_url")]
