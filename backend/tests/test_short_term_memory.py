@@ -143,6 +143,42 @@ def test_build_conversation_context_omits_current_request_and_empty_sections():
     assert "CURRENT USER REQUEST" not in context
 
 
+def test_build_conversation_context_serializes_image_attachment_metadata_only():
+    recent = [
+        ConversationMessage(
+            id=uuid4(),
+            role="user",
+            content="Tôi cảm thấy ngứa khó chịu",
+            created_at=datetime.now(timezone.utc),
+            message_type="image_upload",
+            attachments=[
+                {
+                    "type": "image",
+                    "patient_id": "12261",
+                    "binary_id": "binary-123",
+                    "media_id": "media-123",
+                    "diagnostic_report_id": "report-123",
+                    "content_type": "image/jpeg",
+                    "url": "/api/skin-images/files/binary-123",
+                    "data": "must-not-leak",
+                }
+            ],
+        )
+    ]
+
+    context = build_conversation_context(summary="", recent_messages=recent)
+
+    assert "USER [image_upload]:\n" not in context
+    assert "USER [image_upload]: Tôi cảm thấy ngứa khó chịu" in context
+    assert "IMAGE_ATTACHMENT:" in context
+    assert "patient_id=12261" in context
+    assert "binary_id=binary-123" in context
+    assert "media_id=media-123" in context
+    assert "diagnostic_report_id=report-123" in context
+    assert "/api/skin-images/files/binary-123" not in context
+    assert "must-not-leak" not in context
+
+
 def test_token_counter_protocol_is_satisfied_by_fixed_counter():
     counter: TokenCounter = FixedTokenCounter()
     assert counter.count_text("abc") == 3

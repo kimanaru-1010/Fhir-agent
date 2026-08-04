@@ -34,3 +34,26 @@ def test_count_messages_adds_content_and_role_overhead():
         + counter.count_text("abcdefgh")
         + counter.message_overhead_tokens * 2
     )
+
+
+def test_count_messages_includes_attachment_metadata():
+    counter = ApproximateTokenCounter()
+    message = ConversationMessage(
+        id=uuid4(),
+        role="user",
+        content="Analyze this image",
+        created_at=datetime.now(timezone.utc),
+        message_type="image_upload",
+        attachments=[
+            {
+                "type": "image",
+                "patient_id": "12261",
+                "binary_id": "binary-123",
+                "data": "must-not-count",
+            }
+        ],
+    )
+
+    count = counter.count_messages([message])
+
+    assert count > counter.count_text("Analyze this image")

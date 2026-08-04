@@ -7,7 +7,12 @@ from typing import Protocol
 from openai import AsyncOpenAI
 
 from app.core.config import settings
-from app.services.token_counter import ApproximateTokenCounter, ConversationMessage, TokenCounter
+from app.services.token_counter import (
+    ApproximateTokenCounter,
+    ConversationMessage,
+    TokenCounter,
+    format_conversation_message,
+)
 
 
 class ConversationSummarizer(Protocol):
@@ -80,7 +85,7 @@ class LLMConversationSummarizer:
         messages: list[ConversationMessage],
     ) -> str:
         formatted_messages = "\n\n".join(
-            f"[{message.created_at.isoformat()}] {message.role.upper()}:\n{message.content}"
+            f"[{message.created_at.isoformat()}] {format_conversation_message(message)}"
             for message in messages
         )
         return f"""Update the existing conversation summary using only the messages below.

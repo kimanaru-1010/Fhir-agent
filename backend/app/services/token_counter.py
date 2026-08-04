@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Protocol
+from typing import Any, Protocol
 from uuid import UUID
 
 from app.core.config import settings
@@ -17,6 +17,39 @@ class ConversationMessage:
     role: str
     content: str
     created_at: datetime
+    message_type: str = "text"
+    attachments: list[dict[str, Any]] = field(default_factory=list)
+
+
+def format_conversation_message(message: ConversationMessage) -> str:
+    label = message.role.upper()
+    message_type = (message.message_type or "text").strip()
+    if message_type and message_type != "text":
+        label = f"{label} [{message_type}]"
+
+    text = f"{label}: {message.content}"
+    attachment_blocks: list[str] = []
+    for attachment in message.attachments or []:
+        if not isinstance(attachment, dict) or attachment.get("type") != "image":
+            continue
+        fields = []
+        for key in (
+            "patient_id",
+            "binary_id",
+            "media_id",
+            "diagnostic_report_id",
+            "content_type",
+            "created_at",
+        ):
+            value = attachment.get(key)
+            if value:
+                fields.append(f"{key}={value}")
+        if fields:
+            attachment_blocks.append("IMAGE_ATTACHMENT:\n" + "\n".join(fields))
+
+    if attachment_blocks:
+        text = text + "\n\n" + "\n\n".join(attachment_blocks)
+    return text
 
 
 class TokenCounter(Protocol):
@@ -40,6 +73,10 @@ class ApproximateTokenCounter:
 
     def count_messages(self, messages: list[ConversationMessage]) -> int:
         return sum(
-            self.count_text(message.content) + self.message_overhead_tokens
+            self.count_text(
+                format_conversation_message(message)
+                if message.attachments or (message.message_type or "text") != "text"
+                else message.content
+            ) + self.message_overhead_tokens
             for message in messages
         )

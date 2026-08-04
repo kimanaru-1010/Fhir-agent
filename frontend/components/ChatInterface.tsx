@@ -20,6 +20,7 @@ import {
   deleteConversation,
   getAccessToken,
   getStoredUser,
+  getSkinDiagnosticStatus,
   createImageUploadConversation,
   listConversations,
   listMessages,
@@ -28,9 +29,18 @@ import {
   openMessageStream,
   register,
   sendImageUploadMessage,
+  submitSkinDiagnosticAnswers,
 } from "@/lib/api";
 
-import type { ChatImageAttachment, ChatMessage, Conversation, UserProfile } from "@/lib/api";
+import type {
+  ChatImageAttachment,
+  ChatMessage,
+  Conversation,
+  SkinDiagnosticResult,
+  SkinDiagnosticStatus,
+  SkinPendingQuestion,
+  UserProfile,
+} from "@/lib/api";
 import { parseSseStream } from "@/lib/sse";
 import type { ParsedSseEvent } from "@/lib/sse";
 
@@ -193,6 +203,46 @@ function replaceMessage(messages: Message[], localId: string, message: ChatMessa
 function appendMessageOnce(messages: Message[], message: Message): Message[] {
   if (messages.some((item) => item.id === message.id)) return messages;
   return [...messages, message];
+}
+
+function stepLabel(step: string): string {
+  const labels: Record<string, string> = {
+    visual_extract: "Image analysis",
+    knowledge_base: "Knowledge base search",
+    clinical_planner_round1: "Question planning 1",
+    user_interview_round1: "Interview 1",
+    clinical_planner_round2: "Question planning 2",
+    user_interview_round2: "Interview 2",
+    diagnostic_reasoning: "Diagnostic reasoning",
+  };
+  return labels[step] || step || "Waiting";
+}
+
+function hasDiagnosticResult(status: SkinDiagnosticStatus | null): status is SkinDiagnosticStatus & { result: SkinDiagnosticResult } {
+  return Boolean(
+    status &&
+    status.status === "completed" &&
+    "ranked_diagnoses" in status.result,
+  );
+}
+
+function extractSkinDiagnosticRunIds(toolCalls?: ToolCall[]): string[] {
+  if (!toolCalls?.length) return [];
+  const runIds: string[] = [];
+  for (const toolCall of toolCalls) {
+    if (toolCall.name !== "start_skin_diagnostic" || !toolCall.output_preview) continue;
+    try {
+      const payload = JSON.parse(toolCall.output_preview) as {
+        status?: string;
+        data?: { run_id?: string };
+      };
+      const runId = payload.status === "ok" ? payload.data?.run_id : "";
+      if (runId && !runIds.includes(runId)) runIds.push(runId);
+    } catch {
+      continue;
+    }
+  }
+  return runIds;
 }
 
 export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputConsumed }: ChatInterfaceProps) {
@@ -965,6 +1015,9 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
                       ))}
                     </VStack>
                   )}
+                  {extractSkinDiagnosticRunIds(msg.toolCalls).map((runId) => (
+                    <ChatSkinDiagnosticRunCard key={runId} runId={runId} />
+                  ))}
                 </Box>
               </Flex>
             </Box>
@@ -1308,6 +1361,229 @@ function SkinImageAttachmentView({
           {shortDescription}
         </Text>
       )}
+    </Box>
+  );
+}
+
+function ChatSkinDiagnosticRunCard({ runId }: { runId: string }) {
+  const [status, setStatus] = useState<SkinDiagnosticStatus | null>(null);
+  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [submittingAnswers, setSubmittingAnswers] = useState(false);
+  const [error, setError] = useState("");
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const submittedStepRef = useRef<string | null>(null);
+
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  }, []);
+
+  const pollStatus = useCallback(async () => {
+    try {
+      const next = await getSkinDiagnosticStatus(runId);
+      if (next.status === "interrupt" && submittedStepRef.current === next.current_step) {
+        setStatus((prev) => prev ? { ...prev, status: "running", pending_questions: null } : next);
+        return;
+      }
+      if (next.status !== "interrupt" || submittedStepRef.current !== next.current_step) {
+        submittedStepRef.current = null;
+      }
+      setStatus(next);
+      setError("");
+      if (next.status === "completed" || next.status === "error" || next.status === "interrupt") {
+        stopPolling();
+      }
+    } catch (err) {
+      stopPolling();
+      setError(err instanceof Error ? err.message : "Unable to load diagnostic status");
+    }
+  }, [runId, stopPolling]);
+
+  const startPolling = useCallback(() => {
+    stopPolling();
+    void pollStatus();
+    pollRef.current = setInterval(() => pollStatus(), 2000);
+  }, [pollStatus, stopPolling]);
+
+  useEffect(() => {
+    startPolling();
+    return stopPolling;
+  }, [startPolling, stopPolling]);
+
+  function setAnswer(question: SkinPendingQuestion, answer: string) {
+    const questionNum = question.question_num;
+    if (questionNum === null) return;
+    setAnswers((prev) => ({ ...prev, [questionNum]: answer }));
+  }
+
+  async function submitAnswers() {
+    if (status?.status !== "interrupt" || !status.pending_questions || submittingAnswers) return;
+    const submittedStep = status.current_step;
+    const payload = status.pending_questions.map((question) => ({
+      question_num: question.question_num,
+      answer: answers[question.question_num ?? -1],
+    }));
+    if (payload.some((item) => !item.answer)) {
+      setError("Answer every question before submitting.");
+      return;
+    }
+
+    setSubmittingAnswers(true);
+    setError("");
+    submittedStepRef.current = submittedStep;
+    try {
+      await submitSkinDiagnosticAnswers(runId, payload);
+      setAnswers({});
+      setStatus((prev) => prev ? { ...prev, status: "running", pending_questions: null } : prev);
+      startPolling();
+    } catch (err) {
+      submittedStepRef.current = null;
+      setError(err instanceof Error ? err.message : "Unable to submit answers");
+      try {
+        const latest = await getSkinDiagnosticStatus(runId);
+        setStatus(latest);
+      } catch {
+        // Keep the submit error visible.
+      }
+    } finally {
+      setSubmittingAnswers(false);
+    }
+  }
+
+  const pendingQuestions = status?.status === "interrupt" ? status.pending_questions || [] : [];
+  const allAnswered = pendingQuestions.length > 0 &&
+    pendingQuestions.every((question) => answers[question.question_num ?? -1]);
+
+  return (
+    <Box mt={3} borderWidth="1px" borderColor="gray.200" borderRadius="md" overflow="hidden" bg="white">
+      <HStack px={3} py={2} justify="space-between" borderBottom="1px solid" borderColor="gray.100">
+        <Box minW={0}>
+          <Text fontSize="sm" fontWeight="semibold">Skin diagnostic run</Text>
+          <Text fontSize="xs" color="gray.500" truncate>{runId}</Text>
+        </Box>
+        <HStack gap={2}>
+          {(!status || status.status === "running") && <Spinner size="xs" />}
+          <Badge colorPalette={
+            status?.status === "error" ? "red" :
+            status?.status === "completed" ? "green" :
+            status?.status === "interrupt" ? "orange" :
+            "blue"
+          }>
+            {status?.status || "running"}
+          </Badge>
+        </HStack>
+      </HStack>
+
+      <Box p={3}>
+        {error && (
+          <Box mb={3} px={3} py={2} bg="red.50" color="red.700" fontSize="sm" borderRadius="md">
+            {error}
+          </Box>
+        )}
+
+        {status && (
+          <Box mb={3}>
+            <HStack justify="space-between" mb={2}>
+              <Text fontSize="sm" fontWeight="medium">{stepLabel(status.current_step)}</Text>
+              <Text fontSize="xs" color="gray.500">{Math.min(status.progress, 7)}/7</Text>
+            </HStack>
+            <Box h="2" bg="gray.100" borderRadius="full" overflow="hidden">
+              <Box
+                h="100%"
+                bg="blue.500"
+                width={`${Math.min((status.progress / 7) * 100, 100)}%`}
+                transition="width 0.2s"
+              />
+            </Box>
+          </Box>
+        )}
+
+        {pendingQuestions.length > 0 && (
+          <Box>
+            <Heading size="xs" mb={3}>Clinical questions</Heading>
+            <VStack align="stretch" gap={3}>
+              {pendingQuestions.map((question) => {
+                const qNum = question.question_num ?? -1;
+                return (
+                  <Box key={qNum} pb={3} borderBottom="1px solid" borderColor="gray.100">
+                    <HStack align="start" justify="space-between" gap={3}>
+                      <Text fontSize="sm" fontWeight="medium">
+                        {question.question_num}. {question.question}
+                      </Text>
+                      {question.pqrst_category && <Badge size="sm">{question.pqrst_category}</Badge>}
+                    </HStack>
+                    {question.purpose && (
+                      <Text fontSize="xs" color="gray.500" mt={1}>{question.purpose}</Text>
+                    )}
+                    <HStack gap={2} mt={2}>
+                      <Button
+                        size="xs"
+                        variant={answers[qNum] === "yes" ? "solid" : "outline"}
+                        colorPalette="green"
+                        onClick={() => setAnswer(question, "yes")}
+                      >
+                        Yes
+                      </Button>
+                      <Button
+                        size="xs"
+                        variant={answers[qNum] === "no" ? "solid" : "outline"}
+                        colorPalette="red"
+                        onClick={() => setAnswer(question, "no")}
+                      >
+                        No
+                      </Button>
+                    </HStack>
+                  </Box>
+                );
+              })}
+            </VStack>
+            <Button mt={3} size="sm" colorPalette="blue" disabled={!allAnswered} loading={submittingAnswers} onClick={submitAnswers}>
+              <Check size={14} />
+              Submit answers
+            </Button>
+          </Box>
+        )}
+
+        {hasDiagnosticResult(status) && (
+          <Box>
+            <Heading size="xs" mb={3}>Diagnostic result</Heading>
+            <VStack align="stretch" gap={3}>
+              {status.result.ranked_diagnoses.map((diagnosis, idx) => {
+                const disease = String(diagnosis.disease || "Unspecified");
+                const likelihood = diagnosis.likelihood ? String(diagnosis.likelihood) : "";
+                const evidence = Array.isArray(diagnosis.supporting_evidence)
+                  ? diagnosis.supporting_evidence.map(String).join("; ")
+                  : "";
+                return (
+                  <Box key={`${disease}-${idx}`} bg="gray.50" borderRadius="md" p={3}>
+                    <HStack justify="space-between" align="start">
+                      <Text fontSize="sm" fontWeight="semibold">
+                        {idx + 1}. {disease}
+                      </Text>
+                      {likelihood && <Badge colorPalette="purple">{likelihood}</Badge>}
+                    </HStack>
+                    {evidence && (
+                      <Text fontSize="xs" color="gray.600" mt={2}>
+                        Evidence: {evidence}
+                      </Text>
+                    )}
+                  </Box>
+                );
+              })}
+              <Box>
+                <Text fontSize="xs" color="gray.500" fontWeight="medium" mb={1}>Reasoning</Text>
+                <Text fontSize="sm" whiteSpace="pre-wrap">{status.result.reasoning}</Text>
+              </Box>
+              <Box>
+                <Text fontSize="xs" color="gray.500" fontWeight="medium" mb={1}>Visual observations</Text>
+                <Text fontSize="sm" whiteSpace="pre-wrap">{status.result.visual_observations}</Text>
+              </Box>
+            </VStack>
+          </Box>
+        )}
+      </Box>
     </Box>
   );
 }

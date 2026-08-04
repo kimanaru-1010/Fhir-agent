@@ -22,6 +22,7 @@ from app.services.token_counter import (
     ApproximateTokenCounter,
     ConversationMessage,
     TokenCounter,
+    format_conversation_message,
 )
 
 logger = logging.getLogger(__name__)
@@ -94,7 +95,7 @@ def build_conversation_context(
         )
     if recent_messages:
         lines = [
-            f"{message.role.upper()}: {message.content}"
+            format_conversation_message(message)
             for message in recent_messages
         ]
         sections.append(
@@ -334,6 +335,8 @@ class ShortTermMemoryService:
                 role=message.role,
                 content=message.content,
                 created_at=message.created_at,
+                message_type=message.message_type or "text",
+                attachments=message.attachments or [],
             )
             for message in message_result.scalars().all()
         ]

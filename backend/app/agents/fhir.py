@@ -22,9 +22,10 @@ from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.usage import UsageLimits
 
-from app.graph.client import execute_cypher, get_schema
+from app.graph.client import execute_cypher, get_collector, get_schema
 from app.schemas.message import ChatImageAttachment
 from app.services.long_term_memory import save_conversation_memory, search_memories
+from app.skin_diagnostic.service import start_skin_diagnostic_from_binary
 from app.skin_images.neo4j_repository import search_patient_skin_images
 from app.skin_images.references import build_image_api_url
 from app.skin_images.schemas import SkinImageSearchFilters
@@ -351,30 +352,9 @@ The current user request is the only task to solve.
 
 Before using tools, identify:
 
-1. What information is requested?
-2. What evidence is required?
-3. What is currently unknown?
-
-Classify the missing information as one of:
-
-- ENTITY DISCOVERY:
-  Find the target resource or entity.
-
-- RESOURCE VERIFICATION:
-  Confirm a known resource exists.
-
-- FIELD RETRIEVAL:
-  Read information from a known resource.
-
-- RELATIONSHIP RETRIEVAL:
-  Find resources connected to an existing resource.
-
-- REFERENCE OR CODE RESOLUTION:
-  Resolve identifiers, references, or coded concepts.
-
-- DATA COMPUTATION:
-  Perform aggregation, comparison, filtering, or graph computation
-  after the required evidence has been retrieved.
+- requested information;
+- required evidence;
+- unknown entity, resource, field, relationship, reference/code, or computation.
 
 
 ==================================================
@@ -385,20 +365,11 @@ Always select the smallest capability that resolves the current uncertainty.
 
 Follow this priority:
 
-1. Use discovery capabilities when the target entity is unknown.
-
-2. Use verification capabilities when the target identity is known.
-
-3. Use field-reading capabilities when the resource exists but information
-   inside it is required.
-
-4. Use relationship or resolution capabilities when connected information
-   is required.
-
-5. Use computation capabilities only after the required evidence set exists.
-
-
-Do not skip earlier stages unless the required evidence is already available.
+1. discovery for unknown targets;
+2. verification for known targets;
+3. field-reading for known resources;
+4. relationship or resolution for connected information;
+5. computation only after evidence is retrieved.
 
 Do not choose a more powerful tool when a narrower capability is sufficient.
 
@@ -456,14 +427,6 @@ MULTI RESOURCE REQUEST
 
 For requests involving multiple resources:
 
-First determine:
-
-- the complete resource population required;
-- the fields needed from each resource;
-- the related information required.
-
-Then:
-
 - retrieve the primary resource set;
 - retrieve required related information;
 - use batch operations when available;
@@ -507,19 +470,6 @@ If a tool fails:
 
 
 ==================================================
-STOP CONDITION
-==================================================
-
-Stop retrieving when:
-
-- the requested scope is covered;
-- required fields are collected;
-- unresolved information cannot affect the answer.
-
-Do not stop only because an answer can already be generated.
-
-
-==================================================
 FHIR EVIDENCE RULES
 ==================================================
 
@@ -553,6 +503,24 @@ known, ask the doctor to select or provide one.
 For latest/gần nhất, use count=1 and sort=desc. For N images, pass count=N.
 For all/toàn bộ/tất cả, set all_images=true. Never invent ids/URLs, query
 Binary.data, or ignore the tool result.
+
+
+==================================================
+SKIN DIAGNOSTIC ROUTING
+==================================================
+
+IMAGE_ATTACHMENT blocks in conversation history contain patient_id, binary_id,
+media_id, and diagnostic_report_id only.
+
+- Medical record questions: use FHIR tools.
+- Image retrieval/listing/metadata questions: use find_patient_skin_images or
+  existing IMAGE_ATTACHMENT metadata.
+- Skin diagnosis/assessment from a prior image: Use start_skin_diagnostic only when a binary_id is known. For "ảnh trên/ảnh vừa gửi/ảnh gần nhất", use the
+  latest relevant IMAGE_ATTACHMENT.
+- Use the doctor's current message exactly as initial_complaint.
+- Do not call start_skin_diagnostic for retrieval-only or metadata-only image
+  requests.
+- Never request or include Base64, bytes, or Binary.data in model context.
 
 
 ==================================================
@@ -985,6 +953,99 @@ async def find_patient_skin_images(
         data=sanitized_rows,
         message=None if sanitized_rows else "No matching skin images were found.",
     )
+
+
+@agent.tool
+async def start_skin_diagnostic(
+    ctx: RunContext[AgentDeps],
+    patient_id: Annotated[
+        str,
+        Field(description="Patient id from an IMAGE_ATTACHMENT or explicit doctor selection."),
+    ],
+    binary_id: Annotated[
+        str,
+        Field(description="Binary id from an IMAGE_ATTACHMENT. Required; never guess it."),
+    ],
+    initial_complaint: Annotated[
+        str,
+        Field(description="The doctor's current message copied exactly, without rewriting."),
+    ],
+) -> str:
+    """
+    Start the skin diagnostic workflow from an image already stored in Neo4j.
+
+    Use when:
+    - The doctor asks for diagnosis, assessment, analysis, or triage based on a
+      skin image already present in conversation history.
+    - A concrete binary_id is available from IMAGE_ATTACHMENT metadata.
+
+    Do not use when:
+    - The doctor only asks to view/list/find images or asks image metadata.
+    - No binary_id is available.
+
+    Behavior:
+    - Reads Binary.data inside backend service only.
+    - Creates a diagnostic run and starts the existing skin workflow.
+    - Returns run status metadata only.
+    """
+    resolved_patient_id = (patient_id or ctx.deps.active_patient_id or "").strip()
+    resolved_binary_id = (binary_id or "").strip()
+    if not resolved_patient_id:
+        return _json_response(
+            status="patient_required",
+            data={},
+            message="Please ask the doctor to provide or select a Patient ID before starting skin diagnosis.",
+        )
+    if not resolved_binary_id:
+        return _json_response(
+            status="binary_required",
+            data={},
+            message="Please ask the doctor to upload or retrieve a skin image before starting diagnosis.",
+        )
+
+    collector = get_collector()
+    tool_inputs = {
+        "patient_id": resolved_patient_id,
+        "binary_id": resolved_binary_id,
+        "initial_complaint": initial_complaint,
+    }
+    collector.emit_tool_start("start_skin_diagnostic", tool_inputs)
+    try:
+        run = await start_skin_diagnostic_from_binary(
+            user_id=ctx.deps.user_id,
+            patient_id=resolved_patient_id,
+            binary_id=resolved_binary_id,
+            initial_complaint=initial_complaint,
+        )
+    except Exception as exc:
+        model_content = _json_response(
+            status="error",
+            data={},
+            message=str(exc),
+        )
+        collector.collect_tool_call(
+            "start_skin_diagnostic",
+            tool_inputs,
+            model_content,
+        )
+        return model_content
+
+    model_content = _json_response(
+        status="ok",
+        data={
+            "run_id": run.id,
+            "status": "running",
+            "current_step": "visual_extract",
+            "patient_id": resolved_patient_id,
+            "binary_id": resolved_binary_id,
+        },
+    )
+    collector.collect_tool_call(
+        "start_skin_diagnostic",
+        tool_inputs,
+        model_content,
+    )
+    return model_content
 
 
 @agent.tool

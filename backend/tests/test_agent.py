@@ -19,6 +19,7 @@ from app.agents.fhir import (
     find_patient_skin_images,
     generate_agent_response,
     handle_message,
+    start_skin_diagnostic,
 )
 from app.schemas.message import ChatImageAttachment
 
@@ -40,6 +41,13 @@ def test_system_prompt_is_concise_and_preserves_core_rules():
 def test_system_prompt_forbids_duplicate_tool_calls():
     assert "repeat a tool call with the same or equivalent arguments" in SYSTEM_PROMPT
     assert "reuse the existing result" in SYSTEM_PROMPT
+
+
+def test_system_prompt_routes_image_diagnosis_from_attachment_metadata():
+    assert "IMAGE_ATTACHMENT" in SYSTEM_PROMPT
+    assert "Use start_skin_diagnostic only when" in SYSTEM_PROMPT
+    assert "Use the doctor's current message exactly as initial_complaint" in SYSTEM_PROMPT
+    assert "Do not call start_skin_diagnostic" in SYSTEM_PROMPT
 
 
 def test_batch_size_error_requires_smaller_batches():
@@ -130,6 +138,39 @@ def test_find_patient_skin_images_requires_patient_context():
         payload = json.loads(result)
         assert payload["status"] == "patient_required"
         assert payload["data"] == []
+
+    anyio.run(run_test)
+
+
+def test_start_skin_diagnostic_tool_uses_binary_id_and_exact_complaint():
+    async def run_test():
+        ctx = MagicMock()
+        ctx.deps = AgentDeps(session_id="session-1", user_id="doctor-1")
+        run = MagicMock()
+        run.id = "run-1"
+
+        with patch(
+            "app.agents.fhir.start_skin_diagnostic_from_binary",
+            AsyncMock(return_value=run),
+        ) as starter:
+            result = await start_skin_diagnostic(
+                ctx,
+                patient_id="12261",
+                binary_id="binary-123",
+                initial_complaint="Với ảnh trên tôi cảm thấy ngứa khó chịu",
+            )
+
+        starter.assert_awaited_once_with(
+            user_id="doctor-1",
+            patient_id="12261",
+            binary_id="binary-123",
+            initial_complaint="Với ảnh trên tôi cảm thấy ngứa khó chịu",
+        )
+        payload = json.loads(result)
+        assert payload["status"] == "ok"
+        assert payload["data"]["run_id"] == "run-1"
+        assert payload["data"]["current_step"] == "visual_extract"
+        assert payload["data"]["binary_id"] == "binary-123"
 
     anyio.run(run_test)
 
