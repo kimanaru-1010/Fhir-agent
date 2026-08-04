@@ -13,6 +13,7 @@ class SkinImageAnalyzeResponse(BaseModel):
     modality: str
     analysis_text: str
     image_url: str
+    content_type: str | None = None
     created_at: datetime
 
 

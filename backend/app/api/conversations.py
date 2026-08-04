@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import StreamingResponse
@@ -18,12 +18,17 @@ from app.schemas.conversation import (
     ConversationListResponse,
     ConversationResponse,
 )
-from app.schemas.message import MessageResponse
+from app.schemas.message import ChatImageAttachment, MessageExchangeResponse, MessageResponse
 from app.services.chat import generate_assistant_exchange, persist_chat_memory
 from app.services.chat_stream import (
     serialize_conversation,
     serialize_message,
     stream_persisted_exchange,
+)
+from app.skin_images.service import (
+    analyze_and_save_skin_image,
+    build_upload_attachment,
+    normalize_patient_id,
 )
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
@@ -42,6 +47,8 @@ async def create_conversation_with_user_message(
     db: AsyncSession,
     user_id: UUID,
     first_message: str,
+    message_type: str = "text",
+    attachments: list[dict] | None = None,
 ) -> tuple[Conversation, Message]:
     conversation = Conversation(
         user_id=user_id,
@@ -55,6 +62,8 @@ async def create_conversation_with_user_message(
             conversation_id=conversation.id,
             role="user",
             content=first_message,
+            message_type=message_type,
+            attachments=attachments or [],
         )
         db.add(user_message)
         await db.commit()
@@ -65,6 +74,21 @@ async def create_conversation_with_user_message(
     await db.refresh(conversation)
     await db.refresh(user_message)
     return conversation, user_message
+
+
+def _stored_image_attachment(attachment: ChatImageAttachment) -> dict:
+    return {
+        "type": "image",
+        "patient_id": attachment.patient_id,
+        "binary_id": attachment.binary_id,
+        "media_id": attachment.media_id,
+        "diagnostic_report_id": attachment.diagnostic_report_id,
+        "content_type": attachment.content_type,
+    }
+
+
+def _upload_assistant_content(patient_id: str, analysis_text: str) -> str:
+    return f"Đã phân tích và lưu ảnh da cho bệnh nhân {patient_id}.\n\n{analysis_text}"
 
 
 async def _get_owned_conversation(
@@ -212,6 +236,61 @@ async def create_conversation_stream(
             "Cache-Control": "no-cache",
             "X-Accel-Buffering": "no",
         },
+    )
+
+
+@router.post(
+    "/image-upload",
+    response_model=MessageExchangeResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_conversation_image_upload(
+    patient_id: str = Form(...),
+    content: str = Form(default=""),
+    image: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    patient_id = normalize_patient_id(patient_id)
+    user_content = content.strip() or f"Upload skin image for Patient/{patient_id}"
+    result = await analyze_and_save_skin_image(patient_id=patient_id, image=image)
+    attachment = build_upload_attachment(patient_id=patient_id, result=result)
+    stored_attachment = _stored_image_attachment(attachment)
+
+    try:
+        conversation, user_message = await create_conversation_with_user_message(
+            db=db,
+            user_id=current_user.id,
+            first_message=user_content,
+            message_type="image_upload",
+            attachments=[stored_attachment],
+        )
+        assistant_message = Message(
+            conversation_id=conversation.id,
+            role="assistant",
+            content=_upload_assistant_content(patient_id, result.analysis_text),
+            message_type="text",
+        )
+        db.add(assistant_message)
+        conversation.updated_at = datetime.now(timezone.utc)
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        logger.exception("Failed to persist image upload conversation for user_id=%s", current_user.id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to persist image upload message",
+        )
+
+    await db.refresh(conversation)
+    await db.refresh(user_message)
+    await db.refresh(assistant_message)
+
+    return MessageExchangeResponse(
+        conversation_id=conversation.id,
+        user_message=MessageResponse.model_validate(user_message),
+        assistant_message=MessageResponse.model_validate(assistant_message),
+        attachments=[attachment],
     )
 
 

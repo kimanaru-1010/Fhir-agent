@@ -20,13 +20,14 @@ import {
   deleteConversation,
   getAccessToken,
   getStoredUser,
-  analyzeSkinImage,
+  createImageUploadConversation,
   listConversations,
   listMessages,
   login,
   openConversationStream,
   openMessageStream,
   register,
+  sendImageUploadMessage,
 } from "@/lib/api";
 
 import type { ChatImageAttachment, ChatMessage, Conversation, UserProfile } from "@/lib/api";
@@ -634,7 +635,6 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
       return;
     }
 
-    const localUserId = `local-user-${crypto.randomUUID()}`;
     const localAssistantId = `local-assistant-${crypto.randomUUID()}`;
     const userContent = messageText || `Upload skin image for Patient/${patientId}`;
 
@@ -643,41 +643,17 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
     setError(null);
 
     try {
-      const result = await analyzeSkinImage(chatImage, patientId);
+      const result = activeConversationId
+        ? await sendImageUploadMessage(activeConversationId, chatImage, patientId, userContent)
+        : await createImageUploadConversation(chatImage, patientId, userContent);
 
-      const conversationId = activeConversationId ?? "local-upload";
-
-      const attachment: ChatImageAttachment = {
-        type: "image",
-        placement: "user-upload",
-        patient_id: patientId,
-        diagnostic_report_id: result.diagnostic_report_id,
-        media_id: result.media_id,
-        binary_id: result.binary_id,
-        url: result.image_url,
-        content_type: chatImage.type || "image/jpeg",
-        created_at: result.created_at,
-      };
-
-      const userMessage: Message = {
-        id: localUserId,
-        conversation_id: conversationId,
-        role: "user",
-        content: userContent,
-        created_at: new Date().toISOString(),
-        attachments: [attachment],
-      };
-
-      const assistantMessage: Message = {
-        id: localAssistantId,
-        conversation_id: conversationId,
-        role: "assistant",
-        content: `Đã phân tích và lưu ảnh da cho bệnh nhân ${patientId}.\n\n${result.analysis_text}`,
-        created_at: new Date().toISOString(),
-        attachments: [],
-      };
-
-      setMessages((previous) => [...previous, userMessage, assistantMessage]);
+      setActiveConversationId(result.conversation_id);
+      void loadConversationList();
+      setMessages((previous) => [
+        ...previous,
+        mapBackendMessage(result.user_message),
+        mapBackendMessage(result.assistant_message),
+      ]);
 
       setInput("");
       setChatImagePatientId("");

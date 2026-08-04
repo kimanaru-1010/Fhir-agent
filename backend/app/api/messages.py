@@ -6,7 +6,7 @@ import logging
 from datetime import datetime, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import StreamingResponse
@@ -15,6 +15,7 @@ from app.db.session import get_db
 from app.db.models import Conversation, Message, User
 from app.dependencies.auth import get_current_user
 from app.schemas.message import (
+    ChatImageAttachment,
     MessageCreateRequest,
     MessageExchangeResponse,
     MessageListResponse,
@@ -24,6 +25,11 @@ from app.services.chat import generate_assistant_exchange, persist_chat_memory
 from app.services.chat_stream import (
     serialize_message,
     stream_persisted_exchange,
+)
+from app.skin_images.service import (
+    analyze_and_save_skin_image,
+    build_upload_attachment,
+    normalize_patient_id,
 )
 
 router = APIRouter(
@@ -74,6 +80,21 @@ async def create_user_message(
     await db.refresh(user_message)
     await db.refresh(conversation)
     return user_message
+
+
+def _stored_image_attachment(attachment: ChatImageAttachment) -> dict:
+    return {
+        "type": "image",
+        "patient_id": attachment.patient_id,
+        "binary_id": attachment.binary_id,
+        "media_id": attachment.media_id,
+        "diagnostic_report_id": attachment.diagnostic_report_id,
+        "content_type": attachment.content_type,
+    }
+
+
+def _upload_assistant_content(patient_id: str, analysis_text: str) -> str:
+    return f"Đã phân tích và lưu ảnh da cho bệnh nhân {patient_id}.\n\n{analysis_text}"
 
 
 @router.get(
@@ -200,6 +221,68 @@ async def create_message(
         user_message=MessageResponse.model_validate(user_message),
         assistant_message=MessageResponse.model_validate(assistant_message),
         attachments=attachments,
+    )
+
+
+@router.post(
+    "/image-upload",
+    response_model=MessageExchangeResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_image_upload_message(
+    conversation_id: UUID,
+    patient_id: str = Form(...),
+    content: str = Form(default=""),
+    image: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    conversation = await get_owned_conversation(db, conversation_id, current_user.id)
+    patient_id = normalize_patient_id(patient_id)
+    user_content = content.strip() or f"Upload skin image for Patient/{patient_id}"
+
+    result = await analyze_and_save_skin_image(patient_id=patient_id, image=image)
+    attachment = build_upload_attachment(patient_id=patient_id, result=result)
+
+    user_message = Message(
+        conversation_id=conversation.id,
+        role="user",
+        content=user_content,
+        message_type="image_upload",
+        attachments=[_stored_image_attachment(attachment)],
+    )
+    assistant_message = Message(
+        conversation_id=conversation.id,
+        role="assistant",
+        content=_upload_assistant_content(patient_id, result.analysis_text),
+        message_type="text",
+    )
+    try:
+        db.add(user_message)
+        db.add(assistant_message)
+        conversation.updated_at = datetime.now(timezone.utc)
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        logger.exception(
+            "Failed to persist image upload message for conversation_id=%s user_id=%s",
+            conversation_id,
+            current_user.id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to persist image upload message",
+        )
+
+    await db.refresh(user_message)
+    await db.refresh(assistant_message)
+    await db.refresh(conversation)
+
+    return MessageExchangeResponse(
+        conversation_id=conversation.id,
+        user_message=MessageResponse.model_validate(user_message),
+        assistant_message=MessageResponse.model_validate(assistant_message),
+        attachments=[attachment],
     )
 
 

@@ -33,6 +33,7 @@ export interface ChatMessage {
   conversation_id: string;
   role: "user" | "assistant" | "system";
   content: string;
+  message_type?: string;
   created_at: string;
   attachments?: ChatImageAttachment[];
 }
@@ -115,6 +116,7 @@ export interface SkinImageAnalyzeResponse {
   modality: string;
   analysis_text: string;
   image_url: string;
+  content_type?: string | null;
   created_at: string;
 }
 
@@ -365,6 +367,47 @@ export async function analyzeSkinImage(
     throw new ApiError(response.status, await readError(response));
   }
   return response.json() as Promise<SkinImageAnalyzeResponse>;
+}
+
+export async function createImageUploadConversation(
+  image: File,
+  patientId: string,
+  content: string,
+): Promise<MessageExchangeResponse> {
+  const body = new FormData();
+  body.append("patient_id", patientId);
+  body.append("content", content);
+  body.append("image", image);
+
+  const response = await apiFetch("/conversations/image-upload", {
+    method: "POST",
+    body,
+  });
+  if (!response.ok) {
+    throw new ApiError(response.status, await readError(response));
+  }
+  return response.json() as Promise<MessageExchangeResponse>;
+}
+
+export async function sendImageUploadMessage(
+  conversationId: string,
+  image: File,
+  patientId: string,
+  content: string,
+): Promise<MessageExchangeResponse> {
+  const body = new FormData();
+  body.append("patient_id", patientId);
+  body.append("content", content);
+  body.append("image", image);
+
+  const response = await apiFetch(`/conversations/${conversationId}/messages/image-upload`, {
+    method: "POST",
+    body,
+  });
+  if (!response.ok) {
+    throw new ApiError(response.status, await readError(response));
+  }
+  return response.json() as Promise<MessageExchangeResponse>;
 }
 
 export async function listSkinImages(patientId?: string): Promise<SkinImageListResponse> {

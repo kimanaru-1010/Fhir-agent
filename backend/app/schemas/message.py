@@ -6,6 +6,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.skin_images.references import build_image_api_url
+
 
 class MessageCreateRequest(BaseModel):
     content: str = Field(
@@ -30,7 +32,7 @@ class ChatImageAttachment(BaseModel):
     diagnostic_report_id: str
     media_id: str
     binary_id: str
-    url: str
+    url: str | None = None
     content_type: str | None = None
     created_at: str | None = None
     title: str | None = None
@@ -42,6 +44,7 @@ class MessageResponse(BaseModel):
     conversation_id: UUID
     role: str
     content: str
+    message_type: str = "text"
     attachments: list[ChatImageAttachment] = Field(default_factory=list)
     created_at: datetime
 
@@ -50,7 +53,21 @@ class MessageResponse(BaseModel):
     @field_validator("attachments", mode="before")
     @classmethod
     def normalize_attachments(cls, value):
-        return [] if value is None else value
+        if value is None:
+            return []
+        if not isinstance(value, list):
+            return value
+        normalized = []
+        for item in value:
+            if isinstance(item, dict) and item.get("binary_id") and not item.get("url"):
+                item = {**item, "url": build_image_api_url(str(item["binary_id"]))}
+            normalized.append(item)
+        return normalized
+
+    @field_validator("message_type", mode="before")
+    @classmethod
+    def normalize_message_type(cls, value):
+        return "text" if value is None else value
 
 
 class MessageListResponse(BaseModel):

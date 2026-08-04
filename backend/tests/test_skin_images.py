@@ -47,9 +47,9 @@ def test_analyze_requires_linked_patient_in_neo4j(mocker):
     app = _make_app(_make_user())
     client = TestClient(app)
 
-    mocker.patch("app.skin_images.router.patient_exists", new=AsyncMock(return_value=False))
-    process_mock = mocker.patch("app.skin_images.router.normalize_uploaded_skin_image", new=AsyncMock())
-    save_mock = mocker.patch("app.skin_images.router.save_skin_analysis", new=AsyncMock())
+    mocker.patch("app.skin_images.service.patient_exists", new=AsyncMock(return_value=False))
+    process_mock = mocker.patch("app.skin_images.service.normalize_uploaded_skin_image", new=AsyncMock())
+    save_mock = mocker.patch("app.skin_images.service.save_skin_analysis", new=AsyncMock())
 
     response = client.post(
         "/api/skin-images/analyze",
@@ -77,9 +77,9 @@ def test_analyze_saves_skin_resources_for_selected_patient(mocker):
     app = _make_app(_make_user())
     client = TestClient(app)
 
-    patient_mock = mocker.patch("app.skin_images.router.patient_exists", new=AsyncMock(return_value=True))
+    patient_mock = mocker.patch("app.skin_images.service.patient_exists", new=AsyncMock(return_value=True))
     mocker.patch(
-        "app.skin_images.router.normalize_uploaded_skin_image",
+        "app.skin_images.service.normalize_uploaded_skin_image",
         new=AsyncMock(
             return_value=ProcessedImage(
                 raw=b"normalized-image",
@@ -90,15 +90,15 @@ def test_analyze_saves_skin_resources_for_selected_patient(mocker):
         ),
     )
     mocker.patch(
-        "app.skin_images.router.classify_skin_modality",
+        "app.skin_images.service.classify_skin_modality",
         new=AsyncMock(return_value=("XC", "Dermatology")),
     )
     mocker.patch(
-        "app.skin_images.router.analyze_skin_image",
+        "app.skin_images.service.analyze_skin_image",
         new=AsyncMock(return_value="AI skin analysis"),
     )
     save_mock = mocker.patch(
-        "app.skin_images.router.save_skin_analysis",
+        "app.skin_images.service.save_skin_analysis",
         new=AsyncMock(
             return_value={
                 "binary_id": "binary-1",
@@ -357,3 +357,4 @@ async def test_repository_saves_resources_through_cyfhir_bundle(mocker):
     assert '"resourceType": "DiagnosticReport"' in bundle_json
     assert "MERGE (binary" not in query
     assert "CREATE (subject" not in query
+

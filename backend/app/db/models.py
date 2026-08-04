@@ -166,6 +166,13 @@ class Message(Base):
         nullable=False,
     )
 
+    message_type: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        default="text",
+        server_default="text",
+    )
+
     attachments: Mapped[list[dict[str, Any]]] = mapped_column(
         JSONB,
         nullable=False,
