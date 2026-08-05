@@ -27,6 +27,7 @@ SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
 class SkinDiagnosticRun:
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str = ""
+    conversation_id: str = ""
     status: str = "idle"
     current_step: str = ""
     state: dict[str, Any] = field(default_factory=dict)
@@ -88,6 +89,7 @@ class SkinDiagnosticStore:
         self,
         *,
         user_id: str,
+        conversation_id: str = "",
         image_path: str,
         image_url: str,
         anamnesis: str,
@@ -97,6 +99,7 @@ class SkinDiagnosticStore:
             run = SkinDiagnosticRun(
                 id=run_id or str(uuid.uuid4()),
                 user_id=user_id,
+                conversation_id=conversation_id,
                 image_path=image_path,
                 image_url=image_url,
                 anamnesis=anamnesis,

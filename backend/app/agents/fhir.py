@@ -1013,6 +1013,7 @@ async def start_skin_diagnostic(
     try:
         run = await start_skin_diagnostic_from_binary(
             user_id=ctx.deps.user_id,
+            conversation_id=ctx.deps.session_id,
             patient_id=resolved_patient_id,
             binary_id=resolved_binary_id,
             initial_complaint=initial_complaint,

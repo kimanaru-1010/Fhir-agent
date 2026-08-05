@@ -35,7 +35,7 @@ export interface ChatMessage {
   content: string;
   message_type?: string;
   created_at: string;
-  attachments?: ChatImageAttachment[];
+  attachments?: ChatAttachment[];
 }
 
 export interface ChatImageAttachment {
@@ -51,6 +51,15 @@ export interface ChatImageAttachment {
   title?: string | null;
   description?: string | null;
 }
+
+export interface SkinDiagnosticResultAttachment {
+  type: "skin_diagnostic_result";
+  run_id: string;
+  result: SkinDiagnosticResult;
+  created_at?: string | null;
+}
+
+export type ChatAttachment = ChatImageAttachment | SkinDiagnosticResultAttachment;
 
 export interface ConversationListResponse {
   items: Conversation[];

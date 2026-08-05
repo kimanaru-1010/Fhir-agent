@@ -26,6 +26,7 @@ class PendingQuestion(BaseModel):
 class SkinDiagnosticResult(BaseModel):
     ranked_diagnoses: list[dict] = Field(default_factory=list)
     reasoning: str = ""
+    remaining_uncertainty: str = ""
     visual_observations: str = ""
     visual_differentials: list[str] = Field(default_factory=list)
     qa_history: str = ""

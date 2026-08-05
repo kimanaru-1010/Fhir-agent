@@ -36,6 +36,7 @@ def _decode_binary_data(value) -> bytes:
 async def start_skin_diagnostic_from_binary(
     *,
     user_id: str,
+    conversation_id: str = "",
     patient_id: str,
     binary_id: str,
     initial_complaint: str,
@@ -58,6 +59,7 @@ async def start_skin_diagnostic_from_binary(
     run = await store.create(
         run_id=run_id,
         user_id=user_id,
+        conversation_id=conversation_id,
         image_path=str(image_path),
         image_url=build_image_api_url(binary_id),
         anamnesis=initial_complaint,

@@ -14,6 +14,7 @@ both rounds just call it with different inputs.
 
 import asyncio
 
+from app.skin_diagnostic.result_messages import persist_skin_diagnostic_result_message
 from app.skin_diagnostic.session_store import get_store
 
 
@@ -290,6 +291,9 @@ async def run_pipeline_background(session_id: str, image_path: str, anamnesis: s
             state["reasoning"] = diag_output[:500]
 
         await store.update(session_id, status="completed", current_step="diagnostic_reasoning", state=state)
+        completed_run = await store.get(session_id)
+        if completed_run is not None:
+            await persist_skin_diagnostic_result_message(completed_run)
 
     except Exception as e:
         await store.update(session_id, status="error", error=str(e))

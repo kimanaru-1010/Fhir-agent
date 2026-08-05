@@ -162,6 +162,7 @@ def test_start_skin_diagnostic_tool_uses_binary_id_and_exact_complaint():
 
         starter.assert_awaited_once_with(
             user_id="doctor-1",
+            conversation_id="session-1",
             patient_id="12261",
             binary_id="binary-123",
             initial_complaint="Với ảnh trên tôi cảm thấy ngứa khó chịu",

@@ -33,10 +33,12 @@ import {
 } from "@/lib/api";
 
 import type {
+  ChatAttachment,
   ChatImageAttachment,
   ChatMessage,
   Conversation,
   SkinDiagnosticResult,
+  SkinDiagnosticResultAttachment,
   SkinDiagnosticStatus,
   SkinPendingQuestion,
   UserProfile,
@@ -75,7 +77,7 @@ interface Message extends ChatMessage {
   failed?: boolean;
   entities?: ExtractedEntity[];
   preferences?: DetectedPreference[];
-  attachments?: ChatImageAttachment[];
+  attachments?: ChatAttachment[];
 }
 
 interface ChatInterfaceProps {
@@ -175,6 +177,15 @@ function isChatImageAttachment(value: unknown): value is ChatImageAttachment {
   );
 }
 
+function isSkinDiagnosticResultAttachment(value: unknown): value is SkinDiagnosticResultAttachment {
+  return (
+    isRecord(value) &&
+    value.type === "skin_diagnostic_result" &&
+    typeof value.run_id === "string" &&
+    isRecord(value.result)
+  );
+}
+
 function isGraphData(value: unknown): value is GraphData {
   return isRecord(value) && Array.isArray(value.results);
 }
@@ -185,6 +196,7 @@ function mapBackendMessage(message: ChatMessage): Message {
     conversation_id: message.conversation_id,
     role: message.role,
     content: message.content,
+    message_type: message.message_type ?? "text",
     created_at: message.created_at,
     attachments: message.attachments,
   };
@@ -793,6 +805,14 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
     }
   }
 
+  const persistedSkinDiagnosticRunIds = new Set(
+    messages.flatMap((message) =>
+      (message.attachments || [])
+        .filter(isSkinDiagnosticResultAttachment)
+        .map((attachment) => attachment.run_id),
+    ),
+  );
+
   if (!authReady) {
     return (
       <Flex align="center" justify="center" h="100%">
@@ -978,6 +998,15 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
                   {msg.role === "assistant" ? (
                     <Box fontSize="sm" className="markdown-content">
                       {(() => {
+                        const resultAttachment = (msg.attachments || []).find(isSkinDiagnosticResultAttachment);
+                        if (msg.message_type === "skin_diagnostic_result" && resultAttachment) {
+                          return (
+                            <SkinDiagnosticResultMessageCard
+                              runId={resultAttachment.run_id}
+                              result={resultAttachment.result}
+                            />
+                          );
+                        }
                         const { thinking, response } = splitThinkingAndResponse(msg.content);
                         return (
                           <>
@@ -1040,7 +1069,7 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
                   )}
                   {msg.attachments && msg.attachments.length > 0 && (
                     <VStack align="stretch" gap={3} mt={3}>
-                      {msg.attachments.map((attachment) => (
+                      {msg.attachments.filter(isChatImageAttachment).map((attachment) => (
                         <SkinImageAttachmentView
                           key={`${attachment.diagnostic_report_id}-${attachment.binary_id}`}
                           attachment={attachment}
@@ -1050,8 +1079,18 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
                       ))}
                     </VStack>
                   )}
-                  {extractSkinDiagnosticRunIds(msg.toolCalls).map((runId) => (
-                    <ChatSkinDiagnosticRunCard key={runId} runId={runId} />
+                  {extractSkinDiagnosticRunIds(msg.toolCalls)
+                    .filter((runId) => !persistedSkinDiagnosticRunIds.has(runId))
+                    .map((runId) => (
+                    <ChatSkinDiagnosticRunCard
+                      key={runId}
+                      runId={runId}
+                      onCompleted={() => {
+                        if (activeConversationId) {
+                          void loadConversationMessages(activeConversationId);
+                        }
+                      }}
+                    />
                   ))}
                 </Box>
               </Flex>
@@ -1400,13 +1439,110 @@ function SkinImageAttachmentView({
   );
 }
 
-function ChatSkinDiagnosticRunCard({ runId }: { runId: string }) {
+function SkinDiagnosticResultMessageCard({
+  runId,
+  result,
+}: {
+  runId?: string;
+  result: SkinDiagnosticResult;
+}) {
+  return (
+    <Box>
+      <HStack justify="space-between" align="start" mb={3}>
+        <Heading size="xs">Ket qua chan doan da lieu</Heading>
+        {runId && <Badge variant="subtle">Run {runId.slice(0, 8)}</Badge>}
+      </HStack>
+      <VStack align="stretch" gap={3}>
+        {result.ranked_diagnoses.map((diagnosis, idx) => {
+          const rank = Number(diagnosis.rank || idx + 1);
+          const disease = diagnosis.disease?.trim() || "Chua xac dinh";
+          const confidence = diagnosis.confidence || "Low";
+          const evidenceFor = diagnosis.evidence_for?.trim() || "";
+          const evidenceAgainst = diagnosis.evidence_against?.trim() || "";
+          return (
+            <Box
+              key={`${rank}-${disease}`}
+              bg="gray.50"
+              borderWidth="1px"
+              borderColor={diagnosisBorderColor(confidence)}
+              borderLeftWidth="5px"
+              borderRadius="md"
+              p={3}
+            >
+              <HStack justify="space-between" align="start" gap={3}>
+                <Text fontSize="sm" fontWeight="semibold">
+                  #{rank} - {confidenceLabel(confidence)}: {disease}
+                </Text>
+                <Badge colorPalette={confidencePalette(confidence)}>
+                  {confidence}
+                </Badge>
+              </HStack>
+              {evidenceFor && (
+                <Text fontSize="xs" color="gray.700" mt={2} whiteSpace="pre-wrap">
+                  <Text as="span" fontWeight="semibold">Bang chung ho tro: </Text>
+                  {evidenceFor}
+                </Text>
+              )}
+              {evidenceAgainst && (
+                <Text fontSize="xs" color="gray.700" mt={2} whiteSpace="pre-wrap">
+                  <Text as="span" fontWeight="semibold" color="red.700">
+                    Diem can loai tru:{" "}
+                  </Text>
+                  {evidenceAgainst}
+                </Text>
+              )}
+            </Box>
+          );
+        })}
+        {result.reasoning && (
+          <Box>
+            <Text fontSize="xs" color="gray.500" fontWeight="medium" mb={1}>Bien luan y khoa</Text>
+            <Text fontSize="sm" whiteSpace="pre-wrap">{result.reasoning}</Text>
+          </Box>
+        )}
+        {result.visual_observations && (
+          <Box>
+            <Text fontSize="xs" color="gray.500" fontWeight="medium" mb={1}>Phan tich hinh anh ton thuong</Text>
+            <Text fontSize="sm" whiteSpace="pre-wrap">{result.visual_observations}</Text>
+          </Box>
+        )}
+        {result.remaining_uncertainty && (
+          <Box borderWidth="1px" borderColor="orange.200" borderRadius="md" bg="orange.50" p={3}>
+            <Text fontSize="xs" color="orange.800" fontWeight="medium" mb={1}>
+              Thong tin can bo sung
+            </Text>
+            <Text fontSize="sm" color="orange.900" whiteSpace="pre-wrap">
+              {result.remaining_uncertainty}
+            </Text>
+          </Box>
+        )}
+        <Text fontSize="xs" color="gray.500">
+          Ket qua chi co muc dich ho tro quyet dinh lam sang, khong thay the viec kham truc tiep va chan doan cua bac si.
+        </Text>
+      </VStack>
+    </Box>
+  );
+}
+
+function ChatSkinDiagnosticRunCard({
+  runId,
+  onCompleted,
+}: {
+  runId: string;
+  onCompleted?: () => void;
+}) {
   const [status, setStatus] = useState<SkinDiagnosticStatus | null>(null);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [submittingAnswers, setSubmittingAnswers] = useState(false);
   const [error, setError] = useState("");
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const submittedStepRef = useRef<string | null>(null);
+  const completedNotifiedRef = useRef(false);
+  const onCompletedRef = useRef(onCompleted);
+
+  useEffect(() => {
+    onCompletedRef.current = onCompleted;
+  }, [onCompleted]);
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) {
@@ -1429,6 +1565,10 @@ function ChatSkinDiagnosticRunCard({ runId }: { runId: string }) {
       setError("");
       if (next.status === "completed" || next.status === "error" || next.status === "interrupt") {
         stopPolling();
+      }
+      if (next.status === "completed" && !completedNotifiedRef.current) {
+        completedNotifiedRef.current = true;
+        window.setTimeout(() => onCompletedRef.current?.(), 500);
       }
     } catch (err) {
       stopPolling();
@@ -1582,73 +1722,7 @@ function ChatSkinDiagnosticRunCard({ runId }: { runId: string }) {
         )}
 
         {hasDiagnosticResult(status) && (
-          <Box>
-            <Heading size="xs" mb={3}>Ket qua chan doan da lieu</Heading>
-            <VStack align="stretch" gap={3}>
-              {status.result.ranked_diagnoses.map((diagnosis, idx) => {
-                const rank = Number(diagnosis.rank || idx + 1);
-                const disease = diagnosis.disease?.trim() || "Chua xac dinh";
-                const confidence = diagnosis.confidence || "Low";
-                const evidenceFor = diagnosis.evidence_for?.trim() || "";
-                const evidenceAgainst = diagnosis.evidence_against?.trim() || "";
-                return (
-                  <Box
-                    key={`${rank}-${disease}`}
-                    bg="gray.50"
-                    borderWidth="1px"
-                    borderColor={diagnosisBorderColor(confidence)}
-                    borderLeftWidth="5px"
-                    borderRadius="md"
-                    p={3}
-                  >
-                    <HStack justify="space-between" align="start" gap={3}>
-                      <Text fontSize="sm" fontWeight="semibold">
-                        #{rank} - {confidenceLabel(confidence)}: {disease}
-                      </Text>
-                      <Badge colorPalette={confidencePalette(confidence)}>
-                        {confidence}
-                      </Badge>
-                    </HStack>
-                    {evidenceFor && (
-                      <Text fontSize="xs" color="gray.700" mt={2} whiteSpace="pre-wrap">
-                        <Text as="span" fontWeight="semibold">Bang chung ho tro: </Text>
-                        {evidenceFor}
-                      </Text>
-                    )}
-                    {evidenceAgainst && (
-                      <Text fontSize="xs" color="gray.700" mt={2} whiteSpace="pre-wrap">
-                        <Text as="span" fontWeight="semibold" color="red.700">
-                          Diem can loai tru:{" "}
-                        </Text>
-                        {evidenceAgainst}
-                      </Text>
-                    )}
-                  </Box>
-                );
-              })}
-              <Box>
-                <Text fontSize="xs" color="gray.500" fontWeight="medium" mb={1}>Bien luan y khoa</Text>
-                <Text fontSize="sm" whiteSpace="pre-wrap">{status.result.reasoning}</Text>
-              </Box>
-              <Box>
-                <Text fontSize="xs" color="gray.500" fontWeight="medium" mb={1}>Phan tich hinh anh ton thuong</Text>
-                <Text fontSize="sm" whiteSpace="pre-wrap">{status.result.visual_observations}</Text>
-              </Box>
-              {status.result.remaining_uncertainty && (
-                <Box borderWidth="1px" borderColor="orange.200" borderRadius="md" bg="orange.50" p={3}>
-                  <Text fontSize="xs" color="orange.800" fontWeight="medium" mb={1}>
-                    Thong tin can bo sung
-                  </Text>
-                  <Text fontSize="sm" color="orange.900" whiteSpace="pre-wrap">
-                    {status.result.remaining_uncertainty}
-                  </Text>
-                </Box>
-              )}
-              <Text fontSize="xs" color="gray.500">
-                Ket qua chi co muc dich ho tro quyet dinh lam sang, khong thay the viec kham truc tiep va chan doan cua bac si.
-              </Text>
-            </VStack>
-          </Box>
+          <SkinDiagnosticResultMessageCard runId={runId} result={status.result} />
         )}
       </Box>
     </Box>

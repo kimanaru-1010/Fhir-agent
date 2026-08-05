@@ -1,7 +1,7 @@
 """Pydantic schemas for conversation messages."""
 
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -39,13 +39,20 @@ class ChatImageAttachment(BaseModel):
     description: str | None = None
 
 
+class SkinDiagnosticResultAttachment(BaseModel):
+    type: Literal["skin_diagnostic_result"] = "skin_diagnostic_result"
+    run_id: str
+    result: dict[str, Any] = Field(default_factory=dict)
+    created_at: str | None = None
+
+
 class MessageResponse(BaseModel):
     id: UUID
     conversation_id: UUID
     role: str
     content: str
     message_type: str = "text"
-    attachments: list[ChatImageAttachment] = Field(default_factory=list)
+    attachments: list[ChatImageAttachment | SkinDiagnosticResultAttachment] = Field(default_factory=list)
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
