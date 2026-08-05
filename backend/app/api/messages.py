@@ -31,6 +31,7 @@ from app.skin_images.service import (
     build_upload_attachment,
     normalize_patient_id,
 )
+from app.skin_diagnostic.service import start_skin_diagnostic_from_binary
 
 router = APIRouter(
     prefix="/conversations/{conversation_id}/messages",
@@ -95,6 +96,51 @@ def _stored_image_attachment(attachment: ChatImageAttachment) -> dict:
 
 def _upload_assistant_content(patient_id: str, analysis_text: str) -> str:
     return f"Đã phân tích và lưu ảnh da cho bệnh nhân {patient_id}.\n\n{analysis_text}"
+
+
+def _diagnostic_pending_content(patient_id: str, complaint: str) -> str:
+    if not complaint:
+        return _upload_assistant_content(patient_id, "")
+    return (
+        "Đã lưu ảnh da vào hồ sơ bệnh nhân "
+        f"{patient_id}. Tôi đang bắt đầu quy trình phân tích hình ảnh da liễu."
+    )
+
+
+def _diagnostic_started_content(
+    content: str,
+    run_id: str | None,
+    warning: str | None,
+    complaint: str,
+) -> str:
+    if warning:
+        return (
+            f"{content}\n\n"
+            f"Lưu ý: ảnh đã được lưu nhưng chưa thể bắt đầu chẩn đoán tự động: {warning}"
+        )
+    if run_id:
+        complaint_text = f" cho tình trạng {complaint}" if complaint else ""
+        return (
+            "Tôi đã bắt đầu quy trình phân tích hình ảnh da liễu"
+            f"{complaint_text} dựa trên hình ảnh đã cung cấp.\n\n"
+            "**Trạng thái phân tích:**\n\n"
+            f"- **Mã số phiên làm việc (Run ID):** `{run_id}`\n"
+            "- **Trạng thái hiện tại:** Đang thực hiện (Running)\n\n"
+            "Tôi sẽ thông báo cho bạn ngay khi có kết quả phân tích từ hệ thống."
+        )
+    return content
+
+
+def _memory_user_content(complaint: str) -> str:
+    return complaint or "User uploaded a skin image without a complaint."
+
+
+def _memory_assistant_content(*, diagnostic_run_id: str | None, warning: str | None) -> str:
+    if warning:
+        return "A skin image was saved, but automatic skin diagnosis could not be started."
+    if diagnostic_run_id:
+        return "A skin image was saved and automatic skin diagnosis was started."
+    return "A skin image was saved without starting automatic skin diagnosis."
 
 
 @router.get(
@@ -239,7 +285,8 @@ async def create_image_upload_message(
 ):
     conversation = await get_owned_conversation(db, conversation_id, current_user.id)
     patient_id = normalize_patient_id(patient_id)
-    user_content = content.strip() or f"Upload skin image for Patient/{patient_id}"
+    complaint = content.strip()
+    user_content = complaint or f"Upload skin image for Patient/{patient_id}"
 
     result = await analyze_and_save_skin_image(patient_id=patient_id, image=image)
     attachment = build_upload_attachment(patient_id=patient_id, result=result)
@@ -254,7 +301,9 @@ async def create_image_upload_message(
     assistant_message = Message(
         conversation_id=conversation.id,
         role="assistant",
-        content=_upload_assistant_content(patient_id, result.analysis_text),
+        content=_diagnostic_pending_content(patient_id, complaint)
+        if complaint
+        else _upload_assistant_content(patient_id, result.analysis_text),
         message_type="text",
     )
     try:
@@ -278,11 +327,67 @@ async def create_image_upload_message(
     await db.refresh(assistant_message)
     await db.refresh(conversation)
 
+    diagnostic_run_id: str | None = None
+    diagnostic_warning: str | None = None
+    if complaint:
+        try:
+            run = await start_skin_diagnostic_from_binary(
+                user_id=str(current_user.id),
+                conversation_id=str(conversation.id),
+                patient_id=patient_id,
+                binary_id=attachment.binary_id,
+                initial_complaint=complaint,
+            )
+            diagnostic_run_id = run.id
+        except Exception as exc:
+            logger.exception(
+                "Failed to start automatic skin diagnostic for conversation_id=%s user_id=%s",
+                conversation_id,
+                current_user.id,
+            )
+            diagnostic_warning = str(exc)
+
+        assistant_message.content = _diagnostic_started_content(
+            _upload_assistant_content(patient_id, result.analysis_text),
+            diagnostic_run_id,
+            diagnostic_warning,
+            complaint,
+        )
+        conversation.updated_at = datetime.now(timezone.utc)
+        try:
+            await db.commit()
+            await db.refresh(assistant_message)
+            await db.refresh(conversation)
+        except Exception:
+            await db.rollback()
+            logger.exception(
+                "Failed to update image upload diagnostic status for conversation_id=%s user_id=%s",
+                conversation_id,
+                current_user.id,
+            )
+
+    try:
+        await persist_chat_memory(
+            user_id=str(current_user.id),
+            conversation_id=str(conversation.id),
+            user_message=_memory_user_content(complaint),
+            assistant_message=_memory_assistant_content(
+                diagnostic_run_id=diagnostic_run_id,
+                warning=diagnostic_warning,
+            ),
+        )
+    except Exception:
+        logger.exception(
+            "Failed to persist memory for conversation_id=%s",
+            conversation.id,
+        )
+
     return MessageExchangeResponse(
         conversation_id=conversation.id,
         user_message=MessageResponse.model_validate(user_message),
         assistant_message=MessageResponse.model_validate(assistant_message),
         attachments=[attachment],
+        diagnostic_run_id=diagnostic_run_id,
     )
 
 

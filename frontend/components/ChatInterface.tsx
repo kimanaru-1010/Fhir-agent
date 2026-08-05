@@ -11,6 +11,7 @@ import {
   Plus, Trash2, LogOut, ImagePlus, X,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { API_BASE, DOMAIN } from "@/lib/config";
 import type { GraphData } from "@/lib/config";
@@ -48,6 +49,13 @@ import type { ParsedSseEvent } from "@/lib/sse";
 
 const CHAT_STREAM_TIMEOUT_MS = 900_000;
 
+const markdownComponents: Components = {
+  img({ src, alt, ...props }) {
+    if (typeof src !== "string" || !src.trim()) return null;
+    return <img src={src} alt={alt || ""} {...props} />;
+  },
+};
+
 interface ToolCall {
   name: string;
   inputs: Record<string, unknown>;
@@ -78,6 +86,7 @@ interface Message extends ChatMessage {
   entities?: ExtractedEntity[];
   preferences?: DetectedPreference[];
   attachments?: ChatAttachment[];
+  diagnosticRunId?: string | null;
 }
 
 interface ChatInterfaceProps {
@@ -199,6 +208,7 @@ function mapBackendMessage(message: ChatMessage): Message {
     message_type: message.message_type ?? "text",
     created_at: message.created_at,
     attachments: message.attachments,
+    diagnosticRunId: message.diagnostic_run_id ?? null,
   };
 }
 
@@ -219,15 +229,15 @@ function appendMessageOnce(messages: Message[], message: Message): Message[] {
 
 function stepLabel(step: string): string {
   const labels: Record<string, string> = {
-    visual_extract: "Image analysis",
-    knowledge_base: "Knowledge base search",
-    clinical_planner_round1: "Question planning 1",
-    user_interview_round1: "Interview 1",
-    clinical_planner_round2: "Question planning 2",
-    user_interview_round2: "Interview 2",
-    diagnostic_reasoning: "Diagnostic reasoning",
+    visual_extract: "Trích xuất đặc điểm hình ảnh",
+    knowledge_base: "Tra cứu tri thức bệnh lý",
+    clinical_planner_round1: "Lập câu hỏi lâm sàng 1",
+    user_interview_round1: "Hỏi bệnh 1",
+    clinical_planner_round2: "Lập câu hỏi lâm sàng 2",
+    user_interview_round2: "Hỏi bệnh 2",
+    diagnostic_reasoning: "Suy luận chẩn đoán",
   };
-  return labels[step] || step || "Waiting";
+  return labels[step] || step || "Đang chờ";
 }
 
 function hasDiagnosticResult(status: SkinDiagnosticStatus | null): status is SkinDiagnosticStatus & { result: SkinDiagnosticResult } {
@@ -733,7 +743,7 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
     }
 
     const localAssistantId = `local-assistant-${crypto.randomUUID()}`;
-    const userContent = messageText || `Upload skin image for Patient/${patientId}`;
+    const userContent = messageText;
 
     setUploadingImage(true);
     setLoading(true);
@@ -749,7 +759,10 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
       setMessages((previous) => [
         ...previous,
         mapBackendMessage(result.user_message),
-        mapBackendMessage(result.assistant_message),
+        {
+          ...mapBackendMessage(result.assistant_message),
+          diagnosticRunId: result.diagnostic_run_id ?? null,
+        },
       ]);
 
       setInput("");
@@ -1020,12 +1033,12 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
                                 </Collapsible.Trigger>
                                 <Collapsible.Content>
                                   <Box px={2} py={1} mb={2} bg="gray.100" borderRadius="sm" fontSize="xs" color="gray.600">
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{thinking}</ReactMarkdown>
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{thinking}</ReactMarkdown>
                                   </Box>
                                 </Collapsible.Content>
                               </Collapsible.Root>
                             )}
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{response || msg.content}</ReactMarkdown>
+                            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{response || msg.content}</ReactMarkdown>
                           </>
                         );
                       })()}
@@ -1079,7 +1092,10 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
                       ))}
                     </VStack>
                   )}
-                  {extractSkinDiagnosticRunIds(msg.toolCalls)
+                  {[...new Set([
+                    ...(msg.diagnosticRunId ? [msg.diagnosticRunId] : []),
+                    ...extractSkinDiagnosticRunIds(msg.toolCalls),
+                  ])]
                     .filter((runId) => !persistedSkinDiagnosticRunIds.has(runId))
                     .map((runId) => (
                     <ChatSkinDiagnosticRunCard
@@ -1109,7 +1125,7 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
                   </Circle>
                   <Box bg="gray.50" px={3} py={2} borderRadius="lg" flex={1}>
                     <Box fontSize="sm" className="markdown-content">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
                         {streamingContent}
                       </ReactMarkdown>
                     </Box>
@@ -1630,6 +1646,8 @@ function ChatSkinDiagnosticRunCard({
   const pendingQuestions = status?.status === "interrupt" ? status.pending_questions || [] : [];
   const allAnswered = pendingQuestions.length > 0 &&
     pendingQuestions.every((question) => answers[question.question_num ?? -1]);
+  const displayStep = status?.current_step || "visual_extract";
+  const displayProgress = status?.progress ?? 1;
 
   return (
     <Box mt={3} borderWidth="1px" borderColor="gray.200" borderRadius="md" overflow="hidden" bg="white">
@@ -1658,22 +1676,20 @@ function ChatSkinDiagnosticRunCard({
           </Box>
         )}
 
-        {status && (
-          <Box mb={3}>
-            <HStack justify="space-between" mb={2}>
-              <Text fontSize="sm" fontWeight="medium">{stepLabel(status.current_step)}</Text>
-              <Text fontSize="xs" color="gray.500">{Math.min(status.progress, 7)}/7</Text>
-            </HStack>
-            <Box h="2" bg="gray.100" borderRadius="full" overflow="hidden">
-              <Box
-                h="100%"
-                bg="blue.500"
-                width={`${Math.min((status.progress / 7) * 100, 100)}%`}
-                transition="width 0.2s"
-              />
-            </Box>
+        <Box mb={3}>
+          <HStack justify="space-between" mb={2}>
+            <Text fontSize="sm" fontWeight="medium">{stepLabel(displayStep)}</Text>
+            <Text fontSize="xs" color="gray.500">{Math.min(displayProgress, 7)}/7</Text>
+          </HStack>
+          <Box h="2" bg="gray.100" borderRadius="full" overflow="hidden">
+            <Box
+              h="100%"
+              bg="blue.500"
+              width={`${Math.min((displayProgress / 7) * 100, 100)}%`}
+              transition="width 0.2s"
+            />
           </Box>
-        )}
+        </Box>
 
         {pendingQuestions.length > 0 && (
           <Box>

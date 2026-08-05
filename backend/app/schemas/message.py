@@ -87,3 +87,4 @@ class MessageExchangeResponse(BaseModel):
     user_message: MessageResponse
     assistant_message: MessageResponse
     attachments: list[ChatImageAttachment] = Field(default_factory=list)
+    diagnostic_run_id: str | None = None

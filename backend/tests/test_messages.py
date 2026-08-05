@@ -16,6 +16,7 @@ from sqlalchemy.exc import IntegrityError
 from app.db import session as _db_module
 from app.dependencies import auth as _auth_dep
 from app.db.models import Conversation, Message, User
+from app.skin_images.schemas import SkinImageAnalyzeResponse
 
 
 def _build_mock_session() -> tuple[MagicMock, MagicMock]:
@@ -131,6 +132,19 @@ def _result(
 
 def _configure_execute_results(mock_session: MagicMock, results: list[MagicMock]) -> None:
     mock_session.execute = AsyncMock(side_effect=results)
+
+
+def _skin_image_result() -> SkinImageAnalyzeResponse:
+    return SkinImageAnalyzeResponse(
+        binary_id="binary-123",
+        media_id="media-123",
+        diagnostic_report_id="report-123",
+        modality="XC",
+        analysis_text="Visual analysis",
+        image_url="/api/skin-images/files/binary-123",
+        content_type="image/jpeg",
+        created_at=datetime.now(timezone.utc),
+    )
 
 
 class _SessionFactory:
@@ -505,6 +519,112 @@ def test_create_message_memory_error_after_commit_still_returns_201():
     mock_session.rollback.assert_not_awaited()
     assert mock_session.commit.await_count == 2
     assert "mem0 failed" not in resp.text
+
+
+def test_image_upload_with_complaint_starts_diagnostic_and_persists_memory():
+    user = _make_user()
+    conv = _make_conversation(user_id=user.id)
+    app, mock_session, _ = _make_test_app(current_user=user)
+    _configure_execute_results(mock_session, [_result(scalar_one_or_none=conv)])
+    run = MagicMock(id="run-123")
+    memory = AsyncMock()
+
+    with (
+        patch("app.api.messages.analyze_and_save_skin_image", AsyncMock(return_value=_skin_image_result())) as analyze,
+        patch("app.api.messages.start_skin_diagnostic_from_binary", AsyncMock(return_value=run)) as starter,
+        patch("app.api.messages.persist_chat_memory", memory),
+    ):
+        resp = TestClient(app).post(
+            f"/api/conversations/{conv.id}/messages/image-upload",
+            data={"patient_id": " 12261 ", "content": "  ngứa dữ dội  "},
+            files={"image": ("skin.jpg", b"image", "image/jpeg")},
+        )
+
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["diagnostic_run_id"] == "run-123"
+    assert data["user_message"]["content"] == "ngứa dữ dội"
+    assert data["attachments"][0]["binary_id"] == "binary-123"
+    analyze.assert_awaited_once()
+    starter.assert_awaited_once_with(
+        user_id=str(user.id),
+        conversation_id=str(conv.id),
+        patient_id="12261",
+        binary_id="binary-123",
+        initial_complaint="ngứa dữ dội",
+    )
+    memory.assert_awaited_once_with(
+        user_id=str(user.id),
+        conversation_id=str(conv.id),
+        user_message="ngứa dữ dội",
+        assistant_message="A skin image was saved and automatic skin diagnosis was started.",
+    )
+
+
+def test_image_upload_blank_content_does_not_start_diagnostic():
+    user = _make_user()
+    conv = _make_conversation(user_id=user.id)
+    app, mock_session, _ = _make_test_app(current_user=user)
+    _configure_execute_results(mock_session, [_result(scalar_one_or_none=conv)])
+    memory = AsyncMock()
+
+    with (
+        patch("app.api.messages.analyze_and_save_skin_image", AsyncMock(return_value=_skin_image_result())),
+        patch("app.api.messages.start_skin_diagnostic_from_binary", AsyncMock()) as starter,
+        patch("app.api.messages.persist_chat_memory", memory),
+    ):
+        resp = TestClient(app).post(
+            f"/api/conversations/{conv.id}/messages/image-upload",
+            data={"patient_id": "12261", "content": "   "},
+            files={"image": ("skin.jpg", b"image", "image/jpeg")},
+        )
+
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["diagnostic_run_id"] is None
+    assert data["user_message"]["content"] == "Upload skin image for Patient/12261"
+    starter.assert_not_awaited()
+    memory.assert_awaited_once_with(
+        user_id=str(user.id),
+        conversation_id=str(conv.id),
+        user_message="User uploaded a skin image without a complaint.",
+        assistant_message="A skin image was saved without starting automatic skin diagnosis.",
+    )
+
+
+def test_image_upload_diagnostic_failure_keeps_saved_image():
+    user = _make_user()
+    conv = _make_conversation(user_id=user.id)
+    app, mock_session, _ = _make_test_app(current_user=user)
+    _configure_execute_results(mock_session, [_result(scalar_one_or_none=conv)])
+    memory = AsyncMock()
+
+    with (
+        patch("app.api.messages.analyze_and_save_skin_image", AsyncMock(return_value=_skin_image_result())),
+        patch(
+            "app.api.messages.start_skin_diagnostic_from_binary",
+            AsyncMock(side_effect=RuntimeError("diagnostic unavailable")),
+        ) as starter,
+        patch("app.api.messages.persist_chat_memory", memory),
+    ):
+        resp = TestClient(app).post(
+            f"/api/conversations/{conv.id}/messages/image-upload",
+            data={"patient_id": "12261", "content": "ngứa dữ dội"},
+            files={"image": ("skin.jpg", b"image", "image/jpeg")},
+        )
+
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["diagnostic_run_id"] is None
+    assert data["attachments"][0]["binary_id"] == "binary-123"
+    assert "chưa thể bắt đầu chẩn đoán tự động" in data["assistant_message"]["content"]
+    starter.assert_awaited_once()
+    memory.assert_awaited_once_with(
+        user_id=str(user.id),
+        conversation_id=str(conv.id),
+        user_message="ngứa dữ dội",
+        assistant_message="A skin image was saved, but automatic skin diagnosis could not be started.",
+    )
 
 
 def test_stream_message_success_forwards_tool_events_and_persists_messages():

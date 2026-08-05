@@ -36,6 +36,7 @@ export interface ChatMessage {
   message_type?: string;
   created_at: string;
   attachments?: ChatAttachment[];
+  diagnostic_run_id?: string | null;
 }
 
 export interface ChatImageAttachment {
@@ -83,6 +84,7 @@ export interface MessageExchangeResponse {
   user_message: ChatMessage;
   assistant_message: ChatMessage;
   attachments?: ChatImageAttachment[];
+  diagnostic_run_id?: string | null;
 }
 
 export interface SkinPendingQuestion {
