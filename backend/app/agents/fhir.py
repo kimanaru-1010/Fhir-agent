@@ -2311,10 +2311,18 @@ async def _prepare_run(
         run_id, resolved_session_id, len(memories), len(message),
         estimated_history_chars, len(_active_runs),
     )
-    _log_payload(f"MEM0 RESULTS {trace}", memories)
-    logger.debug("MEMORY CONTEXT %s\n%s", trace, memory_prompt)
+    logger.debug(
+        "MEMORY CONTEXT %s | memory_count=%s | context_chars=%s",
+        trace,
+        len(memories),
+        len(memory_prompt),
+    )
 
     return resolved_session_id, message_history, memory_prompt
+
+
+_MEMORY_CONTEXT_ITEM_MAX_CHARS = 1000
+_MEMORY_CONTEXT_MAX_CHARS = 4000
 
 
 def _format_memory_context(memories: list[dict[str, Any]]) -> str:
@@ -2334,9 +2342,17 @@ def _format_memory_context(memories: list[dict[str, Any]]) -> str:
         mem_text = str(item.get("memory") or "").strip()
         if not mem_text:
             continue
+        mem_text = mem_text[:_MEMORY_CONTEXT_ITEM_MAX_CHARS]
         created_at = item.get("created_at") or item.get("updated_at") or "unknown"
-        lines.append(f"- [created_at={created_at}] {mem_text}")
-    return "\n".join(lines)
+        next_line = f"- [created_at={created_at}] {mem_text}"
+        candidate = "\n".join([*lines, next_line])
+        if len(candidate) > _MEMORY_CONTEXT_MAX_CHARS:
+            remaining = _MEMORY_CONTEXT_MAX_CHARS - len("\n".join(lines)) - 1
+            if remaining > 0:
+                lines.append(next_line[:remaining])
+            break
+        lines.append(next_line)
+    return "\n".join(lines)[:_MEMORY_CONTEXT_MAX_CHARS]
 
 
 async def generate_agent_response(

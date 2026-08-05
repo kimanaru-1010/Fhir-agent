@@ -32,124 +32,55 @@ def _import_memory_class():
 
     return Memory
 
-_LEGACY_FHIR_MEMORY_EXTRACTION_PROMPT = """
-Vai trÃ²: Báº¡n lÃ  bá»™ trÃ­ch xuáº¥t trÃ­ nhá»› dÃ i háº¡n cho trá»£ lÃ½ FHIR.
-
-Má»¥c tiÃªu: Giá»¯ láº¡i bá»‘i cáº£nh bá»n vá»¯ng giÃºp cÃ¡c cuá»™c há»™i thoáº¡i sau hiá»ƒu ngÆ°á»i dÃ¹ng
-vÃ  cÃ´ng viá»‡c há» Ä‘ang theo Ä‘uá»•i.
-
-Nhiá»‡m vá»¥: TrÃ­ch xuáº¥t sá»Ÿ thÃ­ch á»•n Ä‘á»‹nh, nhu cáº§u thÆ°á»ng xuyÃªn, chá»§ Ä‘á» cÃ´ng viá»‡c cÃ³
-thá»ƒ tiáº¿p tá»¥c vÃ  quyáº¿t Ä‘á»‹nh cÃ³ giÃ¡ trá»‹ lÃ¢u dÃ i. HÃ£y khÃ¡i quÃ¡t Ã½ nghÄ©a thay vÃ¬ sao
-chÃ©p ná»™i dung cá»§a lÆ°á»£t chat.
-
-Giá»›i háº¡n:
-- KhÃ´ng lÆ°u tÃªn bá»‡nh nhÃ¢n, ID tÃ i nguyÃªn, mÃ£, ngÃ y, cháº©n Ä‘oÃ¡n, thuá»‘c, káº¿t quáº£,
-  diá»…n biáº¿n lÃ¢m sÃ ng hoáº·c chi tiáº¿t thanh toÃ¡n cá»§a má»™t ca bá»‡nh cá»¥ thá»ƒ.
-- KhÃ´ng biáº¿n ná»™i dung trong cÃ¢u tráº£ lá»i cá»§a trá»£ lÃ½ thÃ nh sá»± tháº­t dÃ i háº¡n vá»
-  bá»‡nh nhÃ¢n.
-- KhÃ´ng lÆ°u Ä‘áº§u ra cÃ´ng cá»¥, Cypher, log, suy luáº­n ná»™i bá»™ hoáº·c toÃ n bá»™ cÃ¢u tráº£ lá»i.
-- KhÃ´ng suy diá»…n thÃ´ng tin chÆ°a Ä‘Æ°á»£c thá»ƒ hiá»‡n rÃµ.
-
-Äáº§u ra: Má»—i trÃ­ nhá»› lÃ  má»™t cÃ¢u ngáº¯n, tá»± nhiÃªn, Ä‘á»™c láº­p vÃ  cÃ¹ng ngÃ´n ngá»¯ vá»›i
-ngÆ°á»i dÃ¹ng. Náº¿u khÃ´ng cÃ³ thÃ´ng tin há»¯u Ã­ch cho tÆ°Æ¡ng lai, khÃ´ng táº¡o trÃ­ nhá»›.
-"""
-
 FHIR_MEMORY_EXTRACTION_PROMPT = """
-Vai trÃ²: Báº¡n lÃ  bá»™ trÃ­ch xuáº¥t trÃ­ nhá»› dÃ i háº¡n cho trá»£ lÃ½ FHIR.
+Vai trò: Bạn là bộ trích xuất trí nhớ dài hạn cho trợ lý FHIR.
 
-Má»¥c tiÃªu: LÆ°u nhá»¯ng bá»‘i cáº£nh cÃ³ thá»ƒ giÃºp cÃ¡c cuá»™c há»™i thoáº¡i sau hiá»ƒu ngÆ°á»i
-dÃ¹ng, cÃ¡ch há» muá»‘n lÃ m viá»‡c vÃ  hÆ°á»›ng cÃ´ng viá»‡c Ä‘ang theo Ä‘uá»•i.
+Mục tiêu: Lưu bối cảnh có thể tái sử dụng về người dùng và công việc đang làm,
+đủ cụ thể để nhận ra hoạt động lịch sử nhưng không biến dữ liệu ca bệnh thành
+sự thật dài hạn.
 
-Nhiá»‡m vá»¥: Táº¡o memory khi lÆ°á»£t chat thá»ƒ hiá»‡n rÃµ má»™t thÃ´ng tin cÃ³ kháº£ nÄƒng tÃ¡i sá»­
-dá»¥ng. Giá»¯ Ä‘á»§ ngá»¯ cáº£nh Ä‘á»ƒ memory cÃ²n cÃ³ nghÄ©a sau nÃ y, nhÆ°ng khÃ´ng sao chÃ©p toÃ n
-bá»™ cÃ¢u há»i hoáº·c cÃ¢u tráº£ lá»i.
+Nên lưu khi thông tin rõ ràng:
+- Sở thích ổn định về ngôn ngữ, độ dài, định dạng, mức chi tiết hoặc cách trình bày.
+- Hoạt động đang diễn ra, ví dụ đang phân tích một hành trình chăm sóc, danh sách
+  chẩn đoán, chỉ định, kết quả, thuốc, claim/payment hoặc nhóm tài nguyên FHIR.
+- Phạm vi, tiêu chí lọc, quy ước hoặc quyết định mà user muốn áp dụng về sau.
+- Một mốc neo nhẹ do user tự nêu để nhận diện hoạt động lịch sử, như tên người,
+  tên bệnh nhân, Patient ID, case ID hoặc nhãn chủ đề, chỉ khi mốc đó giúp trả lời
+  "đang làm gì/với ai".
 
-NÃªn lÆ°u:
-- Sá»Ÿ thÃ­ch á»•n Ä‘á»‹nh cá»§a ngÆ°á»i dÃ¹ng vá» ngÃ´n ngá»¯, Ä‘á»™ dÃ i, Ä‘á»‹nh dáº¡ng, má»©c chi tiáº¿t
-  hoáº·c cÃ¡ch trÃ¬nh bÃ y.
-- Má»¥c tiÃªu cÃ´ng viá»‡c Ä‘ang theo Ä‘uá»•i á»Ÿ má»©c khÃ¡i quÃ¡t vá»«a Ä‘á»§.
-- Pháº¡m vi phÃ¢n tÃ­ch, tiÃªu chÃ­ lá»c, loáº¡i dá»¯ liá»‡u hoáº·c loáº¡i tÃ i nguyÃªn FHIR mÃ 
-  ngÆ°á»i dÃ¹ng thÆ°á»ng quan tÃ¢m.
-- Quyáº¿t Ä‘á»‹nh hoáº·c quy Æ°á»›c cÃ³ thá»ƒ áº£nh hÆ°á»Ÿng Ä‘áº¿n cÃ¡c lÆ°á»£t há»i sau.
-- Viá»‡c cÃ²n dang dá»Ÿ hoáº·c ngá»¯ cáº£nh cáº§n nhá»› Ä‘á»ƒ tiáº¿p tá»¥c cÃ´ng viá»‡c.
+Mức cụ thể cho phép:
+- Có thể giữ một tên hoặc nhãn định danh do user nói rõ, ví dụ "đang phân tích
+  hành trình chăm sóc của bệnh nhân được nêu tên".
+- Có thể lưu một ID định danh tối thiểu do user nêu rõ, ví dụ Patient/10796 hoặc
+  "patient_id=10796", khi ID đó chỉ dùng để nối tiếp đúng đối tượng/case đang nghiên cứu.
+- Không lưu MRN, mã bệnh, ngày, thuốc, kết quả lâm sàng, số tiền, kết luận thanh toán
+  hoặc chuỗi định danh nhạy cảm khác.
+- Không ghép mốc neo hoặc ID với dữ kiện lâm sàng/financial cụ thể thành memory bệnh án.
 
-Má»©c Ä‘á»™ cá»¥ thá»ƒ:
-- CÃ³ thá»ƒ giá»¯ cÃ¡c khÃ¡i niá»‡m miá»n nhÆ° bá»‡nh nhÃ¢n, lÆ°á»£t khÃ¡m, cháº©n Ä‘oÃ¡n, chá»‰ Ä‘á»‹nh,
-  káº¿t quáº£, thuá»‘c, thanh toÃ¡n, claim, payment hoáº·c timeline náº¿u chÃºng mÃ´ táº£ loáº¡i
-  cÃ´ng viá»‡c ngÆ°á»i dÃ¹ng muá»‘n lÃ m.
-- KhÃ´ng lÆ°u giÃ¡ trá»‹ ca bá»‡nh cá»¥ thá»ƒ nhÆ° tÃªn bá»‡nh nhÃ¢n, FHIR id, mÃ£ bá»‡nh, ngÃ y,
-  thuá»‘c, káº¿t quáº£ lÃ¢m sÃ ng, sá»‘ tiá»n hoáº·c káº¿t luáº­n thanh toÃ¡n nhÆ° má»™t sá»± tháº­t dÃ i
-  háº¡n.
-- Khi cáº§n nháº¯c Ä‘áº¿n má»™t ca bá»‡nh, hÃ£y mÃ´ táº£ á»Ÿ má»©c "má»™t bá»‡nh nhÃ¢n/ca bá»‡nh/lÆ°á»£t
-  khÃ¡m Ä‘ang Ä‘Æ°á»£c phÃ¢n tÃ­ch" thay vÃ¬ Ä‘á»‹nh danh cá»¥ thá»ƒ.
+Phân biệt:
+- Chỉ viết "user muốn/ưa thích" khi user nêu preference rõ hoặc lặp lại cùng
+  định dạng/cách làm.
+- Với một nhiệm vụ đơn lẻ nhưng có thể tiếp tục, viết trung tính như "user đang
+  phân tích..." hoặc "user đang truy vết...".
+- Câu trả lời của assistant chỉ là bằng chứng về ngữ cảnh đang làm, không phải
+  preference hay fact dài hạn trừ khi user xác nhận.
 
-KhÃ´ng lÆ°u:
-- Lá»i chÃ o, cáº£m Æ¡n, xÃ¡c nháº­n ngáº¯n, cÃ¢u há»i má»™t láº§n khÃ´ng táº¡o bá»‘i cáº£nh má»›i.
-- Ná»™i dung tool output, Cypher, log, lá»—i ká»¹ thuáº­t, suy luáº­n ná»™i bá»™ hoáº·c toÃ n bá»™
-  cÃ¢u tráº£ lá»i cá»§a trá»£ lÃ½.
-- ThÃ´ng tin do trá»£ lÃ½ nÃªu ra náº¿u ngÆ°á»i dÃ¹ng khÃ´ng xÃ¡c nháº­n hoáº·c nÃ³ chá»‰ lÃ  dá»¯
-  liá»‡u lÃ¢m sÃ ng/financial cá»§a má»™t ca cá»¥ thá»ƒ.
+Tránh suy diễn:
+- Không thêm actor, vai trò, đối tác, quan hệ, nguyên nhân, mục đích hoặc phạm vi
+  nếu user không nói rõ.
+- Không suy từ một câu hỏi kiểm tra lịch sử thành nhu cầu sản phẩm lâu dài.
+- Không sao chép toàn bộ câu hỏi, câu trả lời, tool output, Cypher, log, lỗi kỹ
+  thuật hoặc reasoning nội bộ.
+- Nếu chỉ là lời chào, cảm ơn, xác nhận ngắn hoặc câu hỏi nhất thời không thêm
+  bối cảnh mới, không tạo memory.
+- Nếu không chắc memory có hữu ích về sau hay không, không tạo memory.
 
-NguyÃªn táº¯c suy luáº­n:
-- Chá»‰ lÆ°u Ä‘iá»u Ä‘Æ°á»£c thá»ƒ hiá»‡n rÃµ trong user message hoáº·c Ä‘Æ°á»£c user xÃ¡c nháº­n.
-- KhÃ´ng thÃªm vai trÃ², tÃ¡c nhÃ¢n, Ã½ Ä‘á»‹nh, quan há»‡, Ä‘á»‘i tÆ°á»£ng hoáº·c khÃ¡i niá»‡m mÃ 
-  ngÆ°á»i dÃ¹ng khÃ´ng nÃ³i rÃµ.
-- Náº¿u má»™t cÃ¢u cÃ³ thá»ƒ chá»‰ lÃ  há»i láº¡i ngá»¯ cáº£nh hiá»‡n táº¡i, chá»‰ lÆ°u khi nÃ³ bá»™c lá»™
-  nhu cáº§u tÃ¡i sá»­ dá»¥ng rÃµ rÃ ng.
-- Náº¿u khÃ´ng cháº¯c memory cÃ³ há»¯u Ã­ch lÃ¢u dÃ i hay khÃ´ng, khÃ´ng táº¡o memory.
-
-Äáº§u ra: Má»—i memory lÃ  má»™t cÃ¢u ngáº¯n, tá»± nhiÃªn, Ä‘á»™c láº­p vÃ  cÃ¹ng ngÃ´n ngá»¯ vá»›i
-ngÆ°á»i dÃ¹ng. Æ¯u tiÃªn 1-3 memory tháº­t sá»± há»¯u Ã­ch. Náº¿u khÃ´ng cÃ³ thÃ´ng tin dÃ i háº¡n
-má»›i, khÃ´ng táº¡o memory.
-"""
-_LEGACY_FHIR_MEMORY_EXTRACTION_PROMPT_V2 = FHIR_MEMORY_EXTRACTION_PROMPT
-
-FHIR_MEMORY_EXTRACTION_PROMPT = """
-Vai trÃ²: Báº¡n lÃ  bá»™ trÃ­ch xuáº¥t trÃ­ nhá»› dÃ i háº¡n cho trá»£ lÃ½ FHIR.
-
-Má»¥c tiÃªu: LÆ°u bá»‘i cáº£nh cÃ³ thá»ƒ tÃ¡i sá»­ dá»¥ng vá» ngÆ°á»i dÃ¹ng vÃ  cÃ´ng viá»‡c Ä‘ang lÃ m,
-Ä‘á»§ cá»¥ thá»ƒ Ä‘á»ƒ nháº­n ra hoáº¡t Ä‘á»™ng lá»‹ch sá»­ nhÆ°ng khÃ´ng biáº¿n dá»¯ liá»‡u ca bá»‡nh thÃ nh
-sá»± tháº­t dÃ i háº¡n.
-
-NÃªn lÆ°u khi thÃ´ng tin rÃµ rÃ ng:
-- Sá»Ÿ thÃ­ch á»•n Ä‘á»‹nh vá» ngÃ´n ngá»¯, Ä‘á»™ dÃ i, Ä‘á»‹nh dáº¡ng, má»©c chi tiáº¿t hoáº·c cÃ¡ch trÃ¬nh bÃ y.
-- Hoáº¡t Ä‘á»™ng Ä‘ang diá»…n ra, vÃ­ dá»¥ Ä‘ang phÃ¢n tÃ­ch má»™t hÃ nh trÃ¬nh chÄƒm sÃ³c, danh sÃ¡ch
-  cháº©n Ä‘oÃ¡n, chá»‰ Ä‘á»‹nh, káº¿t quáº£, thuá»‘c, claim/payment hoáº·c nhÃ³m tÃ i nguyÃªn FHIR.
-- Pháº¡m vi, tiÃªu chÃ­ lá»c, quy Æ°á»›c hoáº·c quyáº¿t Ä‘á»‹nh mÃ  user muá»‘n Ã¡p dá»¥ng vá» sau.
-- Má»™t má»‘c neo nháº¹ do user tá»± nÃªu Ä‘á»ƒ nháº­n diá»‡n hoáº¡t Ä‘á»™ng lá»‹ch sá»­, nhÆ° tÃªn ngÆ°á»i,
-  tÃªn bá»‡nh nhÃ¢n, tÃªn case hoáº·c nhÃ£n chá»§ Ä‘á», chá»‰ khi má»‘c Ä‘Ã³ giÃºp tráº£ lá»i "Ä‘ang lÃ m
-  gÃ¬/vá»›i ai".
-
-Má»©c cá»¥ thá»ƒ cho phÃ©p:
-- CÃ³ thá»ƒ giá»¯ má»™t tÃªn hoáº·c nhÃ£n Ä‘á»‹nh danh do user nÃ³i rÃµ, vÃ­ dá»¥ "Ä‘ang phÃ¢n tÃ­ch
-  hÃ nh trÃ¬nh chÄƒm sÃ³c cá»§a bá»‡nh nhÃ¢n Ä‘Æ°á»£c nÃªu tÃªn".
-- KhÃ´ng lÆ°u FHIR id, MRN, mÃ£ bá»‡nh, ngÃ y, thuá»‘c, káº¿t quáº£ lÃ¢m sÃ ng, sá»‘ tiá»n,
-  káº¿t luáº­n thanh toÃ¡n hoáº·c chuá»—i Ä‘á»‹nh danh nháº¡y cáº£m.
-- KhÃ´ng ghÃ©p má»‘c neo vá»›i dá»¯ kiá»‡n lÃ¢m sÃ ng/financial cá»¥ thá»ƒ thÃ nh memory bá»‡nh Ã¡n.
-
-PhÃ¢n biá»‡t:
-- Chá»‰ viáº¿t "user muá»‘n/Æ°a thÃ­ch" khi user nÃªu preference rÃµ hoáº·c láº·p láº¡i cÃ¹ng
-  Ä‘á»‹nh dáº¡ng/cÃ¡ch lÃ m.
-- Vá»›i má»™t nhiá»‡m vá»¥ Ä‘Æ¡n láº» nhÆ°ng cÃ³ thá»ƒ tiáº¿p tá»¥c, viáº¿t trung tÃ­nh nhÆ° "user Ä‘ang
-  phÃ¢n tÃ­ch..." hoáº·c "user Ä‘ang truy váº¿t...".
-- CÃ¢u tráº£ lá»i cá»§a assistant chá»‰ lÃ  báº±ng chá»©ng vá» ngá»¯ cáº£nh Ä‘ang lÃ m, khÃ´ng pháº£i
-  preference hay fact dÃ i háº¡n trá»« khi user xÃ¡c nháº­n.
-
-TrÃ¡nh suy diá»…n:
-- KhÃ´ng thÃªm actor, vai trÃ², Ä‘á»‘i tÃ¡c, quan há»‡, nguyÃªn nhÃ¢n, má»¥c Ä‘Ã­ch hoáº·c pháº¡m vi
-  náº¿u user khÃ´ng nÃ³i rÃµ.
-- KhÃ´ng suy tá»« má»™t cÃ¢u há»i kiá»ƒm tra lá»‹ch sá»­ thÃ nh nhu cáº§u sáº£n pháº©m lÃ¢u dÃ i.
-- KhÃ´ng sao chÃ©p toÃ n bá»™ cÃ¢u há»i, cÃ¢u tráº£ lá»i, tool output, Cypher, log, lá»—i ká»¹
-  thuáº­t hoáº·c reasoning ná»™i bá»™.
-- Náº¿u chá»‰ lÃ  lá»i chÃ o, cáº£m Æ¡n, xÃ¡c nháº­n ngáº¯n hoáº·c cÃ¢u há»i nháº¥t thá»i khÃ´ng thÃªm
-  bá»‘i cáº£nh má»›i, khÃ´ng táº¡o memory.
-- Náº¿u khÃ´ng cháº¯c memory cÃ³ há»¯u Ã­ch vá» sau hay khÃ´ng, khÃ´ng táº¡o memory.
-
-Äáº§u ra: Táº¡o tá»‘i Ä‘a 1-3 memory ngáº¯n, tá»± nhiÃªn, Ä‘á»™c láº­p vÃ  cÃ¹ng ngÃ´n ngá»¯ vá»›i user.
-Æ¯u tiÃªn memory khÃ¡i quÃ¡t vá»«a Ä‘á»§, cÃ³ má»‘c neo nháº¹ khi cáº§n. Náº¿u khÃ´ng cÃ³ thÃ´ng tin
-dÃ i háº¡n má»›i, khÃ´ng táº¡o memory.
+Đầu ra: Tạo tối đa 1-3 memory ngắn, tự nhiên, độc lập và cùng ngôn ngữ với user.
+Ưu tiên memory khái quát vừa đủ, có mốc neo nhẹ khi cần. Nếu không có thông tin
+dài hạn mới, không tạo memory.
 """
 _memory: Memory | None = None
+_MEMORY_INPUT_MAX_CHARS = 12000
 _MEMORY_SEARCH_MAX_RESULTS = 5
 _MEMORY_SEARCH_MIN_SCORE = 0.5
 
@@ -291,6 +222,24 @@ def _filter_relevant_memories(
     return relevant[:_MEMORY_SEARCH_MAX_RESULTS]
 
 
+def _memory_ids(memories: list[dict[str, Any]]) -> list[str]:
+    ids: list[str] = []
+    for memory in memories:
+        memory_id = memory.get("id")
+        if memory_id:
+            ids.append(str(memory_id))
+    return ids
+
+
+def _memory_event_types(memories: list[dict[str, Any]]) -> list[str]:
+    events: list[str] = []
+    for memory in memories:
+        event = memory.get("event")
+        if event:
+            events.append(str(event))
+    return events
+
+
 def _get_all_memories_sync(
     mem: Memory,
     *,
@@ -353,8 +302,8 @@ async def log_memory_snapshot(
             user_id=user_id,
             session_id=session_id,
             record_count=len(normalized),
-            raw_result=raw_snapshot,
-            records=normalized,
+            result_ids=_memory_ids(normalized),
+            event_types=_memory_event_types(normalized),
         )
         return normalized
     except Exception as exc:
@@ -365,7 +314,6 @@ async def log_memory_snapshot(
             user_id=user_id,
             session_id=session_id,
             error_type=type(exc).__name__,
-            error=str(exc),
         )
         logger.warning("Unable to read Mem0/pgvector snapshot", exc_info=True)
         return []
@@ -405,7 +353,7 @@ def get_memory() -> Memory | None:
 
 def _sanitize(text: str) -> str:
     """Apply a conservative size boundary before persistence."""
-    return (text or "").strip()[:]
+    return (text or "").strip()[:_MEMORY_INPUT_MAX_CHARS]
 
 def _strip_reasoning(text: str) -> str:
     """Remove model reasoning blocks before saving to Mem0."""
@@ -451,8 +399,9 @@ async def search_memories(
         trace(
             "memory",
             "search_start",
-            query=clean_query,
-            filters=filters,
+            query_length=len(clean_query),
+            user_id=user_id,
+            agent_id=settings.mem0_agent_id,
             top_k=top_k,
             min_score=_MEMORY_SEARCH_MIN_SCORE,
         )
@@ -466,13 +415,13 @@ async def search_memories(
             top_k=top_k,
         )
 
-        # This is the exact object returned by mem.search().
         trace(
             "memory",
-            "search_raw_result",
-            query=clean_query,
-            filters=filters,
-            raw_result=result,
+            "search_result",
+            query_length=len(clean_query),
+            user_id=user_id,
+            agent_id=settings.mem0_agent_id,
+            result_count=len(_normalize_mem0_results(result)),
         )
 
         candidates = _normalize_mem0_results(result)
@@ -481,13 +430,15 @@ async def search_memories(
         trace(
             "memory",
             "search_success",
-            query=clean_query,
-            filters=filters,
+            query_length=len(clean_query),
+            user_id=user_id,
+            agent_id=settings.mem0_agent_id,
             result_count=len(normalized),
             candidate_count=len(candidates),
             dropped_count=len(candidates) - len(normalized),
             min_score=_MEMORY_SEARCH_MIN_SCORE,
-            results=normalized,
+            result_ids=_memory_ids(normalized),
+            event_types=_memory_event_types(normalized),
         )
 
         # Optional full snapshot lets you compare retrieved matches with all
@@ -503,10 +454,10 @@ async def search_memories(
         trace(
             "memory",
             "search_error",
-            query=clean_query,
-            filters=filters,
+            query_length=len(clean_query),
+            user_id=user_id,
+            agent_id=settings.mem0_agent_id,
             error_type=type(exc).__name__,
-            error=str(exc),
         )
         logger.warning("Mem0 search failed", exc_info=True)
         return []
@@ -546,7 +497,8 @@ async def save_conversation_memory(
             user_id=user_id,
             session_id=session_id,
             agent_id=settings.mem0_agent_id,
-            messages=messages,
+            user_message_length=len(clean_user),
+            assistant_message_length=len(clean_assistant),
         )
 
         # Mem0 exposes a synchronous API. Run it in a worker thread so the
@@ -560,13 +512,12 @@ async def save_conversation_memory(
             prompt=FHIR_MEMORY_EXTRACTION_PROMPT,
         )
 
-        # Exact return value from mem.add(), including ADD/UPDATE/DELETE events.
         trace(
             "memory",
-            "save_raw_result",
+            "save_result",
             user_id=user_id,
             session_id=session_id,
-            raw_result=result,
+            result_count=len(_normalize_mem0_results(result)),
         )
 
         normalized = _normalize_mem0_results(result)
@@ -577,7 +528,8 @@ async def save_conversation_memory(
             user_id=user_id,
             session_id=session_id,
             result_count=len(normalized),
-            results=normalized,
+            result_ids=_memory_ids(normalized),
+            event_types=_memory_event_types(normalized),
         )
 
         # Read back the scoped records after writing so the log shows what is
@@ -596,7 +548,6 @@ async def save_conversation_memory(
             user_id=user_id,
             session_id=session_id,
             error_type=type(exc).__name__,
-            error=str(exc),
         )
         logger.warning("Mem0 save failed", exc_info=True)
         return []

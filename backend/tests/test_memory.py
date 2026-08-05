@@ -9,6 +9,7 @@ from pytest_mock import MockerFixture
 
 from app.services.long_term_memory import (
     FHIR_MEMORY_EXTRACTION_PROMPT,
+    _MEMORY_INPUT_MAX_CHARS,
     _build_mem0_config,
     _sanitize,
     check_pgvector_connection,
@@ -16,6 +17,7 @@ from app.services.long_term_memory import (
     save_conversation_memory,
     search_memories,
 )
+from app.agents.fhir import _format_memory_context
 
 
 # ---------------------------------------------------------------------------
@@ -59,10 +61,46 @@ def test_sanitize_empty():
 
 def test_sanitize_trims():
     assert _sanitize("  hello  ") == "hello"
-    # _sanitize trims whitespace but does not truncate
-    long = "x" * 10000
+    long = "x" * (_MEMORY_INPUT_MAX_CHARS - 1)
     result = _sanitize(long)
-    assert len(result) == 10000
+    assert len(result) == _MEMORY_INPUT_MAX_CHARS - 1
+
+
+def test_sanitize_caps_input_length():
+    long = "  " + ("x" * (_MEMORY_INPUT_MAX_CHARS + 500)) + "  "
+
+    result = _sanitize(long)
+
+    assert len(result) == _MEMORY_INPUT_MAX_CHARS
+    assert result == "x" * _MEMORY_INPUT_MAX_CHARS
+
+
+def test_memory_extraction_prompt_is_utf8_vietnamese():
+    assert "Vai trò" in FHIR_MEMORY_EXTRACTION_PROMPT
+    assert "Mục tiêu" in FHIR_MEMORY_EXTRACTION_PROMPT
+    assert "Patient ID" in FHIR_MEMORY_EXTRACTION_PROMPT
+    assert "Patient/10796" in FHIR_MEMORY_EXTRACTION_PROMPT
+    assert "Không lưu MRN" in FHIR_MEMORY_EXTRACTION_PROMPT
+    assert "Không ghép mốc neo hoặc ID" in FHIR_MEMORY_EXTRACTION_PROMPT
+    assert "Ã" not in FHIR_MEMORY_EXTRACTION_PROMPT
+    assert "Ä" not in FHIR_MEMORY_EXTRACTION_PROMPT
+    assert "Æ" not in FHIR_MEMORY_EXTRACTION_PROMPT
+
+
+def test_format_memory_context_caps_memory_items_and_total_length():
+    memories = [
+        {
+            "memory": f"memory-{idx}-" + ("x" * 2000),
+            "created_at": f"2026-08-05T00:00:{idx:02d}+00:00",
+        }
+        for idx in range(10)
+    ]
+
+    context = _format_memory_context(memories)
+
+    assert "Relevant long-term memories are ordered by relevance" in context
+    assert len(context) <= 4000
+    assert "x" * 1001 not in context
 
 
 # ---------------------------------------------------------------------------
