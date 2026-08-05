@@ -24,16 +24,28 @@ def get_step_progress(step: str) -> int:
 
 
 def build_result(state: dict) -> dict:
+    """Build the public diagnostic result returned to the frontend."""
+
     if not state:
         return {}
+
     return {
         "ranked_diagnoses": state.get("ranked_diagnoses", []),
         "reasoning": state.get("reasoning", ""),
-        "visual_observations": state.get("visual_observations", ""),
-        "visual_differentials": state.get("visual_differentials", []),
+        "remaining_uncertainty": state.get(
+            "remaining_uncertainty",
+            "",
+        ),
+        "visual_observations": state.get(
+            "visual_observations",
+            "",
+        ),
+        "visual_differentials": state.get(
+            "visual_differentials",
+            [],
+        ),
         "qa_history": state.get("qa_history", ""),
     }
-
 
 def get_pending_questions(run) -> list[dict] | None:
     if run.status != "interrupt":

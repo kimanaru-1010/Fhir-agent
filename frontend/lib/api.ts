@@ -85,9 +85,20 @@ export interface SkinPendingQuestion {
   total: number | null;
 }
 
+export type SkinDiagnosisConfidence = "High" | "Medium" | "Low";
+
+export interface SkinRankedDiagnosis {
+  rank: number;
+  disease: string;
+  confidence: SkinDiagnosisConfidence | string;
+  evidence_for: string;
+  evidence_against: string;
+}
+
 export interface SkinDiagnosticResult {
-  ranked_diagnoses: Record<string, unknown>[];
+  ranked_diagnoses: SkinRankedDiagnosis[];
   reasoning: string;
+  remaining_uncertainty: string;
   visual_observations: string;
   visual_differentials: string[];
   qa_history: string;

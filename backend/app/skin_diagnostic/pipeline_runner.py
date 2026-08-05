@@ -215,6 +215,7 @@ async def run_pipeline_background(session_id: str, image_path: str, anamnesis: s
             "qa_history": "",
             "ranked_diagnoses": [],
             "reasoning": "",
+            "remaining_uncertainty": "",
         }
         complaint = anamnesis or "(Không có)"
 
@@ -263,7 +264,14 @@ async def run_pipeline_background(session_id: str, image_path: str, anamnesis: s
         diag_parsed = extract_json(diag_output)
         if isinstance(diag_parsed, dict):
             state["ranked_diagnoses"] = diag_parsed.get("ranked_diagnoses", [])
-            state["reasoning"] = diag_parsed.get("overall_reasoning", "Không có biện luận.")
+            state["reasoning"] = diag_parsed.get(
+                "overall_reasoning",
+                "Không có biện luận.",
+            )
+            state["remaining_uncertainty"] = diag_parsed.get(
+                "remaining_uncertainty",
+                "",
+            )
 
             # The diagnose instruction allows ranking a disease NOT on the
             # candidate list when there is strong, specific evidence for it.

@@ -226,6 +226,41 @@ function hasDiagnosticResult(status: SkinDiagnosticStatus | null): status is Ski
   );
 }
 
+function confidenceLabel(confidence: string): string {
+  const labels: Record<string, string> = {
+    High: "Kha nang cao",
+    Medium: "Kha nang trung binh",
+    Low: "Can xem xet",
+  };
+
+  return labels[confidence] || confidence || "Chua xac dinh";
+}
+
+function confidencePalette(
+  confidence: string,
+): "green" | "orange" | "blue" | "gray" {
+  const palettes: Record<
+    string,
+    "green" | "orange" | "blue" | "gray"
+  > = {
+    High: "green",
+    Medium: "orange",
+    Low: "blue",
+  };
+
+  return palettes[confidence] || "gray";
+}
+
+function diagnosisBorderColor(confidence: string): string {
+  const colors: Record<string, string> = {
+    High: "green.400",
+    Medium: "orange.400",
+    Low: "blue.400",
+  };
+
+  return colors[confidence] || "gray.300";
+}
+
 function extractSkinDiagnosticRunIds(toolCalls?: ToolCall[]): string[] {
   if (!toolCalls?.length) return [];
   const runIds: string[] = [];
@@ -1548,38 +1583,70 @@ function ChatSkinDiagnosticRunCard({ runId }: { runId: string }) {
 
         {hasDiagnosticResult(status) && (
           <Box>
-            <Heading size="xs" mb={3}>Diagnostic result</Heading>
+            <Heading size="xs" mb={3}>Ket qua chan doan da lieu</Heading>
             <VStack align="stretch" gap={3}>
               {status.result.ranked_diagnoses.map((diagnosis, idx) => {
-                const disease = String(diagnosis.disease || "Unspecified");
-                const likelihood = diagnosis.likelihood ? String(diagnosis.likelihood) : "";
-                const evidence = Array.isArray(diagnosis.supporting_evidence)
-                  ? diagnosis.supporting_evidence.map(String).join("; ")
-                  : "";
+                const rank = Number(diagnosis.rank || idx + 1);
+                const disease = diagnosis.disease?.trim() || "Chua xac dinh";
+                const confidence = diagnosis.confidence || "Low";
+                const evidenceFor = diagnosis.evidence_for?.trim() || "";
+                const evidenceAgainst = diagnosis.evidence_against?.trim() || "";
                 return (
-                  <Box key={`${disease}-${idx}`} bg="gray.50" borderRadius="md" p={3}>
-                    <HStack justify="space-between" align="start">
+                  <Box
+                    key={`${rank}-${disease}`}
+                    bg="gray.50"
+                    borderWidth="1px"
+                    borderColor={diagnosisBorderColor(confidence)}
+                    borderLeftWidth="5px"
+                    borderRadius="md"
+                    p={3}
+                  >
+                    <HStack justify="space-between" align="start" gap={3}>
                       <Text fontSize="sm" fontWeight="semibold">
-                        {idx + 1}. {disease}
+                        #{rank} - {confidenceLabel(confidence)}: {disease}
                       </Text>
-                      {likelihood && <Badge colorPalette="purple">{likelihood}</Badge>}
+                      <Badge colorPalette={confidencePalette(confidence)}>
+                        {confidence}
+                      </Badge>
                     </HStack>
-                    {evidence && (
-                      <Text fontSize="xs" color="gray.600" mt={2}>
-                        Evidence: {evidence}
+                    {evidenceFor && (
+                      <Text fontSize="xs" color="gray.700" mt={2} whiteSpace="pre-wrap">
+                        <Text as="span" fontWeight="semibold">Bang chung ho tro: </Text>
+                        {evidenceFor}
+                      </Text>
+                    )}
+                    {evidenceAgainst && (
+                      <Text fontSize="xs" color="gray.700" mt={2} whiteSpace="pre-wrap">
+                        <Text as="span" fontWeight="semibold" color="red.700">
+                          Diem can loai tru:{" "}
+                        </Text>
+                        {evidenceAgainst}
                       </Text>
                     )}
                   </Box>
                 );
               })}
               <Box>
-                <Text fontSize="xs" color="gray.500" fontWeight="medium" mb={1}>Reasoning</Text>
+                <Text fontSize="xs" color="gray.500" fontWeight="medium" mb={1}>Bien luan y khoa</Text>
                 <Text fontSize="sm" whiteSpace="pre-wrap">{status.result.reasoning}</Text>
               </Box>
               <Box>
-                <Text fontSize="xs" color="gray.500" fontWeight="medium" mb={1}>Visual observations</Text>
+                <Text fontSize="xs" color="gray.500" fontWeight="medium" mb={1}>Phan tich hinh anh ton thuong</Text>
                 <Text fontSize="sm" whiteSpace="pre-wrap">{status.result.visual_observations}</Text>
               </Box>
+              {status.result.remaining_uncertainty && (
+                <Box borderWidth="1px" borderColor="orange.200" borderRadius="md" bg="orange.50" p={3}>
+                  <Text fontSize="xs" color="orange.800" fontWeight="medium" mb={1}>
+                    Thong tin can bo sung
+                  </Text>
+                  <Text fontSize="sm" color="orange.900" whiteSpace="pre-wrap">
+                    {status.result.remaining_uncertainty}
+                  </Text>
+                </Box>
+              )}
+              <Text fontSize="xs" color="gray.500">
+                Ket qua chi co muc dich ho tro quyet dinh lam sang, khong thay the viec kham truc tiep va chan doan cua bac si.
+              </Text>
             </VStack>
           </Box>
         )}
