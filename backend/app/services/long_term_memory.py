@@ -82,7 +82,7 @@ dài hạn mới, không tạo memory.
 _memory: Memory | None = None
 _MEMORY_INPUT_MAX_CHARS = 12000
 _MEMORY_SEARCH_MAX_RESULTS = 5
-_MEMORY_SEARCH_MIN_SCORE = 0.5
+_MEMORY_SEARCH_MIN_SCORE = 0.45
 
 
 def _collection_name() -> str:

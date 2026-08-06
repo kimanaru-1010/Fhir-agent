@@ -449,6 +449,9 @@ Always:
 - provide correct argument types;
 - reuse previously retrieved values;
 - prefer batch operations for repeated work.
+- for get_resource_field and get_resource_fields_batch, pass one field name or
+  comma-separated field names in field_name when multiple known fields are
+  needed from the same resource scope.
 - keep a registry of tool name + normalized arguments.
 - before each tool call, compare against that registry.
 - reuse the existing result instead of making a duplicate call.
@@ -664,6 +667,16 @@ def _parse_ids(resource_ids: str) -> list[str]:
         dict.fromkeys(
             item.strip()
             for item in resource_ids.split(",")
+            if item.strip()
+        )
+    )
+
+
+def _parse_field_names(field_name: str) -> list[str]:
+    return list(
+        dict.fromkeys(
+            item.strip()
+            for item in field_name.split(",")
             if item.strip()
         )
     )
@@ -1654,14 +1667,14 @@ async def get_resource_field(
     ],
     field_name: Annotated[
         str,
-        Field(description="Exact field relationship name or root property name to read, such as code, subject, status, or valueQuantity."),
+        Field(description="Exact field relationship/root property name to read. Pass one name or comma-separated names, such as code,valueQuantity,effectiveDateTime."),
     ],
 ) -> str:
     """
-    Read one named root property or internal FHIR field from one resource.
+    Read one or more named root properties or internal FHIR fields from one resource.
 
     Use when:
-    - You know the field_name needed for one FHIRResource.
+    - You know the field_name or comma-separated field names needed for one FHIRResource.
     - A shallow field listing showed a relevant field that needs more detail.
 
     Do not use when:
@@ -1670,30 +1683,41 @@ async def get_resource_field(
     - You need to resolve a Reference target or Coding meaning; prefer resolve_reference or resolve_coding.
 
     Behavior:
-    - Reads a matching root property or paths starting with the named field up to 2 internal hops.
+    - Reads matching root properties or paths starting with each requested field up to 2 internal hops.
     - Does not traverse RESOLVES_TO, DEFINED_BY, blocked relationships, or into another FHIRResource.
 
     Returns:
-        str: JSON payload with field values containing source, node_id, path, labels,
-        properties, and has_children.
+        str: JSON payload with one row per requested field containing field_found
+        and values with source, node_id, path, labels, properties, and has_children.
     """
+    field_names = _parse_field_names(field_name)
+    if not field_names:
+        return _json_response(
+            status="error",
+            count=0,
+            data=[],
+            message="field_name must contain at least one field",
+        )
 
     cypher = """
-    MATCH (resource:FHIRResource {
+    OPTIONAL MATCH (resource:FHIRResource {
         resourceType: $resource_type,
         id: $resource_id
     })
 
-    CALL {
-        WITH resource
+    UNWIND $field_names AS requested_field
 
-        WITH resource, resource[$field_name] AS root_value
-        WHERE root_value IS NOT NULL
+    CALL {
+        WITH resource, requested_field
+
+        WITH resource, requested_field, resource[requested_field] AS root_value
+        WHERE resource IS NOT NULL
+          AND root_value IS NOT NULL
 
         RETURN {
             source: 'root_property',
             node_id: null,
-            path: [$field_name],
+            path: [requested_field],
             labels: labels(resource),
             properties: {value: root_value},
             has_children: false
@@ -1701,11 +1725,12 @@ async def get_resource_field(
 
         UNION
 
-        WITH resource
+        WITH resource, requested_field
         MATCH path=
             (resource)-[first]->(field_node)-[*0..2]->(value_node)
 
-        WHERE type(first) = $field_name
+        WHERE resource IS NOT NULL
+          AND type(first) = requested_field
           AND all(
               relationship IN relationships(path)
               WHERE NOT type(relationship) IN $blocked_relationships
@@ -1732,9 +1757,33 @@ async def get_resource_field(
                     | 1
                 ]) > 0
         } AS value
+
+        UNION
+
+        WITH resource, requested_field
+        RETURN null AS value
     }
 
-    RETURN value
+    WITH requested_field,
+         resource IS NOT NULL AS resource_found,
+         collect(value) AS raw_values
+
+    RETURN requested_field AS field_name,
+           resource_found,
+           size([value IN raw_values WHERE value IS NOT NULL]) > 0 AS field_found,
+           [
+               value IN raw_values
+               WHERE value IS NOT NULL |
+               {
+                   source: value.source,
+                   node_id: value.node_id,
+                   path: value.path,
+                   labels: value.labels,
+                   properties: value.properties,
+                   has_children: value.has_children
+               }
+           ] AS values
+    ORDER BY field_name
     """
 
     return await _execute_tool(
@@ -1743,7 +1792,7 @@ async def get_resource_field(
         parameters={
             "resource_type": resource_type,
             "resource_id": resource_id,
-            "field_name": field_name,
+            "field_names": field_names,
             "blocked_relationships": list(
                 _BLOCKED_TRAVERSAL_RELATIONSHIPS
             ),
@@ -1763,35 +1812,36 @@ async def get_resource_fields_batch(
     ],
     field_name: Annotated[
         str,
-        Field(description="Exact field relationship name or root property name to read across all requested resources."),
+        Field(description="Exact field relationship/root property name to read across all requested resources. Pass one name or comma-separated names."),
     ],
 ) -> str:
     """
-    Read one named root property or internal FHIR field from multiple resources.
+    Read one or more named root properties or internal FHIR fields from multiple resources.
 
     Use when:
-    - You need the same field_name from several FHIRResources of one resourceType.
-    - You want one batch call instead of repeated get_resource_field calls.
+    - You need one or more field names from several FHIRResources of one resourceType.
+    - You want one batch call instead of repeated get_resource_field/get_resource_fields_batch calls.
 
     Do not use when:
     - You only need a shallow field overview; prefer list_resource_fields_batch.
-    - You need different field names for different resources.
     - You need to resolve Reference targets or Coding meanings; prefer resolve_reference or resolve_coding.
 
     Behavior:
     - Parses resource_ids from comma-separated text.
-    - Reads matching root properties or paths starting with field_name up to 2 internal hops.
+    - Parses field_name from comma-separated text.
+    - Reads matching root properties or paths starting with each requested field up to 2 internal hops.
     - Does not traverse RESOLVES_TO, DEFINED_BY, blocked relationships, or into another FHIRResource.
-    - Groups all matching values by requested resource id to reduce repeated metadata.
+    - Groups matching values by requested resource id and field name.
 
     Returns:
         str: JSON payload with one row per requested resource id containing
-        resource_found, field_found, and compact values with source, path, and
+        resource_found, field_found, and fields with source, path, and
         properties. Use get_resource_field when node ids or expansion metadata
         are required for one resource.
     """
 
     ids = _parse_ids(resource_ids)
+    field_names = _parse_field_names(field_name)
 
     if not ids:
         return _json_response(
@@ -1799,6 +1849,13 @@ async def get_resource_fields_batch(
             count=0,
             data=[],
             message="resource_ids must contain at least one id",
+        )
+    if not field_names:
+        return _json_response(
+            status="error",
+            count=0,
+            data=[],
+            message="field_name must contain at least one field",
         )
 
     cypher = """
@@ -1809,22 +1866,24 @@ async def get_resource_fields_batch(
         id: requested_id
     })
 
+    UNWIND $field_names AS requested_field
+
     CALL {
-        WITH requested_id, resource
+        WITH requested_id, requested_field, resource
 
         WITH requested_id,
+             requested_field,
              resource,
-             resource[$field_name] AS root_value
+             resource[requested_field] AS root_value
         WHERE resource IS NOT NULL
           AND root_value IS NOT NULL
 
         RETURN requested_id AS resource_id,
-               true AS resource_found,
-               true AS field_found,
+               requested_field AS field_name,
                {
                    source: 'root_property',
                    node_id: null,
-                   path: [$field_name],
+                   path: [requested_field],
                    labels: labels(resource),
                    properties: {value: root_value},
                    has_children: false
@@ -1832,12 +1891,13 @@ async def get_resource_fields_batch(
 
         UNION
 
-        WITH requested_id, resource
+        WITH requested_id, requested_field, resource
 
         MATCH path=
             (resource)-[first]->(field_node)-[*0..2]->(value_node)
 
-        WHERE type(first) = $field_name
+        WHERE resource IS NOT NULL
+          AND type(first) = requested_field
           AND all(
               relationship IN relationships(path)
               WHERE NOT type(relationship) IN $blocked_relationships
@@ -1848,8 +1908,7 @@ async def get_resource_fields_batch(
           )
 
         RETURN requested_id AS resource_id,
-               true AS resource_found,
-               true AS field_found,
+               requested_field AS field_name,
                {
                    source: 'child_node',
                    node_id: toString(id(value_node)),
@@ -1870,50 +1929,21 @@ async def get_resource_fields_batch(
 
         UNION
 
-        WITH requested_id, resource
-
-        OPTIONAL MATCH path=
-            (resource)-[first]->(field_node)-[*0..2]->(value_node)
-
-        WHERE path IS NULL
-           OR (
-               type(first) = $field_name
-               AND all(
-                   relationship IN relationships(path)
-                   WHERE NOT type(relationship) IN $blocked_relationships
-               )
-               AND all(
-                   path_node IN nodes(path)[1..]
-                   WHERE NOT path_node:FHIRResource
-               )
-           )
-
-        WITH requested_id,
-             resource,
-             resource[$field_name] AS root_value,
-             count(value_node) AS child_value_count
-
-        WHERE resource IS NULL
-           OR (
-               root_value IS NULL
-               AND child_value_count = 0
-           )
-
+        WITH requested_id, requested_field, resource
         RETURN requested_id AS resource_id,
-               resource IS NOT NULL AS resource_found,
-               false AS field_found,
+               requested_field AS field_name,
                null AS value
     }
 
     WITH resource_id,
-         resource_found,
-         field_found,
+         field_name,
+         resource IS NOT NULL AS resource_found,
          collect(value) AS raw_values
 
-    RETURN resource_id,
-           resource_found,
-           field_found,
-           [
+    WITH resource_id,
+         resource_found,
+         field_name,
+         [
                value IN raw_values
                WHERE value IS NOT NULL |
                {
@@ -1922,6 +1952,19 @@ async def get_resource_fields_batch(
                    properties: value.properties
                }
            ] AS values
+
+    WITH resource_id,
+         resource_found,
+         collect({
+             field_name: field_name,
+             field_found: size(values) > 0,
+             values: values
+         }) AS fields
+
+    RETURN resource_id,
+           resource_found,
+           any(field IN fields WHERE field.field_found) AS field_found,
+           fields
     ORDER BY resource_id
     """
 
@@ -1931,7 +1974,7 @@ async def get_resource_fields_batch(
         parameters={
             "resource_type": resource_type,
             "resource_ids": ids,
-            "field_name": field_name,
+            "field_names": field_names,
             "blocked_relationships": list(
                 _BLOCKED_TRAVERSAL_RELATIONSHIPS
             ),

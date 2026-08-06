@@ -16,8 +16,11 @@ from app.agents.fhir import (
     _batch_size_error,
     _format_memory_context,
     _normalize_optional_exact_filter,
+    _parse_field_names,
     find_patient_skin_images,
     generate_agent_response,
+    get_resource_field,
+    get_resource_fields_batch,
     handle_message,
     start_skin_diagnostic,
 )
@@ -36,6 +39,7 @@ def test_system_prompt_is_concise_and_preserves_core_rules():
     assert "meaning over technical identifiers" in SYSTEM_PROMPT
     assert "do not summarize" in SYSTEM_PROMPT
     assert "lists of IDs" in SYSTEM_PROMPT
+    assert "comma-separated field names" in SYSTEM_PROMPT
 
 
 def test_system_prompt_forbids_duplicate_tool_calls():
@@ -68,6 +72,64 @@ def test_optional_exact_filter_normalizes_wildcard_to_no_filter():
     assert _normalize_optional_exact_filter(" * ") == ""
     assert _normalize_optional_exact_filter("") == ""
     assert _normalize_optional_exact_filter("Condition") == "Condition"
+
+
+def test_parse_field_names_accepts_multiple_unique_fields():
+    assert _parse_field_names(" code, valueQuantity, code , effectiveDateTime ") == [
+        "code",
+        "valueQuantity",
+        "effectiveDateTime",
+    ]
+    assert _parse_field_names("  ") == []
+
+
+def test_get_resource_field_passes_multiple_field_names_to_cypher():
+    async def run_test():
+        ctx = MagicMock()
+        ctx.deps = AgentDeps(session_id="session-1", user_id="doctor-1")
+        with patch(
+            "app.agents.fhir.execute_cypher",
+            AsyncMock(return_value=[]),
+        ) as execute:
+            await get_resource_field(
+                ctx,
+                resource_type="Observation",
+                resource_id="10840",
+                field_name="code,valueQuantity,effectiveDateTime",
+            )
+
+        params = execute.await_args.args[1]
+        assert params["field_names"] == [
+            "code",
+            "valueQuantity",
+            "effectiveDateTime",
+        ]
+        assert "field_name" not in params
+
+    anyio.run(run_test)
+
+
+def test_get_resource_fields_batch_passes_multiple_field_names_to_cypher():
+    async def run_test():
+        ctx = MagicMock()
+        ctx.deps = AgentDeps(session_id="session-1", user_id="doctor-1")
+        with patch(
+            "app.agents.fhir.execute_cypher",
+            AsyncMock(return_value=[]),
+        ) as execute:
+            await get_resource_fields_batch(
+                ctx,
+                resource_type="Observation",
+                resource_ids="10840, 10854",
+                field_name="code,valueQuantity",
+            )
+
+        params = execute.await_args.args[1]
+        assert params["resource_ids"] == ["10840", "10854"]
+        assert params["field_names"] == ["code", "valueQuantity"]
+        assert "field_name" not in params
+
+    anyio.run(run_test)
 
 
 def test_find_patient_skin_images_returns_metadata_only_and_collects_attachment():
