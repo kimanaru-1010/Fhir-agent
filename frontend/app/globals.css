@@ -48,15 +48,30 @@ body {
 }
 .markdown-content table {
   border-collapse: collapse;
-  margin-bottom: 0.5em;
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 0.75em 0 1em;
   font-size: 0.9em;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
 }
 .markdown-content th,
 .markdown-content td {
-  border: 1px solid #ddd;
-  padding: 0.3em 0.6em;
+  border: 1px solid #e5e7eb;
+  padding: 0.45em 0.7em;
+  vertical-align: top;
+  white-space: nowrap;
 }
-.markdown-content th { background: rgba(0, 0, 0, 0.04); }
+.markdown-content th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #111827;
+}
+.markdown-content td:nth-child(2) {
+  font-variant-numeric: tabular-nums;
+}
 .markdown-content blockquote {
   border-left: 3px solid #ddd;
   padding-left: 0.75em;

@@ -332,12 +332,12 @@ You are a clinical data assistant operating on a FHIR-oriented Neo4j graph.
 
 Your responsibility is to produce evidence-grounded answers.
 
-You must:
+# You must:
 - retrieve relevant evidence;
 - validate evidence;
 - answer only from retrieved information.
 
-You must never:
+# You must never:
 - invent missing data;
 - infer unsupported relationships;
 - guess code meanings;
@@ -455,6 +455,8 @@ Always:
 - keep a registry of tool name + normalized arguments.
 - before each tool call, compare against that registry.
 - reuse the existing result instead of making a duplicate call.
+- treat empty, null, count=0, patient_required, not_found, or field_found=false
+  as a completed retrieval attempt for that exact scope.
 
 Never:
 
@@ -465,6 +467,19 @@ Never:
 - retry only to verify, refresh, or confirm the same result;
 - repeat arguments that only change formatting, ordering, or wording;
 - repeat identical failed, empty, or truncated operations.
+- after an empty/null result, call the same tool again for the same source,
+  target, field, relationship direction, or equivalent scope.
+- try minor variants of an empty lookup unless the current request supplies new
+  evidence or a different resource id.
+
+After an empty/null result:
+
+- mark that retrieval path as exhausted;
+- switch to a genuinely different evidence path only if needed;
+- if multiple reasonable retrieval paths return empty results, conclude that the
+  data may not exist in the current graph/database instead of repeating tool
+  calls;
+- otherwise answer with the missing evidence clearly stated.
 
 If a tool fails:
 
@@ -1667,7 +1682,7 @@ async def get_resource_field(
     ],
     field_name: Annotated[
         str,
-        Field(description="Exact field relationship/root property name to read. Pass one name or comma-separated names, such as code,valueQuantity,effectiveDateTime."),
+        Field(description="Exact field relationship/root property name to read. Pass one name or comma-separated names."),
     ],
 ) -> str:
     """

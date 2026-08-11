@@ -151,6 +151,40 @@ function splitThinkingAndResponse(text: string): { thinking: string; response: s
   return { thinking, response };
 }
 
+function formatClinicalMarkdown(text: string): string {
+  const normalized = text
+    .replace(/\$\\rightarrow\$/g, "→")
+    .replace(/\\rightarrow/g, "→")
+    .replace(/\$\s*→\s*\$/g, "→")
+    .replace(/\$([^$\n]+)\$/g, "$1");
+
+  const lines = normalized.split("\n");
+  const result: string[] = [];
+  let inSimpleTable = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const parts = trimmed.split(/\s{2,}|\t+/).map((part) => part.trim()).filter(Boolean);
+    const isThreeColumnLine = parts.length === 3 && !trimmed.startsWith("|");
+
+    if (isThreeColumnLine) {
+      if (!inSimpleTable) {
+        result.push(`| ${parts.join(" | ")} |`);
+        result.push("|---|---:|---|");
+        inSimpleTable = true;
+      } else {
+        result.push(`| ${parts.join(" | ")} |`);
+      }
+      continue;
+    }
+
+    inSimpleTable = false;
+    result.push(line);
+  }
+
+  return result.join("\n");
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -1033,12 +1067,12 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
                                 </Collapsible.Trigger>
                                 <Collapsible.Content>
                                   <Box px={2} py={1} mb={2} bg="gray.100" borderRadius="sm" fontSize="xs" color="gray.600">
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{thinking}</ReactMarkdown>
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{formatClinicalMarkdown(thinking)}</ReactMarkdown>
                                   </Box>
                                 </Collapsible.Content>
                               </Collapsible.Root>
                             )}
-                            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{response || msg.content}</ReactMarkdown>
+                            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{formatClinicalMarkdown(response || msg.content)}</ReactMarkdown>
                           </>
                         );
                       })()}
@@ -1126,7 +1160,7 @@ export function ChatInterface({ onGraphUpdate, externalInput, onExternalInputCon
                   <Box bg="gray.50" px={3} py={2} borderRadius="lg" flex={1}>
                     <Box fontSize="sm" className="markdown-content">
                       <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                        {streamingContent}
+                        {formatClinicalMarkdown(streamingContent)}
                       </ReactMarkdown>
                     </Box>
                   </Box>

@@ -45,6 +45,13 @@ def test_system_prompt_is_concise_and_preserves_core_rules():
 def test_system_prompt_forbids_duplicate_tool_calls():
     assert "repeat a tool call with the same or equivalent arguments" in SYSTEM_PROMPT
     assert "reuse the existing result" in SYSTEM_PROMPT
+    assert "treat empty, null, count=0" in SYSTEM_PROMPT
+    assert "retrieval path as exhausted" in SYSTEM_PROMPT
+    assert "same source" in SYSTEM_PROMPT
+    assert "data may not exist in the current graph/database" in SYSTEM_PROMPT
+    assert "get_resource_fields_batch accepts exactly one resource_type" in SYSTEM_PROMPT
+    assert "group the resource ids by resource_type first" in SYSTEM_PROMPT
+    assert "mix resource ids from different resource types" in SYSTEM_PROMPT
 
 
 def test_system_prompt_routes_image_diagnosis_from_attachment_metadata():
